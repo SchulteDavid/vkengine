@@ -13,6 +13,8 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add directory="src/render/util" />
+					<Add directory="src/render" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -22,6 +24,8 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add directory="src/render/util" />
+					<Add directory="src/render" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -31,9 +35,22 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add directory="include" />
+			<Add directory="SDK/x86_64/include/" />
 		</Compiler>
+		<Linker>
+			<Add library="glfw" />
+			<Add library="vulkan" />
+			<Add directory="SDK/x86_64/lib" />
+		</Linker>
 		<Unit filename="src/main.cpp" />
-		<Unit filename="src/vma_implementation.cpp" />
+		<Unit filename="src/render/util/vkutil.cpp" />
+		<Unit filename="src/render/util/vkutil.h" />
+		<Unit filename="src/render/util/vma_implementation.cpp" />
+		<Unit filename="src/render/viewport.cpp" />
+		<Unit filename="src/render/viewport.h" />
+		<Unit filename="src/render/window.cpp" />
+		<Unit filename="src/render/window.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
