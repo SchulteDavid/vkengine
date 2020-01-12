@@ -41,6 +41,8 @@ struct SwapChain {
 GLFWwindow * createWindow(unsigned int width, unsigned int height, void * userData);
 void destroyWindow(GLFWwindow * window);
 
+void setupDebugMessenger(const VkInstance & instance, bool validationLayers);
+
 VkInstance createInstance(std::vector<const char *> validationLayers);
 VkSurfaceKHR createSurface(VkInstance instance, GLFWwindow * window);
 
@@ -55,6 +57,7 @@ VkDevice createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface,
 VmaAllocator createAllocator(VkDevice & device, VkPhysicalDevice & pDevice);
 
 SwapChain createSwapchain(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface, GLFWwindow * window);
+std::vector<VkImageView> createSwapchainImageViews(const std::vector<VkImage> & swapChainImages, VkFormat swapChainFormat, const VkDevice & device);
 
 VkCommandPool createCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface);
 
@@ -65,6 +68,10 @@ void transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout
 VkCommandBuffer beginSingleCommand(const VkCommandPool & commandPool, const VkDevice & device);
 void endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
 
+VkShaderModule createShaderModule(const std::vector<uint8_t> & code, const VkDevice & device);
+
 }
+
+std::vector<uint8_t> readFile(const std::string & fname);
 
 #endif // VKUTIL_H

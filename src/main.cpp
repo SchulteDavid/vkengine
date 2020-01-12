@@ -19,6 +19,8 @@ int main(int argc, char ** argv) {
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 
+        view->drawFrame();
+
     }
 
     return 0;

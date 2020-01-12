@@ -5,8 +5,11 @@
 #include <iostream>
 #include <limits>
 #include <set>
+#include <fstream>
 
 using namespace vkutil;
+
+VkDebugUtilsMessengerEXT debugMessenger;
 
 GLFWwindow * vkutil::createWindow(unsigned int width, unsigned int height, void * userData) {
 
@@ -27,6 +30,50 @@ void vkutil::destroyWindow(GLFWwindow * window) {
     glfwDestroyWindow(window);
     glfwTerminate();
 
+}
+
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+
+    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    throw std::runtime_error(pCallbackData->pMessage);
+    exit(1);
+    return VK_FALSE;
+
+}
+
+void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT * createInfo) {
+    *createInfo = {};
+    createInfo->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo->messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo->pfnUserCallback = debugCallback;
+}
+
+void vkutil::setupDebugMessenger(const VkInstance & instance, bool validationLayers) {
+    if (!validationLayers) return;
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+    populateDebugMessengerCreateInfo(&createInfo);
+
+    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+        throw std::runtime_error("failed to set up debug messenger!");
+    }
 }
 
 bool checkValidationLayerSupport(std::vector<const char *> validationLayers) {
@@ -64,7 +111,7 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     if (validationLayers.size() && !checkValidationLayerSupport(validationLayers))
         throw std::runtime_error("Validation layers not found but requested!");
 
-    VkApplicationInfo appInfo;
+    VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "VkEngine";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -72,7 +119,7 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     appInfo.engineVersion = VK_MAKE_VERSION(1,0,0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
-    VkInstanceCreateInfo createInfo;
+    VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
@@ -86,6 +133,8 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
 
     if (validationLayers.size()) {
         createInfo.ppEnabledLayerNames = validationLayers.data();
+    } else {
+        createInfo.ppEnabledLayerNames = nullptr;
     }
 
     VkInstance instance;
@@ -567,5 +616,71 @@ void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPo
     vkQueueWaitIdle(q);
 
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+
+}
+
+std::vector<uint8_t> readFile(const std::string & fname) {
+
+    std::ifstream file(fname, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error(std::string("Unable to open file ").append(fname));
+    }
+
+    size_t fileSize = file.tellg();
+    std::vector<uint8_t> data(fileSize);
+
+    file.seekg(0);
+    file.read((char*)data.data(), fileSize);
+    file.close();
+
+    return data;
+
+}
+
+
+VkShaderModule vkutil::createShaderModule(const std::vector<uint8_t> & code, const VkDevice & device) {
+
+    VkShaderModuleCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+
+    VkShaderModule module;
+    if (vkCreateShaderModule(device, &createInfo, nullptr, &module) != VK_SUCCESS)
+        throw std::runtime_error("Unable to create shader module");
+
+    return module;
+
+}
+
+std::vector<VkImageView> vkutil::createSwapchainImageViews(const std::vector<VkImage> & swapChainImages, VkFormat swapChainFormat, const VkDevice & device) {
+
+    std::vector<VkImageView> swapChainImageViews(swapChainImages.size());
+
+    for (int i = 0; i < swapChainImages.size(); ++i) {
+
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = swapChainFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+            throw std::runtime_error("Could not create image view for swapChain");
+
+    }
+
+    return swapChainImageViews;
 
 }

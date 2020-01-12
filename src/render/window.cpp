@@ -6,6 +6,10 @@ const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
+const std::vector<const char*> validationLayers = {
+    "VK_LAYER_KHRONOS_validation"
+};
+
 bool isDeviceSuitable(VkPhysicalDevice & device, VkSurfaceKHR & surface) {
 
     VkPhysicalDeviceFeatures supportedFeatures;
@@ -28,8 +32,9 @@ Window::Window() {
 
     glfwWindow = vkutil::createWindow(1280, 720, this);
 
-    std::vector<const char *> validationLayers(0);
+    //std::vector<const char *> validationLayers(0);
     instance = vkutil::createInstance(validationLayers);
+    //vkutil::setupDebugMessenger(instance, validationLayers.size());
 
     surface = vkutil::createSurface(instance, glfwWindow);
     physicalDevice = vkutil::pickPhysicalDevice(instance, [&] (VkPhysicalDevice & d) -> bool {
