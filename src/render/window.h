@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
+#include "util/vkutil.h"
+
 class Window
 {
     public:
@@ -21,19 +23,13 @@ class Window
         VkCommandPool & getCommandPool();
         GLFWwindow * getGlfwWindow();
 
+        vkutil::VulkanState & getState();
+
     protected:
 
     private:
 
-        GLFWwindow * glfwWindow;
-        VkInstance instance;
-        VkSurfaceKHR surface;
-        VkPhysicalDevice physicalDevice;
-        VkQueue presentQueue;
-        VkQueue graphicsQueue;
-        VkDevice device;
-        VmaAllocator vmaAllocator;
-        VkCommandPool commandPool;
+        vkutil::VulkanState state;
 
 
 };

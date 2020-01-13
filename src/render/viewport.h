@@ -7,8 +7,11 @@
 
 #include "util/vkutil.h"
 #include "window.h"
+#include "model.h"
+#include "renderelement.h"
+#include "camera.h"
 
-class Viewport
+class Viewport : public MemoryTransferHandler
 {
     public:
         Viewport(std::shared_ptr<Window> window);
@@ -24,6 +27,11 @@ class Viewport
         struct CameraData;
 
         void drawFrame();
+
+        const vkutil::VulkanState & getState();
+        const VkRenderPass & getRenderpass();
+        const VkExtent2D & getSwapchainExtent();
+        unsigned int getSwapchainSize();
 
     protected:
 
@@ -55,19 +63,15 @@ class Viewport
 
         struct SwapchainInfo : vkutil::SwapChain {
 
-            /*VkSwapchainKHR chain;
-            std::vector<VkImage> images;
-            VkFormat format;
-            VkExtent2D extent;*/
-
-
             std::vector<VkFramebuffer> framebuffers;
             std::vector<VkImageView> imageViews;
 
 
         } swapchain;
 
-        void * camera;
+        const vkutil::VulkanState & state;
+
+        Camera * camera;
         bool framebufferResized;
 
         Window * window;
@@ -75,11 +79,11 @@ class Viewport
         //const VkInstance & instance;
         //const VkSurfaceKHR & surface;
         //const VkPhysicalDevice & physicalDevice;
-        const VkQueue & presentQueue;
+        /*const VkQueue & presentQueue;
         const VkQueue & graphicsQueue;
         const VkDevice & device;
         const VmaAllocator & vmaAllocator;
-        const VkCommandPool & commandPool;
+        const VkCommandPool & commandPool;*/
         VkRenderPass renderPass;
 
         VkImage depthImage;
@@ -118,6 +122,13 @@ class Viewport
         unsigned int frameIndex;
         std::vector<VkFence> inFlightFences;
         VkFence transferFence;
+
+        std::shared_ptr<Model> ppBufferModel;
+
+        LightData lights;
+        unsigned int lightIndex;
+
+        std::vector<std::shared_ptr<RenderElement>> renderElements;
 
 };
 

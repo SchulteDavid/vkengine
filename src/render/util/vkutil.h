@@ -38,6 +38,31 @@ struct SwapChain {
 
 };
 
+struct VertexInputDescriptions {
+    std::vector<VkVertexInputBindingDescription> binding;
+    std::vector<VkVertexInputAttributeDescription> attributes;
+};
+
+struct ShaderInputDescription {
+    VkShaderModule module;
+    VkShaderStageFlagBits usage;
+    char * entryName;
+};
+
+struct VulkanState {
+
+    GLFWwindow * glfwWindow;
+    VkInstance instance;
+    VkSurfaceKHR surface;
+    VkPhysicalDevice physicalDevice;
+    VkQueue presentQueue;
+    VkQueue graphicsQueue;
+    VkDevice device;
+    VmaAllocator vmaAllocator;
+    VkCommandPool commandPool;
+
+};
+
 GLFWwindow * createWindow(unsigned int width, unsigned int height, void * userData);
 void destroyWindow(GLFWwindow * window);
 
@@ -56,6 +81,7 @@ VkDevice createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface,
 
 VmaAllocator createAllocator(VkDevice & device, VkPhysicalDevice & pDevice);
 
+SwapChain createSwapchain(const VulkanState & state);
 SwapChain createSwapchain(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface, GLFWwindow * window);
 std::vector<VkImageView> createSwapchainImageViews(const std::vector<VkImage> & swapChainImages, VkFormat swapChainFormat, const VkDevice & device);
 
@@ -65,10 +91,19 @@ void createImage(const VmaAllocator & allocator, VkDevice device, int width, int
 VkImageView createImageView(const VkDevice & device, const VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);
 void transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
 
+VkCommandBuffer beginSingleCommand(const VulkanState & state);
+void endSingleCommand(VkCommandBuffer & commandBuffer,const VulkanState & state);
+
 VkCommandBuffer beginSingleCommand(const VkCommandPool & commandPool, const VkDevice & device);
 void endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
 
 VkShaderModule createShaderModule(const std::vector<uint8_t> & code, const VkDevice & device);
+
+void copyBuffer(VkBuffer & src, VkBuffer & dst, VkDeviceSize & size, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
+VkDescriptorSetLayout createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> & bindings, const VkDevice & device);
+VkPipeline createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, std::vector<ShaderInputDescription>& shaders, VertexInputDescriptions & descs, VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent);
+
+bool hasStencilComponent(VkFormat format);
 
 }
 

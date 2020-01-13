@@ -15,16 +15,19 @@ Viewport::Viewport(std::shared_ptr<Window> window) :
     //physicalDevice(window->getPhysicalDevice()),
     //instance(window->getInstance()),
     //surface(window->getSurface()),
-    graphicsQueue(window->getGraphicsQueue()),
-    presentQueue(window->getPresentQueue()),
-    device(window->getDevice()),
-    vmaAllocator(window->getAllocator()),
-    commandPool(window->getCommandPool())
+    //graphicsQueue(window->getGraphicsQueue()),
+    //presentQueue(window->getPresentQueue()),
+    //device(window->getDevice()),
+    //vmaAllocator(window->getAllocator()),
+    //commandPool(window->getCommandPool())
+    state(window->getState())
 {
+
+    this->camera = new Camera(70.0, 0.1, 100.0, 1280.0/720.0, glm::vec3(0,0,0));
 
     std::cout << "Creating swapchain" << std::endl;
 
-    vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), device, window->getSurface(), window->getGlfwWindow());
+    vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), state.device, window->getSurface(), window->getGlfwWindow());
 
     swapchain.chain = tmpChain.chain;
     swapchain.extent = tmpChain.extent;
@@ -37,11 +40,11 @@ Viewport::Viewport(std::shared_ptr<Window> window) :
 
     /** Creating depth resources **/
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
-    vkutil::createImage(vmaAllocator, device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-    depthImageView = vkutil::createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, commandPool, device, graphicsQueue);
+    vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+    depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.commandPool, state.device, state.graphicsQueue);
 
-    swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, device);
+    swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, state.device);
 
     createPpDescriptorSetLayout();
     createPPObjects();
@@ -55,7 +58,11 @@ Viewport::Viewport(std::shared_ptr<Window> window) :
 
     createTransferCommandBuffer();
 
+    ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "cube.ply"));
+
     createSyncObjects();
+
+    recordCommandBuffers();
 
 }
 
@@ -79,11 +86,11 @@ void Viewport::createSyncObjects() {
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS) {
+        if (vkCreateSemaphore(state.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(state.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS) {
             throw std::runtime_error("Unable to create semaphores");
         }
 
-        if (vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+        if (vkCreateFence(state.device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
             throw std::runtime_error("Unable to create fence");
 
     }
@@ -94,18 +101,18 @@ void Viewport::createTransferCommandBuffer() {
 
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = state.commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = 1;
 
-    if (vkAllocateCommandBuffers(device, &allocInfo, &transferCmdBuffer) != VK_SUCCESS)
+    if (vkAllocateCommandBuffers(state.device, &allocInfo, &transferCmdBuffer) != VK_SUCCESS)
         throw std::runtime_error("Unable to allocate command buffer");
 
     VkFenceCreateInfo fenceInfo = {};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    vkCreateFence(device, &fenceInfo, nullptr, &transferFence);
+    vkCreateFence(state.device, &fenceInfo, nullptr, &transferFence);
 
 }
 
@@ -113,15 +120,15 @@ void Viewport::prepareRenderElements() {
 
     bool needsUpdate = false;
 
-    /*for (unsigned int i = 0; i < renderElements.size(); ++i) {
+    for (unsigned int i = 0; i < renderElements.size(); ++i) {
         needsUpdate |= renderElements[i]->needsDrawCmdUpdate();
         if (needsUpdate) break;
-    }*/
+    }
 
     if (needsUpdate) {
 
 
-        vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
+        vkFreeCommandBuffers(state.device, state.commandPool, commandBuffers.size(), commandBuffers.data());
         setupCommandBuffers();
         recordCommandBuffers();
 
@@ -134,12 +141,18 @@ void Viewport::drawFrame() {
 
     static auto startRenderTime = std::chrono::high_resolution_clock::now();
 
+    float vData[3] = {0, 0, 1};
+
+    camera->rotate(Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(vData), 0.001));
+
+    //std::cout << camera->getView() << std::endl;
+
     prepareRenderElements();
 
-    /*if (this->hasPendingTransfer()) {
+    if (this->hasPendingTransfer()) {
 
-        vkWaitForFences(device, 1, &transferFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
-        vkResetFences(device, 1, &transferFence);
+        vkWaitForFences(state.device, 1, &transferFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+        vkResetFences(state.device, 1, &transferFence);
 
         this->recordTranfer(transferCmdBuffer);
 
@@ -150,14 +163,14 @@ void Viewport::drawFrame() {
         transferSubmit.signalSemaphoreCount = 0;
         transferSubmit.waitSemaphoreCount = 0;
 
-        vkQueueSubmit(graphicsQueue, 1, &transferSubmit, transferFence);
+        vkQueueSubmit(state.graphicsQueue, 1, &transferSubmit, transferFence);
 
-    }*/
+    }
 
-    vkWaitForFences(device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+    vkWaitForFences(state.device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     uint32_t imageIndex = 0;
-    VkResult result = vkAcquireNextImageKHR(device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
     switch(result) {
 
@@ -191,9 +204,11 @@ void Viewport::drawFrame() {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    vkResetFences(device, 1, &inFlightFences[frameIndex]);
+    vkResetFences(state.device, 1, &inFlightFences[frameIndex]);
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
+    //std::cout << frameIndex << " : " << inFlightFences[frameIndex] << std::endl;
+
+    if (vkQueueSubmit(state.graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
         throw std::runtime_error("Unable to submit command buffer");
 
     VkPresentInfoKHR presentInfo = {};
@@ -206,14 +221,14 @@ void Viewport::drawFrame() {
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr;
 
-    vkQueuePresentKHR(presentQueue, &presentInfo);
+    vkQueuePresentKHR(state.presentQueue, &presentInfo);
 
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
-    if (!frameIndex) {
+    /*if (!frameIndex) {
         double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
         std::cout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
-    }
+    }*/
 
     startRenderTime = std::chrono::high_resolution_clock::now();
 
@@ -226,7 +241,7 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    /*UniformBufferObject ubo;
+    UniformBufferObject ubo;
 
     float x = 50.0 * sin(time);
 
@@ -235,19 +250,19 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
     for (unsigned int i = 0; i < renderElements.size(); ++i) {
 
-        renderElements[i]->updateUniformBuffer(ubo, device, imageIndex);
+        renderElements[i]->updateUniformBuffer(ubo, imageIndex);
 
     }
 
     void * data;
-    vmaMapMemory(vmaAllocator, ppLightBuffersMemory[imageIndex], &data);
+    vmaMapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex], &data);
     memcpy(data, &lights, sizeof(LightData));
-    vmaUnmapMemory(vmaAllocator, ppLightBuffersMemory[imageIndex]);
+    vmaUnmapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex]);
 
-    vmaMapMemory(vmaAllocator, ppCameraBuffersMemory[imageIndex], &data);
+    vmaMapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex], &data);
     CameraData * camData = (CameraData *) data;
     camData->position = glm::vec3(0,-4, 2);
-    vmaUnmapMemory(vmaAllocator, ppCameraBuffersMemory[imageIndex]);*/
+    vmaUnmapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex]);
 
 }
 
@@ -382,21 +397,21 @@ void Viewport::setupRenderPass() {
     renderPassInfo.dependencyCount = dependencies.size();
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(state.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
         throw std::runtime_error("Unable to create renderpass");
 
 }
 
 void Viewport::createPPObjects() {
 
-    vkutil::createImage(vmaAllocator, device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImage, gBufferImageMemory);
-    gBufferImageView = vkutil::createImageView(device, gBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImage, gBufferImageMemory);
+    gBufferImageView = vkutil::createImageView(state.device, gBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
-    vkutil::createImage(vmaAllocator, device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, nBufferImage, nBufferImageMemory);
-    nBufferImageView = vkutil::createImageView(device, nBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, nBufferImage, nBufferImageMemory);
+    nBufferImageView = vkutil::createImageView(state.device, nBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
-    vkutil::createImage(vmaAllocator, device, swapchain.extent.width, swapchain.extent.height, 1, 1, swapchain.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, aBufferImage, aBufferImageMemory);
-    aBufferImageView = vkutil::createImageView(device, aBufferImage, swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, swapchain.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, aBufferImage, aBufferImageMemory);
+    aBufferImageView = vkutil::createImageView(state.device, aBufferImage, swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
     VkDeviceSize lightSize = sizeof(LightData);
     VkDeviceSize cameraSize = sizeof(CameraData);
@@ -421,7 +436,7 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
-            vmaCreateBuffer(vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppLightBuffers[i], &ppLightBuffersMemory[i], &stagingBufferAllocInfo);
+            vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppLightBuffers[i], &ppLightBuffersMemory[i], &stagingBufferAllocInfo);
         }
         {
             VkBufferCreateInfo stBufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -435,7 +450,7 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
-            vmaCreateBuffer(vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppCameraBuffers[i], &ppCameraBuffersMemory[i], &stagingBufferAllocInfo);
+            vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppCameraBuffers[i], &ppCameraBuffersMemory[i], &stagingBufferAllocInfo);
         }
         //StorageBuffer::createBuffer(vmaAllocator, cameraSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, ppCameraBuffers[i], ppCameraBuffersMemory[i]);
 
@@ -445,19 +460,19 @@ void Viewport::createPPObjects() {
 
 void Viewport::destroyPPObjects() {
 
-    vmaDestroyImage(vmaAllocator, gBufferImage, gBufferImageMemory);
-    vkDestroyImageView(device, gBufferImageView, nullptr);
+    vmaDestroyImage(state.vmaAllocator, gBufferImage, gBufferImageMemory);
+    vkDestroyImageView(state.device, gBufferImageView, nullptr);
 
-    vmaDestroyImage(vmaAllocator, nBufferImage, nBufferImageMemory);
-    vkDestroyImageView(device, nBufferImageView, nullptr);
+    vmaDestroyImage(state.vmaAllocator, nBufferImage, nBufferImageMemory);
+    vkDestroyImageView(state.device, nBufferImageView, nullptr);
 
-    vmaDestroyImage(vmaAllocator, aBufferImage, aBufferImageMemory);
-    vkDestroyImageView(device, aBufferImageView, nullptr);
+    vmaDestroyImage(state.vmaAllocator, aBufferImage, aBufferImageMemory);
+    vkDestroyImageView(state.device, aBufferImageView, nullptr);
 
     for (int i = 0; i < swapchain.images.size(); ++i) {
 
-        vmaDestroyBuffer(vmaAllocator, ppLightBuffers[i], ppLightBuffersMemory[i]);
-        vmaDestroyBuffer(vmaAllocator, ppCameraBuffers[i], ppCameraBuffersMemory[i]);
+        vmaDestroyBuffer(state.vmaAllocator, ppLightBuffers[i], ppLightBuffersMemory[i]);
+        vmaDestroyBuffer(state.vmaAllocator, ppCameraBuffers[i], ppCameraBuffersMemory[i]);
 
     }
 
@@ -471,13 +486,13 @@ void Viewport::setupPostProcessingPipeline() {
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages(2);
 
-    shaderStages[0].module = vkutil::createShaderModule(readFile("shaders/id.vert.spirv"), device);
+    shaderStages[0].module = vkutil::createShaderModule(readFile("shaders/id.vert.spirv"), state.device);
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
     shaderStages[0].pName = "main";
 
 
-    shaderStages[1].module = vkutil::createShaderModule(readFile("shaders/pp.frag.spirv"), device);
+    shaderStages[1].module = vkutil::createShaderModule(readFile("shaders/pp.frag.spirv"), state.device);
     shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     shaderStages[1].pName = "main";
@@ -487,8 +502,8 @@ void Viewport::setupPostProcessingPipeline() {
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    std::vector<VkVertexInputBindingDescription> inputDesc;// = Model::Vertex::getBindingDescription();
-    std::vector<VkVertexInputAttributeDescription> attrDesc;// = Model::Vertex::getAttributeDescriptions();
+    std::vector<VkVertexInputBindingDescription> inputDesc = Model::Vertex::getBindingDescription();
+    std::vector<VkVertexInputAttributeDescription> attrDesc = Model::Vertex::getAttributeDescriptions();
 
     vertexInputInfo.vertexBindingDescriptionCount = inputDesc.size();
     vertexInputInfo.pVertexBindingDescriptions = inputDesc.data();
@@ -596,7 +611,7 @@ void Viewport::setupPostProcessingPipeline() {
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &ppPipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &ppPipelineLayout) != VK_SUCCESS)
         throw std::runtime_error("Unable to create pipeline layout");
 
 
@@ -620,7 +635,7 @@ void Viewport::setupPostProcessingPipeline() {
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
     pipelineInfo.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ppPipeline) != VK_SUCCESS)
+    if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ppPipeline) != VK_SUCCESS)
         throw std::runtime_error("Unable to create pipeline");
 
 }
@@ -658,7 +673,7 @@ void Viewport::createPpDescriptorSetLayout() {
     layoutInfo.pBindings = bindings.data();
     layoutInfo.bindingCount = bindings.size();
 
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &ppDescLayout) != VK_SUCCESS)
+    if (vkCreateDescriptorSetLayout(state.device, &layoutInfo, nullptr, &ppDescLayout) != VK_SUCCESS)
         throw std::runtime_error("could not create descriptor set layout.");
 
 }
@@ -685,7 +700,7 @@ void Viewport::createPpDescriptorPool() {
     poolInfo.pPoolSizes = sizes;
     poolInfo.maxSets = swapchain.images.size();
 
-    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &ppDescPool) != VK_SUCCESS)
+    if (vkCreateDescriptorPool(state.device, &poolInfo, nullptr, &ppDescPool) != VK_SUCCESS)
         throw std::runtime_error("Unable to create descriptor pool");
 
 }
@@ -701,7 +716,7 @@ void Viewport::createPPDescriptorSets() {
     allocInfo.descriptorSetCount = swapchain.images.size();
     allocInfo.pSetLayouts = layouts.data();
 
-    if (vkAllocateDescriptorSets(device, &allocInfo, ppDescSets.data()) != VK_SUCCESS)
+    if (vkAllocateDescriptorSets(state.device, &allocInfo, ppDescSets.data()) != VK_SUCCESS)
         throw std::runtime_error("Unable to allocate descriptor sets");
 
     for (int i = 0; i < swapchain.images.size(); ++i) {
@@ -783,10 +798,22 @@ void Viewport::createPPDescriptorSets() {
         descriptorWrites[4].pImageInfo = nullptr;
         descriptorWrites[4].pTexelBufferView = nullptr;
 
-        vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(state.device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
     }
 
+}
+
+const VkRenderPass & Viewport::getRenderpass() {
+    return renderPass;
+}
+
+const VkExtent2D & Viewport::getSwapchainExtent() {
+    return swapchain.extent;
+}
+
+unsigned int Viewport::getSwapchainSize() {
+    return swapchain.imageViews.size();
 }
 
 void Viewport::setupFramebuffers() {
@@ -808,13 +835,13 @@ void Viewport::setupFramebuffers() {
         framebufferInfo.height = swapchain.extent.height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS)
+        if (vkCreateFramebuffer(state.device, &framebufferInfo, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS)
             throw std::runtime_error("Unable to create framebuffer");
 
     }
 
-    //if (this->camera)
-    //    this->camera->updateProjection(70.0, 0.01, 100.0, (float) swapchain.extent.width / (float) swapchain.extent.height);
+    if (this->camera)
+        this->camera->updateProjection(70.0, 0.01, 100.0, (float) swapchain.extent.width / (float) swapchain.extent.height);
 
 }
 
@@ -823,51 +850,51 @@ void Viewport::destroySwapChain() {
     destroyPPObjects();
 
     for (auto framebuffer : swapchain.framebuffers) {
-        vkDestroyFramebuffer(device, framebuffer, nullptr);
+        vkDestroyFramebuffer(state.device, framebuffer, nullptr);
     }
 
-    vkDestroyImageView(device, depthImageView, nullptr);
-    vmaDestroyImage(vmaAllocator, depthImage, depthImageMemory);
+    vkDestroyImageView(state.device, depthImageView, nullptr);
+    vmaDestroyImage(state.vmaAllocator, depthImage, depthImageMemory);
 
-    vkFreeCommandBuffers(device, commandPool, commandBuffers.size(), commandBuffers.data());
+    vkFreeCommandBuffers(state.device, state.commandPool, commandBuffers.size(), commandBuffers.data());
 
-    vkDestroyRenderPass(device, renderPass, nullptr);
+    vkDestroyRenderPass(state.device, renderPass, nullptr);
 
     for (const VkImageView & v : swapchain.imageViews) {
-        vkDestroyImageView(device, v, nullptr);
+        vkDestroyImageView(state.device, v, nullptr);
     }
 
     for (const VkImage & i : swapchain.images) {
-        vkDestroyImage(device, i, nullptr);
+        vkDestroyImage(state.device, i, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, swapchain.chain, nullptr);
+    vkDestroySwapchainKHR(state.device, swapchain.chain, nullptr);
 
-    /*for (unsigned int i = 0; i < renderElements.size(); ++i) {
-        this->renderElements[i]->destroyUniformBuffers();
-    }*/
+    for (unsigned int i = 0; i < renderElements.size(); ++i) {
+        this->renderElements[i]->destroyUniformBuffers(swapchain);
+    }
 
 }
 
 void Viewport::recreateSwapChain() {
 
-    vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), device, window->getSurface(), window->getGlfwWindow());
+    vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), state.device, window->getSurface(), window->getGlfwWindow());
     this->swapchain.chain = tmpChain.chain;
     this->swapchain.extent = tmpChain.extent;
     this->swapchain.format = tmpChain.format;
     this->swapchain.images = tmpChain.images;
-    this->swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, device);
+    this->swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, state.device);
     //VulkanHelper::getSwapChainComponents(swapChain.chain, swapChain.extent, swapChain.images, swapChain.imageViews, swapChain.format);
 
     this->setupRenderPass();
 
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT; /// <- this can be chosen by a function later
 
-    vkutil::createImage(vmaAllocator, device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+    vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
     std::cout << "Creating depth image view" << std::endl;
-    depthImageView = vkutil::createImageView(device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+    depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
-    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, commandPool, device, graphicsQueue);
+    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.commandPool, state.device, state.graphicsQueue);
 
     std::cout << "Creating PP objects" << std::endl;
     createPPObjects();
@@ -876,9 +903,9 @@ void Viewport::recreateSwapChain() {
 
     this->setupFramebuffers();
 
-    /*for (unsigned int i = 0; i < renderElements.size(); ++i) {
-        renderElements[i]->recreateResources(device, renderPass, swapchain.imageViews.size());
-    }*/
+    for (unsigned int i = 0; i < renderElements.size(); ++i) {
+        renderElements[i]->recreateResources(renderPass, swapchain.imageViews.size(), swapchain);
+    }
 
     this->setupPostProcessingPipeline();
     this->createPpDescriptorPool();
@@ -895,13 +922,17 @@ void Viewport::setupCommandBuffers() {
 
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = state.commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = swapchain.framebuffers.size();
 
-    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
+    if (vkAllocateCommandBuffers(state.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
         throw std::runtime_error("Unable to allocate command buffer");
 
+}
+
+const vkutil::VulkanState & Viewport::getState() {
+    return state;
 }
 
 void Viewport::recordCommandBuffers() {
@@ -935,13 +966,13 @@ void Viewport::recordCommandBuffers() {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        /*for (unsigned int j = 0; j < renderElements.size(); ++j) {
+        for (unsigned int j = 0; j < renderElements.size(); ++j) {
 
             renderElements[j]->render(commandBuffers[i], i);
 
-        }*/
+        }
 
-        /*vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipeline);
 
@@ -949,7 +980,7 @@ void Viewport::recordCommandBuffers() {
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipelineLayout, 0, 1, &ppDescSets[i], 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffers[i], ppBufferModel->getIndexCount(), 1, 0, 0, 0);*/
+        vkCmdDrawIndexed(commandBuffers[i], ppBufferModel->getIndexCount(), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers[i]);
 

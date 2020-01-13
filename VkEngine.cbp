@@ -41,16 +41,43 @@
 		<Linker>
 			<Add library="glfw" />
 			<Add library="vulkan" />
+			<Add library="ply" />
+			<Add library="tga" />
 			<Add directory="SDK/x86_64/lib" />
+			<Add directory="lib/linux_amd64" />
 		</Linker>
 		<Unit filename="src/main.cpp" />
+		<Unit filename="src/render/camera.cpp" />
+		<Unit filename="src/render/camera.h" />
+		<Unit filename="src/render/dynamicbuffer.h" />
+		<Unit filename="src/render/indexbuffer.h" />
+		<Unit filename="src/render/memorytransferhandler.cpp" />
+		<Unit filename="src/render/memorytransferhandler.h" />
+		<Unit filename="src/render/model.cpp" />
+		<Unit filename="src/render/model.h" />
+		<Unit filename="src/render/renderelement.cpp" />
+		<Unit filename="src/render/renderelement.h" />
+		<Unit filename="src/render/shader.cpp" />
+		<Unit filename="src/render/shader.h" />
+		<Unit filename="src/render/storagebuffer.cpp" />
+		<Unit filename="src/render/storagebuffer.h" />
+		<Unit filename="src/render/texture.cpp" />
+		<Unit filename="src/render/texture.h" />
 		<Unit filename="src/render/util/vkutil.cpp" />
 		<Unit filename="src/render/util/vkutil.h" />
 		<Unit filename="src/render/util/vma_implementation.cpp" />
+		<Unit filename="src/render/vertexbuffer.h" />
 		<Unit filename="src/render/viewport.cpp" />
 		<Unit filename="src/render/viewport.h" />
 		<Unit filename="src/render/window.cpp" />
 		<Unit filename="src/render/window.h" />
+		<Unit filename="src/util/math/matrix.h" />
+		<Unit filename="src/util/math/quaternion.h" />
+		<Unit filename="src/util/math/vector.h" />
+		<Unit filename="src/util/meshhelper.cpp" />
+		<Unit filename="src/util/meshhelper.h" />
+		<Unit filename="src/util/simplexnoise.cpp" />
+		<Unit filename="src/util/simplexnoise.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

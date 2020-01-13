@@ -30,65 +30,69 @@ bool isDeviceSuitable(VkPhysicalDevice & device, VkSurfaceKHR & surface) {
 
 Window::Window() {
 
-    glfwWindow = vkutil::createWindow(1280, 720, this);
+    state.glfwWindow = vkutil::createWindow(1280, 720, this);
 
     //std::vector<const char *> validationLayers(0);
-    instance = vkutil::createInstance(validationLayers);
+    state.instance = vkutil::createInstance(validationLayers);
     //vkutil::setupDebugMessenger(instance, validationLayers.size());
 
-    surface = vkutil::createSurface(instance, glfwWindow);
-    physicalDevice = vkutil::pickPhysicalDevice(instance, [&] (VkPhysicalDevice & d) -> bool {
-        return isDeviceSuitable(d, surface);
+    state.surface = vkutil::createSurface(state.instance, state.glfwWindow);
+    state.physicalDevice = vkutil::pickPhysicalDevice(state.instance, [&] (VkPhysicalDevice & d) -> bool {
+        return isDeviceSuitable(d, state.surface);
     });
 
-    device = vkutil::createLogicalDevice(physicalDevice, surface, &graphicsQueue, &presentQueue, deviceExtensions);
+    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &state.graphicsQueue, &state.presentQueue, deviceExtensions);
 
-    vmaAllocator = vkutil::createAllocator(device, physicalDevice);
+    state.vmaAllocator = vkutil::createAllocator(state.device, state.physicalDevice);
 
-    commandPool = vkutil::createCommandPool(physicalDevice, device, surface);
+    state.commandPool = vkutil::createCommandPool(state.physicalDevice, state.device, state.surface);
 
 }
 
 Window::~Window() {
 
-    vmaDestroyAllocator(vmaAllocator);
+    vmaDestroyAllocator(state.vmaAllocator);
 
-    vkutil::destroyWindow(glfwWindow);
+    vkutil::destroyWindow(state.glfwWindow);
 
 }
 
 VkPhysicalDevice & Window::getPhysicalDevice() {
-    return physicalDevice;
+    return state.physicalDevice;
 }
 
 VkInstance & Window::getInstance() {
-    return instance;
+    return state.instance;
 }
 
 VkSurfaceKHR & Window::getSurface() {
-    return surface;
+    return state.surface;
 }
 
 VkQueue & Window::getGraphicsQueue() {
-    return graphicsQueue;
+    return state.graphicsQueue;
 }
 
 VkQueue & Window::getPresentQueue() {
-    return presentQueue;
+    return state.presentQueue;
 }
 
 VkDevice & Window::getDevice() {
-    return device;
+    return state.device;
 }
 
 VmaAllocator & Window::getAllocator() {
-    return vmaAllocator;
+    return state.vmaAllocator;
 }
 
 GLFWwindow * Window::getGlfwWindow() {
-    return glfwWindow;
+    return state.glfwWindow;
 }
 
 VkCommandPool & Window::getCommandPool() {
-    return commandPool;
+    return state.commandPool;
+}
+
+vkutil::VulkanState & Window::getState() {
+    return state;
 }
