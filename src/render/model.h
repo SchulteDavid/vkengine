@@ -7,7 +7,10 @@
 #include "vertexbuffer.h"
 #include <string>
 
-class Model {
+#include "../resources/resource.h"
+#include "../resources/resourceloader.h"
+
+class Model : public Resource {
 
     public:
 
@@ -43,6 +46,34 @@ class Model {
 
         int vCount;
         int iCount;
+
+};
+
+class ModelUploader : public ResourceUploader<Model> {
+
+    public:
+        ModelUploader(const vkutil::VulkanState & state, Model * model);
+
+        Model * uploadResource();
+
+    private:
+
+        const vkutil::VulkanState & state;
+        Model * model;
+
+};
+
+class ModelLoader : public ResourceLoader<Model> {
+
+    public:
+
+        ModelLoader(const vkutil::VulkanState & state);
+
+        std::shared_ptr<ResourceUploader<Model>> loadResource(std::string fname);
+
+    private:
+
+        const vkutil::VulkanState & state;
 
 };
 

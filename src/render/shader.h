@@ -9,8 +9,9 @@
 
 #include "util/vkutil.h"
 #include "texture.h"
+#include "../resources/resource.h"
 
-class Shader
+class Shader : public Resource
 {
     public:
         Shader(std::string vertShader, std::string fragShader, const VkDevice & device);

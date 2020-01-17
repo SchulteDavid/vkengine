@@ -14,7 +14,7 @@
 class Viewport : public MemoryTransferHandler
 {
     public:
-        Viewport(std::shared_ptr<Window> window);
+        Viewport(std::shared_ptr<Window> window, Camera * camera);
         virtual ~Viewport();
 
         struct LightData {
@@ -32,6 +32,10 @@ class Viewport : public MemoryTransferHandler
         const VkRenderPass & getRenderpass();
         const VkExtent2D & getSwapchainExtent();
         unsigned int getSwapchainSize();
+
+        void addRenderElement(std::shared_ptr<RenderElement> rElem);
+
+        void addLight(glm::vec4 pos, glm::vec4 color);
 
     protected:
 
@@ -75,15 +79,6 @@ class Viewport : public MemoryTransferHandler
         bool framebufferResized;
 
         Window * window;
-
-        //const VkInstance & instance;
-        //const VkSurfaceKHR & surface;
-        //const VkPhysicalDevice & physicalDevice;
-        /*const VkQueue & presentQueue;
-        const VkQueue & graphicsQueue;
-        const VkDevice & device;
-        const VmaAllocator & vmaAllocator;
-        const VkCommandPool & commandPool;*/
         VkRenderPass renderPass;
 
         VkImage depthImage;

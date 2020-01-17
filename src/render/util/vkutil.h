@@ -14,9 +14,10 @@ struct QueueFamilyIndices {
 
     int graphicsFamily = -1;
     int presentFamily = -1;
+    int transferFamily = -1;
 
     bool isComplete() {
-        return graphicsFamily >= 0 && presentFamily >= 0;
+        return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0 && transferFamily != graphicsFamily;
     }
 
 };
@@ -57,9 +58,11 @@ struct VulkanState {
     VkPhysicalDevice physicalDevice;
     VkQueue presentQueue;
     VkQueue graphicsQueue;
+    VkQueue transferQueue;
     VkDevice device;
     VmaAllocator vmaAllocator;
-    VkCommandPool commandPool;
+    VkCommandPool graphicsCommandPool;
+    VkCommandPool transferCommandPool;
 
 };
 
@@ -77,7 +80,7 @@ SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice & device, c
 
 VkPhysicalDevice pickPhysicalDevice(VkInstance instance, std::function<bool(VkPhysicalDevice &)> isDeviceSuitable);
 
-VkDevice createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, const std::vector<const char*> deviceExtensions);
+VkDevice createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, VkQueue * tQueue, const std::vector<const char*> deviceExtensions);
 
 VmaAllocator createAllocator(VkDevice & device, VkPhysicalDevice & pDevice);
 
@@ -85,7 +88,8 @@ SwapChain createSwapchain(const VulkanState & state);
 SwapChain createSwapchain(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface, GLFWwindow * window);
 std::vector<VkImageView> createSwapchainImageViews(const std::vector<VkImage> & swapChainImages, VkFormat swapChainFormat, const VkDevice & device);
 
-VkCommandPool createCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface);
+VkCommandPool createGraphicsCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface);
+VkCommandPool createTransferCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface);
 
 void createImage(const VmaAllocator & allocator, VkDevice device, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory);
 VkImageView createImageView(const VkDevice & device, const VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 #include "model.h"
 #include "texture.h"
@@ -91,6 +92,7 @@ class RenderElement : public MemoryTransferer {
         std::vector<Transform> transforms;
         uint32_t instanceCount;
 
+        std::mutex transformBufferMutex;
 
         bool instanceBufferDirty;
         bool instanceCountUpdated;

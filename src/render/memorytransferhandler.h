@@ -56,7 +56,7 @@ class MemoryTransferHandler
 
         bool hasPendingTransfer();
 
-        void recordTranfer(VkCommandBuffer & buffer);
+        void recordTransfer(VkCommandBuffer & buffer);
 
     protected:
 

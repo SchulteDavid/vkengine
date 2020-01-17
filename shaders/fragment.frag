@@ -27,4 +27,7 @@ void main() {
     outPosition = position;
     outNormal = vec4(toTangentMat * normalize(texture(normalMap, uvPos).xyz * 2.0 - 1.0), 0.0);
     //outColor = mix(texture(tex, uvPos), texture(tex2, uvPos), ramp(abs(dot(vec3(0, 0, 1), normalize(normal.xyz))), 0.3, 0.6));
+
+    //outColor = vec4(1);
+
 }

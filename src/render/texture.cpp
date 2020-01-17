@@ -45,7 +45,7 @@ Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & d
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     std::cout << "Generating mipmaps" << std::endl;
-    generateMipmaps(width, height, state.commandPool, device, state.graphicsQueue);
+    generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
     std::cout << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

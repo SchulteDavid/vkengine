@@ -196,13 +196,23 @@ void main() {
             light += clamp(dot(normalize(inLights.position[i].xyz), n), 0, 1) * inLights.color[i].xyz;
 
         } else {
-            light += clamp(dot(normalize(l), n), 0, 1) * inLights.color[i].xyz / pow(length(l), inLights.position[i].w);
+
+            //light += clamp(dot(normalize(l), n), 0, 1) * inLights.color[i].xyz / pow(length(l), inLights.position[i].w);
+
         }
 
     }
 
+    //light = vec3(0.1);
+
+    //light += 0;//clamp(dot(normalize(inLights.position[0].xyz), n), 0, 1) * inLights.color[0].xyz;
+
+    //ppResult = vec4(inCamera.position, 1);
+
     ppResult = vec4(light, 1) * subpassLoad(inputAlbedo);
     //ppResult = subpassLoad(inputAlbedo);
+    //ppResult = subpassLoad(inputNormal);
+    //ppResult = vec4(inCamera.position, 1);
     //ppResult = getGColor(1);
 
 }

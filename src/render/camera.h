@@ -21,6 +21,8 @@ class Camera
         void rotate(Math::Quaternion<float> dr);
         void rotate(float dPitch, float dYaw);
 
+        glm::vec3 position;
+
         glm::vec3 getFacing();
         Math::Quaternion<float> getRotation();
 
@@ -39,7 +41,6 @@ class Camera
         float pitch;
         float yaw;
 
-        glm::vec3 position;
         glm::vec3 facing;
         Math::Quaternion<float> rotation;
 

@@ -23,7 +23,9 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
 
-    model->uploadToGPU(state.device, state.commandPool, state.graphicsQueue);
+    //model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+
+    //this->handler->signalTransfer(model.get());
 
     transforms[0] = initTransform;
 
@@ -91,14 +93,20 @@ void RenderElement::updateInstance(Instance & instance, Transform & trans) {
 
     InstanceInfo info = this->instances[instance.id];
 
+    transformBufferMutex.lock();
+
     this->transforms[info.pos] = trans;
     this->instanceTransforms[info.pos] = getTransformationMatrix(transforms[info.pos]);
+
+    transformBufferMutex.unlock();
 
     this->markBufferDirty();
 
 }
 
 void RenderElement::deleteInstance(Instance & instance) {
+
+    transformBufferMutex.lock();
 
     ///No instances left
     if (!transforms.size()) {
@@ -133,6 +141,7 @@ void RenderElement::deleteInstance(Instance & instance) {
 
     instanceCount--;
     //this->instanceCountUpdated = true;
+    transformBufferMutex.unlock();
 
 }
 
@@ -187,7 +196,9 @@ void RenderElement::destroyUniformBuffers(const vkutil::SwapChain & swapchain) {
 
 void RenderElement::recordTransfer(VkCommandBuffer & cmdBuffer) {
 
+    transformBufferMutex.lock();
     this->instanceBuffer->fill(instanceTransforms, cmdBuffer);
+    transformBufferMutex.unlock();
 
 }
 
@@ -198,9 +209,11 @@ bool RenderElement::reusable() {
 void RenderElement::updateUniformBuffer(UniformBufferObject & obj,  uint32_t imageIndex) {
 
     void * data;
+    //transformBufferMutex.lock();
     vmaMapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex], &data);
     memcpy(data, &obj, sizeof(UniformBufferObject));
     vmaUnmapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex]);
+    //transformBufferMutex.unlock();
 
     if (this->instanceCountUpdated) {
 

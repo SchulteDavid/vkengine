@@ -12,10 +12,17 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-pg" />
 					<Add option="-g" />
+					<Add option="-rdynamic" />
 					<Add directory="src/render/util" />
 					<Add directory="src/render" />
+					<Add directory="src/resources" />
 				</Compiler>
+				<Linker>
+					<Add option="-pg" />
+					<Add option="-rdynamic" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/VkEngine" prefix_auto="1" extension_auto="1" />
@@ -26,6 +33,7 @@
 					<Add option="-O2" />
 					<Add directory="src/render/util" />
 					<Add directory="src/render" />
+					<Add directory="src/resources" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -43,9 +51,28 @@
 			<Add library="vulkan" />
 			<Add library="ply" />
 			<Add library="tga" />
+			<Add library="pthread" />
 			<Add directory="SDK/x86_64/lib" />
 			<Add directory="lib/linux_amd64" />
 		</Linker>
+		<Unit filename="shaders/fragment.frag">
+			<Option compile="1" />
+		</Unit>
+		<Unit filename="shaders/id.vert">
+			<Option compile="1" />
+		</Unit>
+		<Unit filename="shaders/normals.frag">
+			<Option compile="1" />
+		</Unit>
+		<Unit filename="shaders/pp.frag">
+			<Option compile="1" />
+		</Unit>
+		<Unit filename="shaders/terrain.frag">
+			<Option compile="1" />
+		</Unit>
+		<Unit filename="shaders/vertex.vert">
+			<Option compile="1" />
+		</Unit>
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/render/camera.cpp" />
 		<Unit filename="src/render/camera.h" />
@@ -71,6 +98,11 @@
 		<Unit filename="src/render/viewport.h" />
 		<Unit filename="src/render/window.cpp" />
 		<Unit filename="src/render/window.h" />
+		<Unit filename="src/resources/resource.h" />
+		<Unit filename="src/resources/resourcemanager.cpp" />
+		<Unit filename="src/resources/resourcemanager.h" />
+		<Unit filename="src/resources/resourceregistry.h" />
+		<Unit filename="src/resources/resourceuploader.h" />
 		<Unit filename="src/util/math/matrix.h" />
 		<Unit filename="src/util/math/quaternion.h" />
 		<Unit filename="src/util/math/vector.h" />

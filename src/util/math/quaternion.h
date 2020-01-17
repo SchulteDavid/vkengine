@@ -214,7 +214,7 @@ template <typename T = double> class Quaternion {
 
         }
 
-        static Quaternion<T> fromAxisAngle(Vector<3, T> axis, double angle) {
+        static Quaternion<T> fromAxisAngle(Vector<3, T> axis, T angle) {
 
             axis.normalize();
 

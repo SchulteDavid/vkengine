@@ -11,7 +11,7 @@ struct Viewport::CameraData {
 
 };
 
-Viewport::Viewport(std::shared_ptr<Window> window) :
+Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) :
     //physicalDevice(window->getPhysicalDevice()),
     //instance(window->getInstance()),
     //surface(window->getSurface()),
@@ -23,7 +23,9 @@ Viewport::Viewport(std::shared_ptr<Window> window) :
     state(window->getState())
 {
 
-    this->camera = new Camera(70.0, 0.1, 100.0, 1280.0/720.0, glm::vec3(0,0,0));
+    this->camera = camera;
+    this->lightIndex = 0;
+    //camera->move(0,0,1);
 
     std::cout << "Creating swapchain" << std::endl;
 
@@ -42,7 +44,7 @@ Viewport::Viewport(std::shared_ptr<Window> window) :
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
     vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
     depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.commandPool, state.device, state.graphicsQueue);
+    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
 
     swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, state.device);
 
@@ -59,6 +61,8 @@ Viewport::Viewport(std::shared_ptr<Window> window) :
     createTransferCommandBuffer();
 
     ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "cube.ply"));
+
+    ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
 
     createSyncObjects();
 
@@ -101,7 +105,7 @@ void Viewport::createTransferCommandBuffer() {
 
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = state.commandPool;
+    allocInfo.commandPool = state.transferCommandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = 1;
 
@@ -128,7 +132,7 @@ void Viewport::prepareRenderElements() {
     if (needsUpdate) {
 
 
-        vkFreeCommandBuffers(state.device, state.commandPool, commandBuffers.size(), commandBuffers.data());
+        vkFreeCommandBuffers(state.device, state.graphicsCommandPool, commandBuffers.size(), commandBuffers.data());
         setupCommandBuffers();
         recordCommandBuffers();
 
@@ -143,18 +147,24 @@ void Viewport::drawFrame() {
 
     float vData[3] = {0, 0, 1};
 
-    camera->rotate(Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(vData), 0.001));
+    //camera->rotate(Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(vData), 0.001));
+
+    //std::cout << "Draw Frame" << std::endl;
 
     //std::cout << camera->getView() << std::endl;
 
     prepareRenderElements();
 
+    //std::cout << "Done preparing render elements" << std::endl;
+
     if (this->hasPendingTransfer()) {
 
+        //std::cout << "Waiting for transfer fences" << std::endl;
         vkWaitForFences(state.device, 1, &transferFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
         vkResetFences(state.device, 1, &transferFence);
 
-        this->recordTranfer(transferCmdBuffer);
+        //std::cout << "Recording transfer" << std::endl;
+        this->recordTransfer(transferCmdBuffer);
 
         VkSubmitInfo transferSubmit = {};
         transferSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -163,9 +173,11 @@ void Viewport::drawFrame() {
         transferSubmit.signalSemaphoreCount = 0;
         transferSubmit.waitSemaphoreCount = 0;
 
-        vkQueueSubmit(state.graphicsQueue, 1, &transferSubmit, transferFence);
+        vkQueueSubmit(state.transferQueue, 1, &transferSubmit, transferFence);
 
     }
+
+    //std::cout << "Waiting for fences" << std::endl;
 
     vkWaitForFences(state.device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
@@ -225,10 +237,10 @@ void Viewport::drawFrame() {
 
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
-    /*if (!frameIndex) {
+    if (!frameIndex) {
         double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
         std::cout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
-    }*/
+    }
 
     startRenderTime = std::chrono::high_resolution_clock::now();
 
@@ -254,6 +266,8 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
     }
 
+    //std::cout << "Copying light data" << std::endl;
+
     void * data;
     vmaMapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex], &data);
     memcpy(data, &lights, sizeof(LightData));
@@ -261,7 +275,7 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
     vmaMapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex], &data);
     CameraData * camData = (CameraData *) data;
-    camData->position = glm::vec3(0,-4, 2);
+    camData->position = camera->position;
     vmaUnmapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex]);
 
 }
@@ -478,6 +492,10 @@ void Viewport::destroyPPObjects() {
 
 }
 
+void Viewport::addRenderElement(std::shared_ptr<RenderElement> rElem) {
+    this->renderElements.push_back(rElem);
+}
+
 void Viewport::setupPostProcessingPipeline() {
 
     /** shaders **/
@@ -502,13 +520,36 @@ void Viewport::setupPostProcessingPipeline() {
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    std::vector<VkVertexInputBindingDescription> inputDesc = Model::Vertex::getBindingDescription();
-    std::vector<VkVertexInputAttributeDescription> attrDesc = Model::Vertex::getAttributeDescriptions();
+    //std::vector<VkVertexInputBindingDescription> inputDesc = Model::Vertex::getBindingDescription();
 
-    vertexInputInfo.vertexBindingDescriptionCount = inputDesc.size();
-    vertexInputInfo.pVertexBindingDescriptions = inputDesc.data();
-    vertexInputInfo.vertexAttributeDescriptionCount = attrDesc.size();
-    vertexInputInfo.pVertexAttributeDescriptions = attrDesc.data();
+    VkVertexInputBindingDescription description = {};
+    description.binding = 0;
+    description.stride = sizeof(Model::Vertex);
+    description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    //std::vector<VkVertexInputAttributeDescription> attrDesc = Model::Vertex::getAttributeDescriptions();
+
+    std::vector<VkVertexInputAttributeDescription> descriptions(3);
+
+    descriptions[0].binding = 0;
+    descriptions[0].location = 0;
+    descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    descriptions[0].offset = offsetof(Model::Vertex, pos);
+
+    descriptions[1].binding = 0;
+    descriptions[1].location = 1;
+    descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    descriptions[1].offset = offsetof(Model::Vertex, normal);
+
+    descriptions[2].binding = 0;
+    descriptions[2].location = 2;
+    descriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+    descriptions[2].offset = offsetof(Model::Vertex, tangent);
+
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &description;
+    vertexInputInfo.vertexAttributeDescriptionCount = descriptions.size();
+    vertexInputInfo.pVertexAttributeDescriptions = descriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -856,7 +897,7 @@ void Viewport::destroySwapChain() {
     vkDestroyImageView(state.device, depthImageView, nullptr);
     vmaDestroyImage(state.vmaAllocator, depthImage, depthImageMemory);
 
-    vkFreeCommandBuffers(state.device, state.commandPool, commandBuffers.size(), commandBuffers.data());
+    vkFreeCommandBuffers(state.device, state.graphicsCommandPool, commandBuffers.size(), commandBuffers.data());
 
     vkDestroyRenderPass(state.device, renderPass, nullptr);
 
@@ -894,11 +935,12 @@ void Viewport::recreateSwapChain() {
     std::cout << "Creating depth image view" << std::endl;
     depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
-    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.commandPool, state.device, state.graphicsQueue);
+    vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
 
     std::cout << "Creating PP objects" << std::endl;
     createPPObjects();
 
+    vkutil::transitionImageLayout(gBufferImage, swapchain.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
     //Texture::transitionImageLayout(gBufferImage, swapchain.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     this->setupFramebuffers();
@@ -922,7 +964,7 @@ void Viewport::setupCommandBuffers() {
 
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = state.commandPool;
+    allocInfo.commandPool = state.graphicsCommandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = swapchain.framebuffers.size();
 
@@ -988,5 +1030,16 @@ void Viewport::recordCommandBuffers() {
             throw std::runtime_error("Unable to record command buffer");
 
     }
+
+}
+
+void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
+
+    if (lightIndex > 31) throw std::runtime_error("To many lights in viewport");
+
+    this->lights.position[lightIndex] = pos;
+    this->lights.color[lightIndex] = color;
+
+    this->lightIndex++;
 
 }

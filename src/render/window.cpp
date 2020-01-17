@@ -34,26 +34,27 @@ Window::Window() {
 
     //std::vector<const char *> validationLayers(0);
     state.instance = vkutil::createInstance(validationLayers);
-    //vkutil::setupDebugMessenger(instance, validationLayers.size());
+    vkutil::setupDebugMessenger(state.instance, validationLayers.size());
 
     state.surface = vkutil::createSurface(state.instance, state.glfwWindow);
     state.physicalDevice = vkutil::pickPhysicalDevice(state.instance, [&] (VkPhysicalDevice & d) -> bool {
         return isDeviceSuitable(d, state.surface);
     });
 
-    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &state.graphicsQueue, &state.presentQueue, deviceExtensions);
+    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &state.graphicsQueue, &state.presentQueue, &state.transferQueue, deviceExtensions);
 
     state.vmaAllocator = vkutil::createAllocator(state.device, state.physicalDevice);
 
-    state.commandPool = vkutil::createCommandPool(state.physicalDevice, state.device, state.surface);
+    state.graphicsCommandPool = vkutil::createGraphicsCommandPool(state.physicalDevice, state.device, state.surface);
+    state.transferCommandPool = vkutil::createTransferCommandPool(state.physicalDevice, state.device, state.surface);
 
 }
 
 Window::~Window() {
 
-    vmaDestroyAllocator(state.vmaAllocator);
+    /*vmaDestroyAllocator(state.vmaAllocator);
 
-    vkutil::destroyWindow(state.glfwWindow);
+    vkutil::destroyWindow(state.glfwWindow);*/
 
 }
 
@@ -90,7 +91,7 @@ GLFWwindow * Window::getGlfwWindow() {
 }
 
 VkCommandPool & Window::getCommandPool() {
-    return state.commandPool;
+    return state.graphicsCommandPool;
 }
 
 vkutil::VulkanState & Window::getState() {

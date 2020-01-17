@@ -7,6 +7,11 @@
 #include <set>
 #include <fstream>
 
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 using namespace vkutil;
 
 VkDebugUtilsMessengerEXT debugMessenger;
@@ -48,28 +53,54 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
+#define THROW_ON_WARN
+#define BACKTRACE_DEPTH 256
+
+void * backtrace_array[BACKTRACE_DEPTH];
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
 
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-    throw std::runtime_error(pCallbackData->pMessage);
-    exit(1);
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        size_t s;
+
+        s = backtrace(backtrace_array, BACKTRACE_DEPTH);
+        backtrace_symbols_fd(backtrace_array, s, STDERR_FILENO);
+
+        throw std::runtime_error(pCallbackData->pMessage);
+    } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        #ifdef THROW_ON_WARN
+        size_t s;
+
+        s = backtrace(backtrace_array, BACKTRACE_DEPTH);
+        backtrace_symbols_fd(backtrace_array, s, STDERR_FILENO);
+        throw std::runtime_error(pCallbackData->pMessage);
+        #else
+        std::cerr << "WARNING : " << pCallbackData->pMessage << std::endl;
+        #endif
+    } else {
+        std::cout << "DEBUG   : " << pCallbackData->pMessage << std::endl;
+    }
+    //exit(1);
     return VK_FALSE;
 
 }
 
-void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT * createInfo) {
-    *createInfo = {};
-    createInfo->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo->messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo->messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo->pfnUserCallback = debugCallback;
+void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT & createInfo) {
+    createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
 }
 
 void vkutil::setupDebugMessenger(const VkInstance & instance, bool validationLayers) {
     if (!validationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
-    populateDebugMessengerCreateInfo(&createInfo);
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
 
     if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
@@ -126,8 +157,12 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     uint32_t glfwExtensionCount = 0;
     const char ** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    createInfo.enabledExtensionCount = glfwExtensionCount;
-    createInfo.ppEnabledExtensionNames = glfwExtensions;
+    std::vector<const char *> requiredExtensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    if (validationLayers.size()) {
+        requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+    createInfo.enabledExtensionCount = requiredExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
     createInfo.enabledLayerCount = validationLayers.size();
 
@@ -171,6 +206,7 @@ VkSurfaceKHR vkutil::createSurface(VkInstance instance, GLFWwindow * window) {
 }
 
 vkutil::QueueFamilyIndices vkutil::findQueueFamilies(const VkPhysicalDevice & device, const VkSurfaceKHR & surface) {
+
     QueueFamilyIndices indices;
 
     uint32_t familyCount = 0;
@@ -184,6 +220,9 @@ vkutil::QueueFamilyIndices vkutil::findQueueFamilies(const VkPhysicalDevice & de
 
         if (p.queueCount > 0 && p.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             indices.graphicsFamily = i;
+
+        if (p.queueCount > 0 && p.queueFlags & VK_QUEUE_TRANSFER_BIT)
+            indices.transferFamily = i;
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
@@ -266,12 +305,12 @@ VkPhysicalDevice vkutil::pickPhysicalDevice(VkInstance instance, std::function<b
 
 }
 
-VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, const std::vector<const char*> deviceExtensions) {
+VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, VkQueue * tQueue, const std::vector<const char*> deviceExtensions) {
 
     QueueFamilyIndices indices = findQueueFamilies(pDevice, surface);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<int> uniqueFamilies = {indices.graphicsFamily, indices.presentFamily};
+    std::set<int> uniqueFamilies = {indices.graphicsFamily, indices.presentFamily, indices.transferFamily};
 
     for (int family : uniqueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo = {};
@@ -306,6 +345,7 @@ VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & 
 
     vkGetDeviceQueue(device, indices.graphicsFamily, 0, gQueue);
     vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
+    vkGetDeviceQueue(device, indices.transferFamily, 0, tQueue);
 
     return device;
 
@@ -446,7 +486,7 @@ SwapChain vkutil::createSwapchain(const VkPhysicalDevice & physicalDevice, const
 
 }
 
-VkCommandPool vkutil::createCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface) {
+VkCommandPool vkutil::createGraphicsCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface) {
 
     VkCommandPool commandPool;
 
@@ -455,6 +495,24 @@ VkCommandPool vkutil::createCommandPool(const VkPhysicalDevice & physicalDevice,
     VkCommandPoolCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     createInfo.queueFamilyIndex = indices.graphicsFamily;
+    createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+    if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
+        throw std::runtime_error("Unable to create command pool");
+
+    return commandPool;
+
+}
+
+VkCommandPool vkutil::createTransferCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface) {
+
+    VkCommandPool commandPool;
+
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+
+    VkCommandPoolCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    createInfo.queueFamilyIndex = indices.transferFamily;
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
@@ -584,7 +642,7 @@ void vkutil::transitionImageLayout(const VkImage & image, VkFormat format, VkIma
 }
 
 VkCommandBuffer vkutil::beginSingleCommand(const VulkanState & state) {
-    return beginSingleCommand(state.commandPool, state.device);
+    return beginSingleCommand(state.graphicsCommandPool, state.device);
 }
 
 VkCommandBuffer vkutil::beginSingleCommand(const VkCommandPool & commandPool, const VkDevice & device) {
@@ -608,7 +666,7 @@ VkCommandBuffer vkutil::beginSingleCommand(const VkCommandPool & commandPool, co
 }
 
 void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VulkanState & state) {
-    endSingleCommand(commandBuffer, state.commandPool, state.device, state.graphicsQueue);
+    endSingleCommand(commandBuffer, state.graphicsCommandPool, state.device, state.graphicsQueue);
 }
 
 void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q) {

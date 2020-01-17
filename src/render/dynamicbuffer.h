@@ -33,7 +33,7 @@ template <typename T> class DynamicBuffer : public StorageBuffer
             vmaMapMemory(state.vmaAllocator, stagingBufferMemory, &tmp);
             memcpy(tmp, data.data(), bufferSize);
             //vmaFlushAllocation(allocator, stagingBufferMemory, 0, bufferSize);
-            vkutil::copyBuffer(stagingBuffer, buffer, bufferSize, state.commandPool, state.device, state.graphicsQueue);
+            vkutil::copyBuffer(stagingBuffer, buffer, bufferSize, state.transferCommandPool, state.device, state.transferQueue);
             vmaUnmapMemory(state.vmaAllocator, stagingBufferMemory);
 
         }
@@ -60,7 +60,7 @@ template <typename T> class DynamicBuffer : public StorageBuffer
             void * tmp;
             vmaMapMemory(state.vmaAllocator, stagingBufferMemory, &tmp);
             memcpy(((T *)tmp) + index, newData, sizeof(T));
-            vkutil::copyBuffer(stagingBuffer, buffer, bufferSize, state.commandPool, state.device, state.graphicsQueue);
+            vkutil::copyBuffer(stagingBuffer, buffer, bufferSize, state.transferCommandPool, state.device, state.transferQueue);
             vmaUnmapMemory(state.vmaAllocator, stagingBufferMemory);
 
         }

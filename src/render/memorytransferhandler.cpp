@@ -34,7 +34,7 @@ bool MemoryTransferHandler::hasPendingTransfer() {
     return !this->transfers.empty();
 }
 
-void MemoryTransferHandler::recordTranfer(VkCommandBuffer & buffer) {
+void MemoryTransferHandler::recordTransfer(VkCommandBuffer & buffer) {
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

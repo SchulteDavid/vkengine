@@ -1,0 +1,3 @@
+#include "resourceregistry.h"
+
+
