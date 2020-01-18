@@ -11,17 +11,7 @@ struct Viewport::CameraData {
 
 };
 
-Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) :
-    //physicalDevice(window->getPhysicalDevice()),
-    //instance(window->getInstance()),
-    //surface(window->getSurface()),
-    //graphicsQueue(window->getGraphicsQueue()),
-    //presentQueue(window->getPresentQueue()),
-    //device(window->getDevice()),
-    //vmaAllocator(window->getAllocator()),
-    //commandPool(window->getCommandPool())
-    state(window->getState())
-{
+Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(window->getState()) {
 
     this->camera = camera;
     this->lightIndex = 0;
