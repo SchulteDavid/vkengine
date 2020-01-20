@@ -10,11 +10,14 @@
 #include "util/vkutil.h"
 #include "texture.h"
 #include "../resources/resource.h"
+#include "../resources/resourceloader.h"
+#include "../resources/resourceuploader.h"
 
 class Shader : public Resource
 {
     public:
         Shader(std::string vertShader, std::string fragShader, const VkDevice & device);
+        Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state);
         virtual ~Shader();
 
         std::vector<VkDescriptorSetLayoutBinding> getBindings(VkSampler & sampler, unsigned int textureCount);
@@ -28,6 +31,8 @@ class Shader : public Resource
         VkPipelineLayout & getPipelineLayout();
 
         void bindForRender(VkCommandBuffer & cmdBuffer, VkDescriptorSet & descriptors);
+
+        void createModules(const vkutil::VulkanState & state);
 
     protected:
 
@@ -43,6 +48,38 @@ class Shader : public Resource
         std::vector<VkShaderStageFlagBits> stages;
         std::vector<VkDescriptorSet> descSets;
         bool hasDescSets;
+
+        std::vector<uint8_t> vertShaderCode;
+        std::vector<uint8_t> fragShaderCode;
+
+};
+
+class ShaderUploader : public ResourceUploader<Shader> {
+
+    public:
+
+        ShaderUploader(const vkutil::VulkanState & state, Shader * shader);
+
+        Shader * uploadResource();
+
+    private:
+
+        const vkutil::VulkanState & state;
+        Shader * shader;
+
+};
+
+class ShaderLoader : public ResourceLoader<Shader> {
+
+    public:
+
+        ShaderLoader(const vkutil::VulkanState & state);
+
+        std::shared_ptr<ResourceUploader<Shader>> loadResource(std::string fname);
+
+    private:
+
+        const vkutil::VulkanState & state;
 
 };
 

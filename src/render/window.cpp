@@ -2,6 +2,9 @@
 
 #include "util/vkutil.h"
 
+#include <GLFW/glfw3.h>
+#include <iostream>
+
 const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -9,6 +12,12 @@ const std::vector<const char*> deviceExtensions = {
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
+
+namespace glfw_inputs {
+void onKeyboard(GLFWwindow * window, int key, int scancode, int action, int mods);
+void onMouseMotion(GLFWwindow * window, double xpos, double ypos);
+void onMouseButton(GLFWwindow * window, int button, int action, int mods);
+}
 
 bool isDeviceSuitable(VkPhysicalDevice & device, VkSurfaceKHR & surface) {
 
@@ -30,7 +39,14 @@ bool isDeviceSuitable(VkPhysicalDevice & device, VkSurfaceKHR & surface) {
 
 Window::Window() {
 
+    this->oldMouseX = 0;
+    this->oldMouseY = 0;
+
     state.glfwWindow = vkutil::createWindow(1280, 720, this);
+
+    glfwSetKeyCallback(state.glfwWindow, glfw_inputs::onKeyboard);
+    glfwSetMouseButtonCallback(state.glfwWindow, glfw_inputs::onMouseButton);
+    glfwSetCursorPosCallback(state.glfwWindow, glfw_inputs::onMouseMotion);
 
     //std::vector<const char *> validationLayers(0);
     state.instance = vkutil::createInstance(validationLayers);
@@ -96,4 +112,67 @@ VkCommandPool & Window::getCommandPool() {
 
 vkutil::VulkanState & Window::getState() {
     return state;
+}
+
+void Window::onKeyboard(int key, int scancode, int action, int mods) {
+
+    for (std::shared_ptr<InputHandler> h : inputHandlers) {
+
+        h->onKeyboard(key, scancode, action, mods);
+
+    }
+
+}
+
+void Window::onMouseButton(int button, int action, int mods) {
+
+    for (std::shared_ptr<InputHandler> h : inputHandlers) {
+
+        h->onMouseButton(button, action, mods);
+
+    }
+
+}
+
+void Window::onMouseMotion(double xpos, double ypos) {
+
+    double dx = xpos - oldMouseX;
+    double dy = ypos - oldMouseY;
+
+    oldMouseX = xpos;
+    oldMouseY = ypos;
+
+    for (std::shared_ptr<InputHandler> h : inputHandlers) {
+
+        h->onMouseMotion(xpos, ypos, dx, dy);
+
+    }
+
+}
+
+void Window::addInputHandler(std::shared_ptr<InputHandler> handler) {
+
+    this->inputHandlers.push_back(handler);
+
+}
+
+void glfw_inputs::onKeyboard(GLFWwindow * w, int key, int scancode, int action, int mods) {
+
+    Window * window = (Window *) glfwGetWindowUserPointer(w);
+    window->onKeyboard(key, scancode, action, mods);
+
+}
+
+void glfw_inputs::onMouseButton(GLFWwindow * w, int button, int action, int mods) {
+
+    Window * window = (Window *) glfwGetWindowUserPointer(w);
+    window->onMouseButton(button, action, mods);
+
+}
+
+void glfw_inputs::onMouseMotion(GLFWwindow * w, double xpos, double ypos) {
+
+    Window * window = (Window *) glfwGetWindowUserPointer(w);
+    window->onMouseMotion(xpos, ypos);
+
 }

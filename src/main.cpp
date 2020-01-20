@@ -12,6 +12,8 @@
 
 #include "resources/resourcemanager.h"
 
+#include "inputs/playercontroler.h"
+
 static bool run = true;
 static bool wait;
 
@@ -23,7 +25,7 @@ void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Ins
 
         //auto startRenderTime = std::chrono::high_resolution_clock::now();
 
-        for (unsigned int i = 0; i < 512; ++i) {
+        for (unsigned int i = 0; i < 64; ++i) {
 
             Math::Quaternion<float> dr = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3,float>(rotAxis), 0.01);
             transforms[i].qRot = transforms[i].qRot * dr;
@@ -54,21 +56,23 @@ int main(int argc, char ** argv) {
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
     resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
+    resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
 
-    /*std::shared_ptr<ResourceUploader<Model>> modelUploader = resourceManager->loadResource<Model>("Model", "cube.ply");
-    Model * tmpModel = modelUploader->uploadResource();
-    resourceManager->registerResource("Model", "cube.ply", tmpModel);*/
 
     resourceManager->startLoadingThreads(1);
 
+    resourceManager->loadResourceBg("Shader", "shaders/std.shader");
     std::shared_ptr<ResourceManager::LoadingStatus> fres = resourceManager->loadResourceBg("Model", "cube.ply");
 
+    std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
+    window->addInputHandler(playerCtl);
 
-    std::shared_ptr<Shader> shader(new Shader("shaders/vertex.vert.spirv", "shaders/fragment.frag.spirv", window->getDevice()));
+    //std::shared_ptr<Shader> shader(new Shader("shaders/vertex.vert.spirv", "shaders/fragment.frag.spirv", window->getDevice()));
     //std::shared_ptr<Model> model(Model::loadFromFile(window->getState(), "cube.ply"));
     while (!fres->isLoaded) {
         //std::cout << fres->isLoaded << std::endl;
     }
+    std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "shaders/std.shader");
     std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "cube.ply");
     std::shared_ptr<Texture> albedo(Texture::createTexture(window->getState(), "test.tga"));
     std::shared_ptr<Texture> normal(Texture::createTexture(window->getState(), "normals.tga"));
@@ -124,9 +128,6 @@ int main(int argc, char ** argv) {
     }
 
     resourceManager->joinLoadingThreads();
-
-    //RenderElement::Instance rInstance = e->addInstance(trans);
-    //RenderElement::Instance instance2 = e->addInstance(trans);
 
     double d = 0;
 

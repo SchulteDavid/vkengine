@@ -1,17 +1,29 @@
 #include "shader.h"
 
 #include <iostream>
+#include <configloader.h>
+
+#include "model.h"
 
 Shader::Shader(std::string vertShader, std::string fragShader, const VkDevice & device) : device(device) {
 
     this->modules.resize(2);
     this->stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
 
-    std::vector<uint8_t> vertShaderCode = readFile(vertShader);
-    std::vector<uint8_t> fragShaderCode = readFile(fragShader);
+    vertShaderCode = readFile(vertShader);
+    fragShaderCode = readFile(fragShader);
 
     modules[0] = vkutil::createShaderModule(vertShaderCode, device);
     modules[1] = vkutil::createShaderModule(fragShaderCode, device);
+
+    hasDescSets = false;
+
+}
+
+Shader::Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state) : device(state.device) {
+
+    vertShaderCode = vertCode;
+    fragShaderCode = fragCode;
 
     hasDescSets = false;
 
@@ -21,6 +33,16 @@ Shader::~Shader() {
 
     for (unsigned int i = 0; i < modules.size(); ++i)
         vkDestroyShaderModule(device, modules[i], nullptr);
+
+}
+
+void Shader::createModules(const vkutil::VulkanState & state) {
+
+    modules.resize(2);
+    stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+
+    modules[0] = vkutil::createShaderModule(vertShaderCode, state.device);
+    modules[1] = vkutil::createShaderModule(fragShaderCode, state.device);
 
 }
 
@@ -192,4 +214,42 @@ VkPipeline & Shader::getPipeline() {
 
 VkPipelineLayout & Shader::getPipelineLayout() {
     return this->pipelineLayout;
+}
+
+ShaderLoader::ShaderLoader(const vkutil::VulkanState & state) : state(state) {
+
+}
+
+std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string fname) {
+
+    CompoundNode * root = ConfigLoader::loadFileTree(fname);
+
+    std::string vertFname(root->get<const char *>("vertex"));
+    std::string fragFname(root->get<const char *>("fragment"));
+
+
+    //std::cout << vertFname << "  " << fragFname << std::endl;
+
+    //delete root;
+
+    std::vector<uint8_t> vertCode = readFile(vertFname);
+    std::vector<uint8_t> fragCode = readFile(fragFname);
+
+    Shader * shader = new Shader(vertCode, fragCode, state);
+
+    return std::shared_ptr<ShaderUploader>(new ShaderUploader(state, shader));
+
+}
+
+ShaderUploader::ShaderUploader(const vkutil::VulkanState & state, Shader * shader) : state(state) {
+
+    this->shader = shader;
+
+}
+
+Shader * ShaderUploader::uploadResource() {
+
+    this->shader->createModules(state);
+    return shader;
+
 }
