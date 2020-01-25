@@ -151,6 +151,10 @@ Model * ModelUploader::uploadResource() {
 
 }
 
+bool ModelUploader::uploadReady() {
+    return true;
+}
+
 ModelLoader::ModelLoader(const vkutil::VulkanState & state) : state(state) {
 
 }

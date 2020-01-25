@@ -274,7 +274,7 @@ VkSampler Texture::createSampler(const VulkanState & state, int mipLevels) {
 
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = mipLevels - 1;
+    samplerInfo.minLod = 0;
     samplerInfo.maxLod = mipLevels;
 
     VkSampler sampler;
@@ -373,5 +373,42 @@ Texture * Texture::createTexture(const vkutil::VulkanState & state, std::string 
     tgaClose(tgaImage);
 
     return new Texture(state, imageData, width, height, 1);
+
+}
+
+TextureUploader::TextureUploader(const vkutil::VulkanState & state, std::vector<float> data, int width, int height, int depth) : state(state) {
+
+    this->data = data;
+    this->width = width;
+    this->height = height;
+    this->depth = depth;
+
+}
+
+bool TextureUploader::uploadReady() {
+    return true;
+}
+
+Texture * TextureUploader::uploadResource() {
+    return new Texture(state, data, width, height, depth);
+}
+
+TextureLoader::TextureLoader(const vkutil::VulkanState & state) : state(state) {
+
+
+
+}
+
+std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::string fname) {
+
+    TGA_FILE * tgaImage = tgaOpen(fname.c_str());
+    int width, height;
+    tgaGetSize(tgaImage, &width, &height);
+    uint8_t * rawData = tgaGetColorDataRGBA(tgaImage);
+    std::vector<float> imageData = convertTgaDataToFloat(rawData, width, height);
+    free(rawData);
+    tgaClose(tgaImage);
+
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader(state, imageData, width, height, 1));
 
 }

@@ -131,21 +131,7 @@ void Viewport::prepareRenderElements() {
 
 }
 
-void Viewport::drawFrame() {
-
-    static auto startRenderTime = std::chrono::high_resolution_clock::now();
-
-    float vData[3] = {0, 0, 1};
-
-    //camera->rotate(Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(vData), 0.001));
-
-    //std::cout << "Draw Frame" << std::endl;
-
-    //std::cout << camera->getView() << std::endl;
-
-    prepareRenderElements();
-
-    //std::cout << "Done preparing render elements" << std::endl;
+void Viewport::manageMemoryTransfer() {
 
     if (this->hasPendingTransfer()) {
 
@@ -166,6 +152,24 @@ void Viewport::drawFrame() {
         vkQueueSubmit(state.transferQueue, 1, &transferSubmit, transferFence);
 
     }
+
+}
+
+void Viewport::drawFrame() {
+
+    static auto startRenderTime = std::chrono::high_resolution_clock::now();
+
+    float vData[3] = {0, 0, 1};
+
+    //camera->rotate(Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(vData), 0.001));
+
+    //std::cout << "Draw Frame" << std::endl;
+
+    //std::cout << camera->getView() << std::endl;
+
+    prepareRenderElements();
+
+    //std::cout << "Done preparing render elements" << std::endl;
 
     //std::cout << "Waiting for fences" << std::endl;
 
@@ -484,6 +488,14 @@ void Viewport::destroyPPObjects() {
 
 void Viewport::addRenderElement(std::shared_ptr<RenderElement> rElem) {
     this->renderElements.push_back(rElem);
+
+    if (this->renderElementsByShader.find(rElem->getShader()) == renderElementsByShader.end()) {
+        renderElementsByShader[rElem->getShader()] = std::vector<std::shared_ptr<RenderElement>>(1);
+        renderElementsByShader[rElem->getShader()][0] = rElem;
+    } else {
+        renderElementsByShader[rElem->getShader()].push_back(rElem);
+    }
+
 }
 
 void Viewport::setupPostProcessingPipeline() {
@@ -510,14 +522,10 @@ void Viewport::setupPostProcessingPipeline() {
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-    //std::vector<VkVertexInputBindingDescription> inputDesc = Model::Vertex::getBindingDescription();
-
     VkVertexInputBindingDescription description = {};
     description.binding = 0;
     description.stride = sizeof(Model::Vertex);
     description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    //std::vector<VkVertexInputAttributeDescription> attrDesc = Model::Vertex::getAttributeDescriptions();
 
     std::vector<VkVertexInputAttributeDescription> descriptions(3);
 

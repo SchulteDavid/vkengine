@@ -55,6 +55,7 @@ class ModelUploader : public ResourceUploader<Model> {
         ModelUploader(const vkutil::VulkanState & state, Model * model);
 
         Model * uploadResource();
+        bool uploadReady();
 
     private:
 

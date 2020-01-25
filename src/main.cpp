@@ -14,28 +14,32 @@
 
 #include "inputs/playercontroler.h"
 
+
 static bool run = true;
 static bool wait;
 
-void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Instance> & instances, std::vector<RenderElement::Transform> & transforms) {
+void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Instance> & instances, std::vector<RenderElement::Transform> & transforms, Viewport * view) {
 
     float rotAxis[3] = {0, 0, 1};
 
+    auto startRenderTime = std::chrono::high_resolution_clock::now();
+
     while (run) {
 
-        //auto startRenderTime = std::chrono::high_resolution_clock::now();
+        double duration = std::chrono::duration<double, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
 
-        for (unsigned int i = 0; i < 64; ++i) {
+        for (unsigned int i = 0; i < instances.size(); ++i) {
 
-            Math::Quaternion<float> dr = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3,float>(rotAxis), 0.01);
+            Math::Quaternion<float> dr = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3,float>(rotAxis), M_PI * duration);
             transforms[i].qRot = transforms[i].qRot * dr;
 
             e->updateInstance(instances[i], transforms[i]);
 
         }
 
-        /*double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
-        std::cout << "Compute time: " << duration << "ms" << std::endl;*/
+        startRenderTime = std::chrono::high_resolution_clock::now();
+
+        view->manageMemoryTransfer();
 
         while (wait);
         wait = true;
@@ -44,8 +48,9 @@ void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Ins
 
 }
 
-int main(int argc, char ** argv) {
+#include <execinfo.h>
 
+int main(int argc, char ** argv) {
 
     std::shared_ptr<Window> window(new Window());
 
@@ -55,45 +60,45 @@ int main(int argc, char ** argv) {
 
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
+    resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
+    resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
+
     resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
     resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
-
+    resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
+    resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
 
     resourceManager->startLoadingThreads(1);
 
-    resourceManager->loadResourceBg("Shader", "shaders/std.shader");
-    std::shared_ptr<ResourceManager::LoadingStatus> fres = resourceManager->loadResourceBg("Model", "cube.ply");
+    LoadingResource matRes = resourceManager->loadResourceBg("Material", "test.mat");
+    LoadingResource fres = resourceManager->loadResourceBg("Model", "cube.ply");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
 
-    //std::shared_ptr<Shader> shader(new Shader("shaders/vertex.vert.spirv", "shaders/fragment.frag.spirv", window->getDevice()));
-    //std::shared_ptr<Model> model(Model::loadFromFile(window->getState(), "cube.ply"));
-    while (!fres->isLoaded) {
-        //std::cout << fres->isLoaded << std::endl;
-    }
+    while (!matRes->status.isUseable);
+
+    std::cout << "Resource-summary: " << std::endl;
+    resourceManager->printSummary();
+    std::cout << "Done" << std::endl;
+
     std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "shaders/std.shader");
     std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "cube.ply");
-    std::shared_ptr<Texture> albedo(Texture::createTexture(window->getState(), "test.tga"));
-    std::shared_ptr<Texture> normal(Texture::createTexture(window->getState(), "normals.tga"));
 
-    std::vector<std::shared_ptr<Texture>> textures = {albedo, normal};
+    std::vector<std::shared_ptr<Texture>> textures = {resourceManager->get<Texture>("Texture", "test.tga"), resourceManager->get<Texture>("Texture", "normals.tga")};
 
-    VkSampler sampler = Texture::createSampler(window->getState(), 3);
-
-    vkutil::VertexInputDescriptions descs;
-    descs.binding = Model::Vertex::getBindingDescription();
-    descs.attributes = Model::Vertex::getAttributeDescriptions();
-
-    shader->setupDescriptorSetLayout(sampler, textures.size());
-    shader->setupGraphicsPipeline(descs, view->getRenderpass(), window->getState(), view->getSwapchainExtent());
 
     RenderElement::Transform trans;
     trans.position = glm::vec3(0, 10, 0);
     trans.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
     trans.scale = 1.0;
 
-    std::shared_ptr<RenderElement> e(new RenderElement(view, model, shader, textures, view->getSwapchainSize(), trans));
+    //std::shared_ptr<Material> material(new Material(shader, textures));
+    //material->setupPipeline(window->getState(), view->getRenderpass(), view->getSwapchainExtent());
+
+    std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "test.mat");
+
+    std::shared_ptr<RenderElement> e(new RenderElement(view, model, material, view->getSwapchainSize(), trans));
 
     view->addRenderElement(e);
 
@@ -109,7 +114,7 @@ int main(int argc, char ** argv) {
 
     view->addLight(glm::vec4(12.5, 12.5, 0.5, 2.0), glm::vec4(10, 10, 10, 0.0));
 
-    for (unsigned int k = 0; k < 2; ++k) {
+    for (unsigned int k = 0; k < 1; ++k) {
 
     for (unsigned int i = 0; i < 32; ++i) {
         for (unsigned int j = 0; j < 32; ++j) {
@@ -131,7 +136,7 @@ int main(int argc, char ** argv) {
 
     double d = 0;
 
-    std::thread rotateThread(rotateFunc, e, std::ref(instances), std::ref(transforms));
+    std::thread rotateThread(rotateFunc, e, std::ref(instances), std::ref(transforms), view);
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 

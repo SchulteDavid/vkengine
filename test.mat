@@ -1,0 +1,14 @@
+#ASCII
+
+string shader = "shaders/std.shader"
+
+comp [2] textures = [
+     {
+	string fname = "test.tga"
+	int32 index = 0
+     },
+     {
+	string fname = "normals.tga"
+	int32 index = 1
+     }
+]

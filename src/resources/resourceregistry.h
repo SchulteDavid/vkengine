@@ -9,6 +9,8 @@
 
 #include "resource.h"
 
+#include <iostream>
+
 template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::value>::type* = nullptr> class ResourceRegistry {
 
     public:
@@ -30,9 +32,13 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
         }
 
         /// Register a resource to a name
-        void registerObject(std::string name, T * obj) {
+        std::shared_ptr<T> registerObject(std::string name, T * obj) {
 
-            this->objects[name] = std::shared_ptr<T>(obj);
+            std::shared_ptr<T> ptr(obj);
+
+            this->objects[name] = ptr;
+
+            return ptr;
 
         }
 
@@ -56,6 +62,16 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
 
             return nullptr;
 
+        }
+
+        bool isLoaded(std::string name) {
+            return objects.find(name) != objects.end();
+        }
+
+        void printSummary() {
+            for (auto const & o : objects) {
+                std::cout << "\t" << o.first << std::endl;
+            }
         }
 
     protected:

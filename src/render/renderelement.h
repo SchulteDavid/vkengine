@@ -12,6 +12,7 @@
 #include "dynamicbuffer.h"
 #include "../util/math/quaternion.h"
 #include "memorytransferhandler.h"
+#include "material.h"
 
 class Viewport;
 
@@ -38,11 +39,13 @@ class RenderElement : public MemoryTransferer {
         };
 
         RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform & initTransform);
+        RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTrasnsform);
         virtual ~RenderElement();
 
         glm::mat4 getTransformationMatrix(Transform & instance);
 
         void render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex);
+        void renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex);
 
         Instance addInstance(Transform & trans);
         void updateInstance(Instance & instance, Transform & trans);
@@ -62,6 +65,8 @@ class RenderElement : public MemoryTransferer {
 
         void recordTransfer(VkCommandBuffer & cmdBuffer);
         bool reusable();
+
+        Shader * getShader();
 
     protected:
 

@@ -37,6 +37,8 @@ class Viewport : public MemoryTransferHandler
 
         void addLight(glm::vec4 pos, glm::vec4 color);
 
+        void manageMemoryTransfer();
+
     protected:
 
         void setupRenderPass();
@@ -124,6 +126,7 @@ class Viewport : public MemoryTransferHandler
         unsigned int lightIndex;
 
         std::vector<std::shared_ptr<RenderElement>> renderElements;
+        std::unordered_map<Shader *, std::vector<std::shared_ptr<RenderElement>>> renderElementsByShader;
 
 };
 

@@ -23,9 +23,32 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
 
-    //model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+    transforms[0] = initTransform;
 
-    //this->handler->signalTransfer(model.get());
+    instanceTransforms[0] = getTransformationMatrix(transforms[0]);
+
+    instanceCount = 1;
+
+    this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    this->createUniformBuffers(scSize);
+
+    this->descPool = this->shader->setupDescriptorPool(state.device, scSize, texture.size());
+    this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+
+}
+
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTransform) : state(view->getState()), MemoryTransferer(*view) {
+
+    this->model = model;
+    this->shader = mat->getShader();
+    this->texture = mat->getTextures();
+
+    instanceTransforms = std::vector<glm::mat4>(1);
+    instances = std::unordered_map<uint32_t, InstanceInfo>(1);
+    transforms = std::vector<Transform>(1);
+
+    std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
 
     transforms[0] = initTransform;
 
@@ -235,6 +258,10 @@ bool RenderElement::needsDrawCmdUpdate() {
     return instanceCountUpdated;// || instanceBufferDirty;
 }
 
+Shader * RenderElement::getShader() {
+    return this->shader.get();
+}
+
 void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
 
     vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->getPipeline());
@@ -245,6 +272,15 @@ void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
     shader->bindForRender(cmdBuffer, descriptorSets[frameIndex]);
 
     vkCmdDrawIndexed(cmdBuffer, model->getIndexCount(), instanceCount, 0, 0, 0);
+
+}
+
+void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex) {
+
+    model->bindForRender(buffer);
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
+    vkCmdDrawIndexed(buffer, model->getIndexCount(), instanceCount, 0, 0, 0);
 
 }
 

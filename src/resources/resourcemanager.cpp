@@ -29,28 +29,51 @@ void ResourceManager::addRegistry(std::string name, ResourceRegistry<Resource> *
 
 void ResourceManager::addLoader(std::string name, ResourceLoader<Resource> * loader) {
 
+    if (this->registries.find(name) == this->registries.end()) {
+        throw std::runtime_error("Unable to add loader to non-existent registry");
+    }
+
     this->registries[name]->addLoader(loader);
+
+    loader->setCurrentManager(this);
 
 }
 
-void ResourceManager::registerResource(std::string regName, std::string name, Resource * res) {
-    this->registries[regName]->registerObject(name, res);
+std::shared_ptr<Resource> ResourceManager::registerResource(std::string regName, std::string name, Resource * res) {
+    return this->registries[regName]->registerObject(name, res);
+}
+
+bool ResourceManager::isLoaded(std::string regName, std::string name) {
+
+    if (registries.find(regName) == registries.end())
+        return false;
+
+    return this->registries[regName]->isLoaded(name);
+
 }
 
 void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
     while (resourceManager->keepThreadsRunning) {
 
-        FutureResource fres = resourceManager->getNextResource();
-        if (!fres.isPresent) continue;
+        LoadingResource fres = resourceManager->getNextResource();
+        if (!fres->isPresent) continue;
 
-        std::cout << "Loading " << fres.regName << " / " << fres.name << std::endl;
+        if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
 
-        std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres.regName, fres.name);
-        Resource * tmpModel = uploader->uploadResource();
-        resourceManager->registerResource(fres.regName, fres.name, tmpModel);
+        std::cout << "Loading " << fres->regName << " / " << fres->name << std::endl;
 
-        fres.status->isLoaded = true;
+        std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
+        fres->uploader = uploader;
+        /*Resource * tmpModel = uploader->uploadResource();
+        fres->location = resourceManager->registerResource(fres->regName, fres->name, tmpModel);*/
+
+        fres->status.isLoaded = true;
+
+        resourceManager->rescheduleUpload(fres);
+
+        /// TODO TEMP:
+        //fres->status.isUseable = true;
 
         std::cout << "Loading Done" << std::endl;
 
@@ -58,14 +81,52 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
 }
 
-ResourceManager::FutureResource ResourceManager::getNextResource() {
+void ResourceManager::rescheduleUpload(LoadingResource res) {
 
-    FutureResource resource;
+    uploadingQueueMutex.lock();
+    uploadingQueue.push(res);
+    uploadingQueueMutex.unlock();
+
+}
+
+void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager) {
+
+    while (resourceManager->keepThreadsRunning) {
+
+        std::shared_ptr<FutureResource> fres = resourceManager->getNextUploadingResource();
+        if (!fres->isPresent) continue;
+
+        if (!fres->status.isLoaded)
+            throw std::runtime_error("Non-loaded element in uploading queue");
+
+        if (!fres->uploader->uploadReady()) {
+
+            resourceManager->rescheduleUpload(fres);
+            continue;
+
+        }
+
+        Resource * tmpResource = fres->uploader->uploadResource();
+        fres->location = resourceManager->registerResource(fres->regName, fres->name, tmpResource);
+
+        fres->status.isUploaded = true;
+        fres->status.isUseable  = true;
+
+    }
+
+}
+
+LoadingResource ResourceManager::getNextResource() {
+
+    std::shared_ptr<FutureResource> resource;
 
     loadingQueueMutex.lock();
     if (loadingQueue.empty()) {
         loadingQueueMutex.unlock();
-        resource.isPresent = false;
+
+        resource = std::shared_ptr<FutureResource>(new FutureResource());
+
+        resource->isPresent = false;
         return resource;
     }
 
@@ -77,22 +138,44 @@ ResourceManager::FutureResource ResourceManager::getNextResource() {
 
 }
 
-std::shared_ptr<ResourceManager::LoadingStatus> ResourceManager::loadResourceBg(std::string regName, std::string name) {
+LoadingResource ResourceManager::getNextUploadingResource() {
 
-    std::shared_ptr<LoadingStatus> status(new LoadingStatus());
-    status->isLoaded = false;
+    std::shared_ptr<FutureResource> resource;
 
-    FutureResource res;
-    res.isPresent = true;
-    res.regName = regName;
-    res.name = name;
-    res.status = status;
+    uploadingQueueMutex.lock();
+    if (uploadingQueue.empty()) {
+        uploadingQueueMutex.unlock();
+        resource = std::shared_ptr<FutureResource>(new FutureResource());
+        resource->isPresent = false;
+        return resource;
+    }
+
+    resource = uploadingQueue.front();
+    uploadingQueue.pop();
+
+    uploadingQueueMutex.unlock();
+    return resource;
+
+}
+
+LoadingResource ResourceManager::loadResourceBg(std::string regName, std::string name) {
+
+    LoadingStatus status;
+    status.isLoaded = false;
+    status.isUploaded = false;
+    status.isUseable = false;
+
+    std::shared_ptr<FutureResource> res(new FutureResource());
+    res->isPresent = true;
+    res->regName = regName;
+    res->name = name;
+    res->status = status;
 
     loadingQueueMutex.lock();
     loadingQueue.push(res);
     loadingQueueMutex.unlock();
 
-    return res.status;
+    return res;
 
 }
 
@@ -107,6 +190,24 @@ void ResourceManager::startLoadingThreads(unsigned int threadCount) {
 
     }
 
+    for (unsigned int i = 0; i < threadCount; ++i) {
+
+        std::thread * th = new std::thread(threadUploadingFunction, this);
+        this->loadingThreads.push_back(th);
+
+    }
+
+}
+
+void ResourceManager::printSummary() {
+
+    for (auto const & x : this->registries) {
+
+        std::cout << x.first << ": " << std::endl;
+        x.second->printSummary();
+
+    }
+
 }
 
 void ResourceManager::joinLoadingThreads() {
@@ -117,4 +218,8 @@ void ResourceManager::joinLoadingThreads() {
         th->join();
     }
 
+}
+
+LoadingResource scheduleResourceLoad(ResourceManager * manager, std::string rName, std::string name) {
+    return manager->loadResourceBg(rName, name);
 }

@@ -8,7 +8,10 @@
 
 #include "util/vkutil.h"
 
-class Texture
+#include "../resources/resourceuploader.h"
+#include "../resources/resourceloader.h"
+
+class Texture : public Resource
 {
     public:
         Texture(const vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth);
@@ -46,6 +49,36 @@ class Texture
         const VmaAllocator & allocator;
 
         void generateMipmaps(int width, int height, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
+
+};
+
+class TextureUploader : public ResourceUploader<Texture> {
+
+    public:
+        TextureUploader(const vkutil::VulkanState & state, std::vector<float> data, int width, int height, int depth);
+
+        bool uploadReady();
+        Texture * uploadResource();
+
+    private:
+
+        const vkutil::VulkanState & state;
+        std::vector<float> data;
+        int width;
+        int height;
+        int depth;
+
+};
+
+class TextureLoader : public ResourceLoader<Texture> {
+
+    public:
+        TextureLoader(const vkutil::VulkanState & state);
+
+        std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
+
+    private:
+        const vkutil::VulkanState & state;
 
 };
 

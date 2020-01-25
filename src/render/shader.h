@@ -61,6 +61,7 @@ class ShaderUploader : public ResourceUploader<Shader> {
         ShaderUploader(const vkutil::VulkanState & state, Shader * shader);
 
         Shader * uploadResource();
+        bool uploadReady();
 
     private:
 

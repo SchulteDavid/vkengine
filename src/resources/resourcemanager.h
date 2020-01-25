@@ -22,22 +22,6 @@ class ResourceManager {
 
         };
 
-        struct LoadingStatus {
-
-            bool isLoaded;
-
-        };
-
-        struct FutureResource {
-
-            std::string regName;
-            std::string name;
-            bool isPresent;
-
-            std::shared_ptr<LoadingStatus> status;
-
-        };
-
         ResourceManager(unsigned int regTypes);
         virtual ~ResourceManager();
 
@@ -52,11 +36,14 @@ class ResourceManager {
             return ((ResourceRegistry<T> *) this->registries[regName])->get(name);
         }
 
-        void registerResource(std::string regName, std::string name, Resource * res);
+        bool isLoaded(std::string regName, std::string name);
+        std::shared_ptr<Resource> registerResource(std::string regName, std::string name, Resource * res);
 
         void startLoadingThreads(unsigned int threadCount);
         void joinLoadingThreads();
-        std::shared_ptr<LoadingStatus> loadResourceBg(std::string regName, std::string name);
+        LoadingResource loadResourceBg(std::string regName, std::string name);
+
+        void printSummary();
 
     protected:
 
@@ -64,14 +51,20 @@ class ResourceManager {
 
         std::unordered_map<std::string, ResourceRegistry<Resource> *> registries;
         std::mutex loadingQueueMutex;
-        std::queue<FutureResource> loadingQueue;
+        std::queue<LoadingResource> loadingQueue;
+        std::mutex uploadingQueueMutex;
+        std::queue<LoadingResource> uploadingQueue;
 
         std::vector<std::thread *> loadingThreads;
 
         bool keepThreadsRunning;
 
         static void threadLoadingFunction(ResourceManager * resourceManager);
-        FutureResource getNextResource();
+        static void threadUploadingFunction(ResourceManager * resourceManager);
+        LoadingResource getNextResource();
+        LoadingResource getNextUploadingResource();
+
+        void rescheduleUpload(LoadingResource res);
 
 
 };

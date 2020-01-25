@@ -253,3 +253,8 @@ Shader * ShaderUploader::uploadResource() {
     return shader;
 
 }
+
+bool ShaderUploader::uploadReady() {
+    return true;
+}
+
