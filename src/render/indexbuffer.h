@@ -2,7 +2,7 @@
 #define INDEXBUFFER_H
 
 #include "storagebuffer.h"
-#include "vkutil.h"
+#include "render/util/vkutil.h"
 #include <type_traits>
 
 #include <vector>

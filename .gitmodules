@@ -1,0 +1,3 @@
+[submodule "srclibs/mathutils"]
+	path = srclibs/mathutils
+	url = git@gitlab.com:douplofigure/mathutils.git

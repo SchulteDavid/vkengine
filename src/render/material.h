@@ -3,9 +3,10 @@
 
 #include "shader.h"
 #include "texture.h"
+#include "model.h"
 
-#include "../resources/resourceuploader.h"
-#include "../resources/resourceloader.h"
+#include "resources/resourceuploader.h"
+#include "resources/resourceloader.h"
 
 class Material : public Resource {
 
@@ -17,7 +18,8 @@ class Material : public Resource {
         std::vector<std::shared_ptr<Texture>> getTextures();
 
 
-        void setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
+        void prepareDescriptors();
+        VkPipeline setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, Model * model, VkPipelineLayout & layout);
 
     protected:
 

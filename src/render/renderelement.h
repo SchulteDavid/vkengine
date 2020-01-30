@@ -10,7 +10,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "dynamicbuffer.h"
-#include "../util/math/quaternion.h"
+#include "util/math/quaternion.h"
 #include "memorytransferhandler.h"
 #include "material.h"
 
@@ -37,8 +37,6 @@ class RenderElement : public MemoryTransferer {
         struct Instance {
             uint32_t id;
         };
-
-        RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform & initTransform);
         RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTrasnsform);
         virtual ~RenderElement();
 
@@ -86,6 +84,8 @@ class RenderElement : public MemoryTransferer {
         std::vector<std::shared_ptr<Texture>> texture;
 
         VkDescriptorPool descPool;
+        VkPipeline pipeline;
+        VkPipelineLayout pipelineLayout;
 
         std::vector<VkDescriptorSet> descriptorSets;
         std::vector<VkBuffer> uniformBuffers;
@@ -102,6 +102,7 @@ class RenderElement : public MemoryTransferer {
         bool instanceBufferDirty;
         bool instanceCountUpdated;
 
+        RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform & initTransform);
         void markBufferDirty();
 
 

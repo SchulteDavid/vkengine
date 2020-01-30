@@ -11,6 +11,8 @@
 
 #include <iostream>
 
+#include "util/debug/trace_exception.h"
+
 template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::value>::type* = nullptr> class ResourceRegistry {
 
     public:
@@ -26,7 +28,7 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
         std::shared_ptr<T> get(std::string name) {
 
             if (objects.find(name) == objects.end()) {
-                throw std::runtime_error(std::string("Unable to find resource '").append(name).append("'"));
+                throw dbg::trace_exception(std::string("Unable to find resource '").append(name).append("'"));
             }
             return objects[name];
         }

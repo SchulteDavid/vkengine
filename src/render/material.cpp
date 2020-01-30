@@ -25,17 +25,20 @@ std::vector<std::shared_ptr<Texture>> Material::getTextures() {
     return textures;
 }
 
-void Material::setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent) {
+void Material::prepareDescriptors() {
 
     VkSampler sampler = textures[0]->getSampler();
-
     shader->setupDescriptorSetLayout(sampler, textures.size());
 
-    vkutil::VertexInputDescriptions descs;
-    descs.binding = Model::Vertex::getBindingDescription();
-    descs.attributes = Model::Vertex::getAttributeDescriptions();
+}
 
-    shader->setupGraphicsPipeline(descs, renderPass, state, swapChainExtent);
+VkPipeline Material::setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, Model * model, VkPipelineLayout & layout) {
+
+    vkutil::VertexInputDescriptions descs;
+    descs.binding = model->getBindingDescription();
+    descs.attributes = model->getAttributeDescriptions();
+
+    return shader->setupGraphicsPipeline(descs, renderPass, state, swapChainExtent, layout);
 
 }
 
@@ -59,7 +62,8 @@ Material * MaterialUploader::uploadResource() {
 
     Material * mat = new Material(mShader, mTextures);
 
-    mat->setupPipeline(state, renderPass, swapChainExtent);
+    //mat->setupPipeline(state, renderPass, swapChainExtent);
+    mat->prepareDescriptors();
 
     return mat;
 
@@ -105,6 +109,8 @@ std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::st
         textureRes[index] = this->loadDependency("Texture", tFname);
 
     }
+
+    //delete root;
 
     return std::shared_ptr<MaterialUploader>(new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, textureRes));
 

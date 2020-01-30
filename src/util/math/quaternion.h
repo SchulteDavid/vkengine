@@ -111,9 +111,9 @@ template <typename T = double> class Quaternion {
             values[9] = 2 * s * (c*d + b * a);
             values[10] = 1 - 2 * s * (b*b + c*c);
 
-            values[3] = loc.x;
-            values[7] = loc.y;
-            values[11] = loc.z;
+            values[3] = loc[0];
+            values[7] = loc[1];
+            values[11] = loc[2];
 
             values[12] = 0;
             values[13] = 0;

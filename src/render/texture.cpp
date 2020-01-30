@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+#include "util/debug/trace_exception.h"
+
 using namespace vkutil;
 
 Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
@@ -210,10 +212,10 @@ void Texture::createImage(const VulkanState & state, int width, int height, int 
     int retVal;
 
     if ((retVal = vmaCreateImage(state.vmaAllocator, &imageInfo, &allocInfo, &image, &memory, nullptr)) != VK_SUCCESS)
-        throw std::runtime_error(std::string("Could not create image ").append(std::to_string(retVal)));
+        throw dbg::trace_exception(std::string("Could not create image ").append(std::to_string(retVal)));
 
     /*if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create texture");
+        throw dbg::trace_exception("Unable to create texture");
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, image, &memRequirements);
@@ -224,7 +226,7 @@ void Texture::createImage(const VulkanState & state, int width, int height, int 
     allocInfo.memoryTypeIndex = StorageBuffer::findMemoryType(memRequirements.memoryTypeBits, memProps); //VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &memory) != VK_SUCCESS)
-        throw std::runtime_error("Unable to allocate memory for image");
+        throw dbg::trace_exception("Unable to allocate memory for image");
 
     vkBindImageMemory(device, image, memory, 0);*/
 
@@ -246,7 +248,7 @@ VkImageView Texture::createImageView(const VulkanState & state, VkImage & image,
 
     VkImageView imageView;
     if (vkCreateImageView(state.device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create image view");
+        throw dbg::trace_exception("Unable to create image view");
 
     return imageView;
 
@@ -280,7 +282,7 @@ VkSampler Texture::createSampler(const VulkanState & state, int mipLevels) {
     VkSampler sampler;
 
     if (vkCreateSampler(state.device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create sampler");
+        throw dbg::trace_exception("Unable to create sampler");
 
     return sampler;
 

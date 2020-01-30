@@ -6,6 +6,8 @@
 #include <ostream>
 #include <iostream>
 
+#include "util/debug/trace_exception.h"
+
 namespace Math {
 
 template<unsigned int dim, typename T = double> class Vector {
@@ -47,7 +49,7 @@ template<unsigned int dim, typename T = double> class Vector {
 
         T& operator[](int i) {
             if (i < 0 || i >= dim)
-                throw std::runtime_error("No such coordinate");
+                throw dbg::trace_exception("No such coordinate");
             return data[i];
         }
 
@@ -114,6 +116,10 @@ template<unsigned int dim, typename T = double> class Vector {
             return (T) sqrt(sum);
         }
 
+        const T * getData() {
+            return data;
+        }
+
     protected:
 
     private:
@@ -121,6 +127,131 @@ template<unsigned int dim, typename T = double> class Vector {
         T data[dim];
 
 };
+
+#ifdef __SSE2__
+
+#include <x86intrin.h>
+#include <immintrin.h>
+
+template <> class Vector<4, float> {
+
+    public:
+
+        Vector() : Vector(0,0,0,0) {
+
+        }
+
+        Vector(float x, float y, float z, float w) {
+
+            float data[4];
+
+            data[0] = x;
+            data[1] = y;
+            data[2] = z;
+            data[3] = w;
+
+            vData = _mm_load_ps(data);
+
+        }
+
+        Vector(float * data) {
+
+            alignas(16) float tmp[4];
+
+            tmp[0] = data[0];
+            tmp[1] = data[1];
+            tmp[2] = data[2];
+            tmp[3] = data[3];
+
+            vData = _mm_load_ps(tmp);
+
+        }
+
+        Vector(__m128 vData) {
+            this->vData = vData;
+        }
+
+        /*const float * getData() {
+            return data;
+        }*/
+
+        __m128 getVData() {
+            return vData;
+        }
+
+        const float operator[](int i) {
+            if (i < 0 || i >= 4)
+                throw dbg::trace_exception("No such coordinate");
+
+            float data[4];
+            _mm_store_ps(data, vData);
+            return data[i];
+        }
+
+        float operator*(Vector<4, float> vec) {
+
+            __m128 v0 = _mm_mul_ps(vData, vec.vData);
+            v0 = _mm_add_ps(_mm_shuffle_ps(v0, v0, _MM_SHUFFLE(2, 3, 0, 1)), vec.vData);
+            v0 = _mm_add_ps(v0, _mm_shuffle_ps(v0, v0, _MM_SHUFFLE(0, 1, 2, 3)));
+
+            float tmp[4];
+
+            _mm_store_ps(tmp, v0);
+
+            return tmp[0];
+
+        }
+
+        Vector<4, float> operator+(Vector<4, float> vec) {
+
+            return Vector<4, float>(_mm_add_ps(vData, vec.vData));
+
+        }
+
+        Vector<4, float> operator*(float v) {
+
+            __m128 vv = _mm_load_ps1(&v);
+
+            return Vector<4, float>(_mm_mul_ps(vData, vv));
+
+        }
+
+        Vector<4, float> operator-(Vector<4, float> vec) {
+
+            return Vector<4, float>(_mm_sub_ps(vData, vec.vData));
+
+        }
+
+        Vector<4, float> operator/(float v) {
+
+            __m128 vv = _mm_load_ps1(&v);
+            return Vector<4, float>(_mm_div_ps(vData, vv));
+
+        }
+
+        void normalize() {
+            float val = this->length();
+            __m128 vv = _mm_load_ps1(&val);
+            this->vData = _mm_div_ps(vData, vv);
+        }
+
+        float length() {
+
+            __m128 tmp = _mm_mul_ps(vData, vData);
+
+            float data[4];
+            _mm_store_ps(data, tmp);
+
+            return (float) sqrt(data[0] + data[1] + data[2] + data[3]);
+        }
+
+    private:
+        //float data[4];
+        __m128 vData;
+
+};
+
+#endif
 
 template <typename T> Vector<3, T> cross(Vector<3, T> vec1, Vector<3, T> vec2) {
 

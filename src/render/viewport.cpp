@@ -5,6 +5,8 @@
 
 #define MAX_FRAMES_IN_FLIGHT 3
 
+#include "util/debug/trace_exception.h"
+
 struct Viewport::CameraData {
 
     alignas(16) glm::vec3 position;
@@ -81,11 +83,11 @@ void Viewport::createSyncObjects() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 
         if (vkCreateSemaphore(state.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(state.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS) {
-            throw std::runtime_error("Unable to create semaphores");
+            throw dbg::trace_exception("Unable to create semaphores");
         }
 
         if (vkCreateFence(state.device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
-            throw std::runtime_error("Unable to create fence");
+            throw dbg::trace_exception("Unable to create fence");
 
     }
 
@@ -100,7 +102,7 @@ void Viewport::createTransferCommandBuffer() {
     allocInfo.commandBufferCount = 1;
 
     if (vkAllocateCommandBuffers(state.device, &allocInfo, &transferCmdBuffer) != VK_SUCCESS)
-        throw std::runtime_error("Unable to allocate command buffer");
+        throw dbg::trace_exception("Unable to allocate command buffer");
 
     VkFenceCreateInfo fenceInfo = {};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -190,7 +192,7 @@ void Viewport::drawFrame() {
         break;
 
     default:
-        throw std::runtime_error("Unable to fetch image from swap chain");
+        throw dbg::trace_exception("Unable to fetch image from swap chain");
 
     }
 
@@ -215,7 +217,7 @@ void Viewport::drawFrame() {
     //std::cout << frameIndex << " : " << inFlightFences[frameIndex] << std::endl;
 
     if (vkQueueSubmit(state.graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
-        throw std::runtime_error("Unable to submit command buffer");
+        throw dbg::trace_exception("Unable to submit command buffer");
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -406,7 +408,7 @@ void Viewport::setupRenderPass() {
     renderPassInfo.pDependencies = dependencies.data();
 
     if (vkCreateRenderPass(state.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create renderpass");
+        throw dbg::trace_exception("Unable to create renderpass");
 
 }
 
@@ -651,7 +653,7 @@ void Viewport::setupPostProcessingPipeline() {
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
     if (vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &ppPipelineLayout) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create pipeline layout");
+        throw dbg::trace_exception("Unable to create pipeline layout");
 
 
     /** Creating the pipeline **/
@@ -675,7 +677,7 @@ void Viewport::setupPostProcessingPipeline() {
     pipelineInfo.basePipelineIndex = -1;
 
     if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ppPipeline) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create pipeline");
+        throw dbg::trace_exception("Unable to create pipeline");
 
 }
 
@@ -713,7 +715,7 @@ void Viewport::createPpDescriptorSetLayout() {
     layoutInfo.bindingCount = bindings.size();
 
     if (vkCreateDescriptorSetLayout(state.device, &layoutInfo, nullptr, &ppDescLayout) != VK_SUCCESS)
-        throw std::runtime_error("could not create descriptor set layout.");
+        throw dbg::trace_exception("could not create descriptor set layout.");
 
 }
 
@@ -740,7 +742,7 @@ void Viewport::createPpDescriptorPool() {
     poolInfo.maxSets = swapchain.images.size();
 
     if (vkCreateDescriptorPool(state.device, &poolInfo, nullptr, &ppDescPool) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create descriptor pool");
+        throw dbg::trace_exception("Unable to create descriptor pool");
 
 }
 
@@ -756,7 +758,7 @@ void Viewport::createPPDescriptorSets() {
     allocInfo.pSetLayouts = layouts.data();
 
     if (vkAllocateDescriptorSets(state.device, &allocInfo, ppDescSets.data()) != VK_SUCCESS)
-        throw std::runtime_error("Unable to allocate descriptor sets");
+        throw dbg::trace_exception("Unable to allocate descriptor sets");
 
     for (int i = 0; i < swapchain.images.size(); ++i) {
 
@@ -875,7 +877,7 @@ void Viewport::setupFramebuffers() {
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(state.device, &framebufferInfo, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS)
-            throw std::runtime_error("Unable to create framebuffer");
+            throw dbg::trace_exception("Unable to create framebuffer");
 
     }
 
@@ -967,7 +969,7 @@ void Viewport::setupCommandBuffers() {
     allocInfo.commandBufferCount = swapchain.framebuffers.size();
 
     if (vkAllocateCommandBuffers(state.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
-        throw std::runtime_error("Unable to allocate command buffer");
+        throw dbg::trace_exception("Unable to allocate command buffer");
 
 }
 
@@ -986,7 +988,7 @@ void Viewport::recordCommandBuffers() {
         beginInfo.pInheritanceInfo = nullptr;
 
         if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS)
-            throw std::runtime_error("Unable to start recording to command buffer");
+            throw dbg::trace_exception("Unable to start recording to command buffer");
 
         VkRenderPassBeginInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1025,7 +1027,7 @@ void Viewport::recordCommandBuffers() {
         vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
-            throw std::runtime_error("Unable to record command buffer");
+            throw dbg::trace_exception("Unable to record command buffer");
 
     }
 
@@ -1033,7 +1035,7 @@ void Viewport::recordCommandBuffers() {
 
 void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
-    if (lightIndex > 31) throw std::runtime_error("To many lights in viewport");
+    if (lightIndex > 31) throw dbg::trace_exception("To many lights in viewport");
 
     this->lights.position[lightIndex] = pos;
     this->lights.color[lightIndex] = color;

@@ -7,8 +7,8 @@
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
-#include "util/vkutil.h"
-#include "../inputs/inputhandler.h"
+#include "render/util/vkutil.h"
+#include "inputs/inputhandler.h"
 
 class Window
 {

@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "storagebuffer.h"
-#include "util/vkutil.h"
+#include "render/util/vkutil.h"
 
 
 template <typename T> class DynamicBuffer : public StorageBuffer

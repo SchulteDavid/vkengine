@@ -5,6 +5,8 @@
 
 #include "model.h"
 
+#include "util/debug/trace_exception.h"
+
 Shader::Shader(std::string vertShader, std::string fragShader, const VkDevice & device) : device(device) {
 
     this->modules.resize(2);
@@ -89,7 +91,7 @@ void Shader::bindForRender(VkCommandBuffer & cmdBuffer, VkDescriptorSet & descri
 
 }
 
-void Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent) {
+VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout) {
 
     std::vector<vkutil::ShaderInputDescription> inputShaders(modules.size());
     for (unsigned int i = 0; i < modules.size(); ++i) {
@@ -100,8 +102,9 @@ void Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, cons
 
     }
 
-    graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descSetLayout, pipelineLayout, swapChainExtent);
+    VkPipeline graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descSetLayout, pipelineLayout, swapChainExtent);
 
+    return graphicsPipeline;
 
 }
 
@@ -130,7 +133,7 @@ VkDescriptorPool Shader::setupDescriptorPool(const VkDevice& device, int scSize,
     VkDescriptorPool descriptorPool;
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create descriptor pool");
+        throw dbg::trace_exception("Unable to create descriptor pool");
 
     return descriptorPool;
 
@@ -139,7 +142,7 @@ VkDescriptorPool Shader::setupDescriptorPool(const VkDevice& device, int scSize,
 std::vector<VkDescriptorSet> Shader::createDescriptorSets(const VkDevice & device, VkDescriptorPool & descPool, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>> & tex, int scSize) {
 
     if (descPool == VK_NULL_HANDLE)
-        throw std::runtime_error("Cannot create descriptor in NULL-pool!");
+        throw dbg::trace_exception("Cannot create descriptor in NULL-pool!");
 
     std::cout << "Creating descriptor set with " << tex.size() << " textures" << std::endl;
 
@@ -153,7 +156,7 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(const VkDevice & devic
 
     this->descSets.resize(scSize);
     if (vkAllocateDescriptorSets(device, &allocInfo, descSets.data()) != VK_SUCCESS)
-        throw std::runtime_error("Unable to allocate descriptor sets");
+        throw dbg::trace_exception("Unable to allocate descriptor sets");
 
     for (int i = 0; i < scSize; ++i) {
 

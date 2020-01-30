@@ -7,8 +7,8 @@
 #include "vertexbuffer.h"
 #include <string>
 
-#include "../resources/resource.h"
-#include "../resources/resourceloader.h"
+#include "resources/resource.h"
+#include "resources/resourceloader.h"
 
 class Model : public Resource {
 
@@ -22,7 +22,6 @@ class Model : public Resource {
             glm::vec2 uv;
 
             static std::vector<VkVertexInputBindingDescription> getBindingDescription();
-
             static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
         };
@@ -34,6 +33,9 @@ class Model : public Resource {
 
         void bindForRender(VkCommandBuffer & cmdBuffer);
         int getIndexCount();
+
+        virtual std::vector<VkVertexInputBindingDescription> getBindingDescription();
+        virtual std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
         static Model * loadFromFile(const vkutil::VulkanState & state, std::string fname);
 

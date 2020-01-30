@@ -14,6 +14,9 @@
 
 #include "inputs/playercontroler.h"
 
+#include "util/debug/trace_exception.h"
+
+#include "util/math/matrix.h"
 
 static bool run = true;
 static bool wait;
@@ -49,6 +52,8 @@ void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Ins
 }
 
 #include <execinfo.h>
+
+#define BM_SIZE ( 1 << 24 )
 
 int main(int argc, char ** argv) {
 
@@ -114,7 +119,7 @@ int main(int argc, char ** argv) {
 
     view->addLight(glm::vec4(12.5, 12.5, 0.5, 2.0), glm::vec4(10, 10, 10, 0.0));
 
-    for (unsigned int k = 0; k < 1; ++k) {
+    for (unsigned int k = 0; k < 2; ++k) {
 
     for (unsigned int i = 0; i < 32; ++i) {
         for (unsigned int j = 0; j < 32; ++j) {

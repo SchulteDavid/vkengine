@@ -1,6 +1,6 @@
 #include "model.h"
 
-#include "../util/meshhelper.h"
+#include "util/meshhelper.h"
 
 #include <ply.hpp>
 #include <iostream>
@@ -149,6 +149,14 @@ Model * ModelUploader::uploadResource() {
     model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
     return model;
 
+}
+
+std::vector<VkVertexInputBindingDescription> Model::getBindingDescription() {
+    return Vertex::getBindingDescription();
+}
+
+std::vector<VkVertexInputAttributeDescription> Model::getAttributeDescriptions() {
+    return Vertex::getAttributeDescriptions();
 }
 
 bool ModelUploader::uploadReady() {

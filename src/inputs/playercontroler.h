@@ -2,8 +2,8 @@
 #define PLAYERCONTROLER_H
 
 #include "inputhandler.h"
-#include "../render/camera.h"
-#include "../render/util/vkutil.h"
+#include "render/camera.h"
+#include "render/util/vkutil.h"
 
 class PlayerControler : public InputHandler {
     public:

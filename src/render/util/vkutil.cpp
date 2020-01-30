@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "../../util/debug/stacktrace.h"
+
 using namespace vkutil;
 
 VkDebugUtilsMessengerEXT debugMessenger;
@@ -54,26 +56,15 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
 }
 
 #define THROW_ON_WARN
-#define BACKTRACE_DEPTH 256
-
-void * backtrace_array[BACKTRACE_DEPTH];
+#include "util/debug/trace_exception.h"
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
 
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        size_t s;
-
-        s = backtrace(backtrace_array, BACKTRACE_DEPTH);
-        backtrace_symbols_fd(backtrace_array, s, STDERR_FILENO);
-
-        throw std::runtime_error(pCallbackData->pMessage);
+        throw dbg::trace_exception(pCallbackData->pMessage);
     } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
         #ifdef THROW_ON_WARN
-        size_t s;
-
-        s = backtrace(backtrace_array, BACKTRACE_DEPTH);
-        backtrace_symbols_fd(backtrace_array, s, STDERR_FILENO);
-        throw std::runtime_error(pCallbackData->pMessage);
+        throw dbg::trace_exception(pCallbackData->pMessage);
         #else
         std::cerr << "WARNING : " << pCallbackData->pMessage << std::endl;
         #endif
@@ -103,7 +94,7 @@ void vkutil::setupDebugMessenger(const VkInstance & instance, bool validationLay
     createInfo.pfnUserCallback = debugCallback;
 
     if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-        throw std::runtime_error("failed to set up debug messenger!");
+        throw dbg::trace_exception("failed to set up debug messenger!");
     }
 }
 
@@ -127,7 +118,7 @@ bool checkValidationLayerSupport(std::vector<const char *> validationLayers) {
         }
 
         if (!layerFound) {
-            throw std::runtime_error(std::string("Missing layer: ").append(name));
+            throw dbg::trace_exception(std::string("Missing layer: ").append(name));
             return false;
         }
 
@@ -140,7 +131,7 @@ bool checkValidationLayerSupport(std::vector<const char *> validationLayers) {
 VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
 
     if (validationLayers.size() && !checkValidationLayerSupport(validationLayers))
-        throw std::runtime_error("Validation layers not found but requested!");
+        throw dbg::trace_exception("Validation layers not found but requested!");
 
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -175,7 +166,7 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     VkInstance instance;
 
     if (vkCreateInstance(&createInfo, nullptr, &instance)) {
-        throw std::runtime_error("Unable to create Instance");
+        throw dbg::trace_exception("Unable to create Instance");
     }
 
     uint32_t extensionCount = 0;
@@ -199,7 +190,7 @@ VkSurfaceKHR vkutil::createSurface(VkInstance instance, GLFWwindow * window) {
     VkSurfaceKHR surface;
 
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface))
-        throw std::runtime_error("Could not create surface");
+        throw dbg::trace_exception("Could not create surface");
 
     return surface;
 
@@ -282,7 +273,7 @@ VkPhysicalDevice vkutil::pickPhysicalDevice(VkInstance instance, std::function<b
 
     uint32_t deviceCount;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-    if (!deviceCount) throw std::runtime_error("No GPU found");
+    if (!deviceCount) throw dbg::trace_exception("No GPU found");
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
@@ -299,7 +290,7 @@ VkPhysicalDevice vkutil::pickPhysicalDevice(VkInstance instance, std::function<b
     }
 
     if (device == VK_NULL_HANDLE)
-        throw std::runtime_error("unable to find physical device");
+        throw dbg::trace_exception("unable to find physical device");
 
     return device;
 
@@ -341,7 +332,7 @@ VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & 
     createInfo.enabledLayerCount = 0;
 
     if (vkCreateDevice(pDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create logical device.");
+        throw dbg::trace_exception("Unable to create logical device.");
 
     vkGetDeviceQueue(device, indices.graphicsFamily, 0, gQueue);
     vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
@@ -466,7 +457,7 @@ SwapChain vkutil::createSwapchain(const VkPhysicalDevice & physicalDevice, const
     VkExtent2D swapChainExtent;
 
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-        throw std::runtime_error("Unable to create swapchain");
+        throw dbg::trace_exception("Unable to create swapchain");
     }
 
     vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
@@ -498,7 +489,7 @@ VkCommandPool vkutil::createGraphicsCommandPool(const VkPhysicalDevice & physica
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create command pool");
+        throw dbg::trace_exception("Unable to create command pool");
 
     return commandPool;
 
@@ -516,7 +507,7 @@ VkCommandPool vkutil::createTransferCommandPool(const VkPhysicalDevice & physica
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create command pool");
+        throw dbg::trace_exception("Unable to create command pool");
 
     return commandPool;
 
@@ -546,7 +537,7 @@ void vkutil::createImage(const VmaAllocator & allocator, VkDevice device, int wi
     int retVal;
 
     if ((retVal = vmaCreateImage(allocator, &imageInfo, &allocInfo, &image, &memory, nullptr)) != VK_SUCCESS)
-        throw std::runtime_error(std::string("Could not create image ").append(std::to_string(retVal)));
+        throw dbg::trace_exception(std::string("Could not create image ").append(std::to_string(retVal)));
 
 }
 
@@ -566,7 +557,7 @@ VkImageView vkutil::createImageView(const VkDevice & device, const VkImage & ima
 
     VkImageView imageView;
     if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create image view");
+        throw dbg::trace_exception("Unable to create image view");
 
     return imageView;
 
@@ -690,7 +681,7 @@ std::vector<uint8_t> readFile(const std::string & fname) {
     std::ifstream file(fname, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
-        throw std::runtime_error(std::string("Unable to open file ").append(fname));
+        throw dbg::trace_exception(std::string("Unable to open file ").append(fname));
     }
 
     size_t fileSize = file.tellg();
@@ -714,7 +705,7 @@ VkShaderModule vkutil::createShaderModule(const std::vector<uint8_t> & code, con
 
     VkShaderModule module;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &module) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create shader module");
+        throw dbg::trace_exception("Unable to create shader module");
 
     return module;
 
@@ -743,7 +734,7 @@ std::vector<VkImageView> vkutil::createSwapchainImageViews(const std::vector<VkI
         createInfo.subresourceRange.layerCount = 1;
 
         if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
-            throw std::runtime_error("Could not create image view for swapChain");
+            throw dbg::trace_exception("Could not create image view for swapChain");
 
     }
 
@@ -776,7 +767,7 @@ VkDescriptorSetLayout vkutil::createDescriptorSetLayout(std::vector<VkDescriptor
     VkDescriptorSetLayout descriptorSetLayout;
 
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-        throw std::runtime_error("could not create descriptor set layout.");
+        throw dbg::trace_exception("could not create descriptor set layout.");
 
     return descriptorSetLayout;
 
@@ -909,7 +900,7 @@ VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRen
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
     if (vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &retLayout) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create pipeline layout");
+        throw dbg::trace_exception("Unable to create pipeline layout");
 
 
     /** Creating the pipeline **/
@@ -935,7 +926,7 @@ VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRen
     VkPipeline graphicsPipeline;
 
     if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create pipeline");
+        throw dbg::trace_exception("Unable to create pipeline");
 
     return graphicsPipeline;
 

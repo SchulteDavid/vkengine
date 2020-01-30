@@ -7,11 +7,11 @@
 
 #include <memory>
 
-#include "util/vkutil.h"
+#include "render/util/vkutil.h"
 #include "texture.h"
-#include "../resources/resource.h"
-#include "../resources/resourceloader.h"
-#include "../resources/resourceuploader.h"
+#include "resources/resource.h"
+#include "resources/resourceloader.h"
+#include "resources/resourceuploader.h"
 
 class Shader : public Resource
 {
@@ -23,7 +23,7 @@ class Shader : public Resource
         std::vector<VkDescriptorSetLayoutBinding> getBindings(VkSampler & sampler, unsigned int textureCount);
 
         void setupDescriptorSetLayout(VkSampler & sampler, unsigned int texCount);
-        void setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent);
+        VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout);
 
         VkDescriptorPool setupDescriptorPool(const VkDevice & device, int scSize, int textureCount);
         std::vector<VkDescriptorSet> createDescriptorSets(const VkDevice & device, VkDescriptorPool & descPool, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement

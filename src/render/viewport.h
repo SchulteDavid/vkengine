@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 
-#include "util/vkutil.h"
+#include "render/util/vkutil.h"
 #include "window.h"
 #include "model.h"
 #include "renderelement.h"

@@ -5,6 +5,8 @@
 #include "../render/model.h"
 #include "../render/shader.h"
 
+#include "util/debug/trace_exception.h"
+
 ResourceManager::ResourceManager(unsigned int regTypes) {
 
     if (regTypes & RESOURCE_MODEL) {
@@ -30,7 +32,7 @@ void ResourceManager::addRegistry(std::string name, ResourceRegistry<Resource> *
 void ResourceManager::addLoader(std::string name, ResourceLoader<Resource> * loader) {
 
     if (this->registries.find(name) == this->registries.end()) {
-        throw std::runtime_error("Unable to add loader to non-existent registry");
+        throw dbg::trace_exception("Unable to add loader to non-existent registry");
     }
 
     this->registries[name]->addLoader(loader);
@@ -97,7 +99,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
         if (!fres->isPresent) continue;
 
         if (!fres->status.isLoaded)
-            throw std::runtime_error("Non-loaded element in uploading queue");
+            throw dbg::trace_exception("Non-loaded element in uploading queue");
 
         if (!fres->uploader->uploadReady()) {
 

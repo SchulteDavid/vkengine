@@ -6,10 +6,10 @@
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 
-#include "util/vkutil.h"
+#include "render/util/vkutil.h"
 
-#include "../resources/resourceuploader.h"
-#include "../resources/resourceloader.h"
+#include "resources/resourceuploader.h"
+#include "resources/resourceloader.h"
 
 class Texture : public Resource
 {

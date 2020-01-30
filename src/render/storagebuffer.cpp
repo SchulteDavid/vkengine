@@ -1,6 +1,8 @@
 #include "storagebuffer.h"
 #include <stdexcept>
-#include "vkutil.h"
+#include "util/vkutil.h"
+
+#include "util/debug/trace_exception.h"
 
 StorageBuffer::StorageBuffer(const vkutil::VulkanState & state, size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) : state(state) {
 
@@ -26,7 +28,7 @@ uint32_t StorageBuffer::findMemoryType(uint32_t filter, VkMemoryPropertyFlags pr
 
     }
 
-    throw std::runtime_error("No suitable memory found");
+    throw dbg::trace_exception("No suitable memory found");
 
 }
 
@@ -43,7 +45,7 @@ void StorageBuffer::createBuffer(const VmaAllocator & allocator, VkDeviceSize si
     //VkDevice device = VulkanHelper::getDevice();
 
     if (properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-        throw std::runtime_error("Bad buffer alloc");
+        throw dbg::trace_exception("Bad buffer alloc");
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -58,7 +60,7 @@ void StorageBuffer::createBuffer(const VmaAllocator & allocator, VkDeviceSize si
     vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer, &memory, nullptr);
 
     /*if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        throw std::runtime_error("Unable to create vertex buffer");
+        throw dbg::trace_exception("Unable to create vertex buffer");
 
 
     VkMemoryRequirements memRequirements = {};
@@ -70,7 +72,7 @@ void StorageBuffer::createBuffer(const VmaAllocator & allocator, VkDeviceSize si
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &memory) != VK_SUCCESS)
-        throw std::runtime_error("Unable to allocate memory");
+        throw dbg::trace_exception("Unable to allocate memory");
 
     vkBindBufferMemory(device, buffer, memory, 0);*/
 
