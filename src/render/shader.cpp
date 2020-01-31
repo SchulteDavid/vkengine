@@ -96,7 +96,7 @@ VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs
     std::vector<vkutil::ShaderInputDescription> inputShaders(modules.size());
     for (unsigned int i = 0; i < modules.size(); ++i) {
 
-        inputShaders[i].entryName = "main";
+        inputShaders[i].entryName = (const char *) "main";
         inputShaders[i].module = modules[i];
         inputShaders[i].usage = stages[i];
 

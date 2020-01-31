@@ -1,10 +1,14 @@
+#Configure flags etc.
 CFLAGS :=-g
 CXXFLAGS :=-g
 PROGNAME :=VkEngine
 
 LIBS := glfw vulkan ply tga pthread configloader stack
 
-C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c" | sed ':a;N;$!ba;s/\n/ /g')
+# Finding source files
+C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c")# | sed ':a;N;$!ba;s/\n/ /g')
+
+INCLUDE_DIRS := src/ include/ $(addsuffix /,$(shell find srclibs/ -name "include"))
 
 CC := gcc
 CXX := g++
@@ -15,8 +19,6 @@ YACC := yacc
 
 get_dependency = $(shell g++ -MM -Isrc/ ${1}| sed -e ':a;N;$$!ba;s/\\\n //g' | tee compiler_out.txt  | sed -e 's/[A-Za-z\.\/_-]*: //')
 obj_target := obj/${2}/$(addsuffix .o,$(basename ${1}))
-
-# | sed ':a;N;$!ba;s/   / /g') | obj/${2}/
 
 define obj
 obj/${2}/$(addsuffix .o,$(basename ${1})) : $(call get_dependency,${1}) | obj/Debug/
@@ -39,20 +41,27 @@ bin/Debug/${PROGNAME}: ${O_FILES} | bin/Debug/
 ${obj.c} : % :
 	@echo Compiling $@
 	@mkdir -p $(dir $@)
-	$(CC) -c -o $@ $< $(CFLAGS) -Isrc/ -Iinclude/
+	$(CC) -c -o $@ $< $(CFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${obj.cpp} : % :
 	@echo Compiling $@
 	@mkdir -p $(dir $@)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) -Isrc/ -Iinclude/
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${obj.cc} : % :
 	@echo Compiling $@
 	@mkdir -p $(dir $@)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) -Isrc/ -Iinclude/
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 obj/Debug/:
 	@mkdir -p obj/Debug/
 
 bin/Debug/:
 	@mkdir -p bin/Debug/
+
+cleanDebug: clean
+
+cleanRelease: clean
+
+clean:
+	@rm -r obj
