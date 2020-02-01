@@ -2,7 +2,7 @@
 #define MESHHELPER_H
 
 #include "../render/model.h"
-#include "math/vector.h"
+#include <mathutils/vector.h>
 
 class MeshHelper
 {

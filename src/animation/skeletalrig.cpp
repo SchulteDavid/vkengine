@@ -1,4 +1,5 @@
 #include "skeletalrig.h"
+#include "util/debug/trace_exception.h"
 
 using namespace Math;
 using namespace dbg;

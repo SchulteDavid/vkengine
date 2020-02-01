@@ -4,9 +4,9 @@
 #include <memory>
 #include <vector>
 
-#include "util/math/quaternion.h"
-#include "util/math/vector.h"
-#include "util/math/matrix.h"
+#include <mathutils/quaternion.h>
+#include <mathutils/vector.h>
+#include <mathutils/matrix.h>
 
 class Bone {
 

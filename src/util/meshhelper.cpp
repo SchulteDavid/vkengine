@@ -1,7 +1,7 @@
 #include "meshhelper.h"
 
-#include "math/vector.h"
-#include "math/quaternion.h"
+#include <mathutils/vector.h>
+#include <mathutils/quaternion.h>
 
 #include "simplexnoise.h"
 

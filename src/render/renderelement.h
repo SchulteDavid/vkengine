@@ -10,7 +10,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "dynamicbuffer.h"
-#include "util/math/quaternion.h"
+#include <mathutils/quaternion.h>
 #include "memorytransferhandler.h"
 #include "material.h"
 
@@ -29,7 +29,7 @@ class RenderElement : public MemoryTransferer {
     public:
 
         struct Transform {
-            glm::vec3 position;
+            Math::Vector<4, float> position;
             Math::Quaternion<float> qRot;
             float scale;
         };
@@ -67,6 +67,8 @@ class RenderElement : public MemoryTransferer {
         Shader * getShader();
 
     protected:
+
+        static glm::mat4 toGLMMatrx(Math::Matrix<4,4,float> mat);
 
     private:
 

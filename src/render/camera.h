@@ -2,7 +2,7 @@
 #define CAMERA_H
 
 #include <glm/mat4x4.hpp>
-#include "util/math/quaternion.h"
+#include <mathutils/quaternion.h>
 
 class Camera
 {

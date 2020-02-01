@@ -115,8 +115,6 @@ std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::st
 
     }
 
-    //delete root;
-
     return std::shared_ptr<MaterialUploader>(new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, textureRes));
 
 }

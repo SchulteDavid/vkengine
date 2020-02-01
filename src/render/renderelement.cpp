@@ -78,16 +78,28 @@ RenderElement::~RenderElement() {
 
 }
 
+glm::mat4 RenderElement::toGLMMatrx(Math::Matrix<4,4,float> m) {
+
+    glm::mat4 mat = glm::mat4(1.0);
+    mat[0] = glm::vec4(m(0,0), m(1,0), m(2,0), m(3,0));
+    mat[1] = glm::vec4(m(0,1), m(1,1), m(2,1), m(3,1));
+    mat[2] = glm::vec4(m(0,2), m(1,2), m(2,2), m(3,2));
+    mat[3] = glm::vec4(m(0,3), m(1,3), m(2,3), m(3,3));
+
+    return mat;
+
+}
+
 glm::mat4 RenderElement::getTransformationMatrix(Transform & i) {
 
     glm::mat4 smat = glm::scale(glm::vec3(i.scale, i.scale, i.scale));
 
     //Math::Matrix<4,4,float> smat = Math::scaleMatrix<4,4,float>(i.scale);
 
-    glm::mat4 trmat = i.qRot.toModelMatrix(i.position).toGlmMatrix();
+    glm::mat4 trmat = toGLMMatrx(i.qRot.toModelMatrix(i.position));
     //Math::Matrix<4,4,float> trmat = i.qRot.toModelMatrix(i.position);
 
-    return (trmat * smat);//.toGlmMatrix();
+    return trmat * smat;//.toGlmMatrix();
 
 }
 

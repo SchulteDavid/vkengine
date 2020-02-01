@@ -3,6 +3,7 @@
 	<FileVersion major="1" minor="6" />
 	<Project>
 		<Option title="VkEngine" />
+		<Option makefile_is_custom="1" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
@@ -13,7 +14,6 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-std=c++11" />
-					<Add option="-pg" />
 					<Add option="-g" />
 					<Add option="-rdynamic" />
 					<Add directory="src/render/util" />
@@ -23,7 +23,6 @@
 					<Add directory="src/util/debug" />
 				</Compiler>
 				<Linker>
-					<Add option="-pg" />
 					<Add option="-rdynamic" />
 				</Linker>
 			</Target>

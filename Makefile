@@ -1,6 +1,6 @@
 #Configure flags etc.
-CFLAGS :=-g
-CXXFLAGS :=-g
+CFLAGS :=-g -rdynamic
+CXXFLAGS :=-g -rdynamic
 PROGNAME :=VkEngine
 
 SRC_LIBS := config
@@ -70,7 +70,7 @@ SRC_LIB_ARCHS := $(foreach lib,${SRC_LIBS},$(call srclib_target,${lib}))
 bin/Debug/${PROGNAME}: ${O_FILES} | bin/Debug/ ${SRC_LIB_ARCHS}
 	@mkdir -p bin/Debug
 	@echo ${LIBRARY_DIRS}
-	$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS})
+	$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS}) $(CXXFLAGS)
 
 lib/lib${PROGNAME}.a: ${LIBRARY_O_FILES} | lib/
 	@echo Creating library

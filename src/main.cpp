@@ -16,7 +16,7 @@
 
 #include "util/debug/trace_exception.h"
 
-#include "util/math/matrix.h"
+#include <mathutils/matrix.h>
 
 static bool run = true;
 static bool wait;
@@ -94,7 +94,7 @@ int main(int argc, char ** argv) {
 
 
     RenderElement::Transform trans;
-    trans.position = glm::vec3(0, 10, 0);
+    trans.position = Math::Vector<4, float>(0, 10, 0, 0);
     trans.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
     trans.scale = 1.0;
 
@@ -125,7 +125,7 @@ int main(int argc, char ** argv) {
         for (unsigned int j = 0; j < 32; ++j) {
 
             RenderElement::Transform trans2;
-            trans2.position = glm::vec3(2 * i, 2 * j, 2 * k);
+            trans2.position = Math::Vector<4, float>(2 * i, 2 * j, 2 * k, 0);
             trans2.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
             trans2.scale = 0.5;
 
