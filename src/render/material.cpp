@@ -2,7 +2,9 @@
 
 #include "model.h"
 
-#include <configloader.h>
+#include <configloading.h>
+
+#include <iostream>
 
 Material::Material(std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> textures) {
 
@@ -87,24 +89,27 @@ MaterialLoader::MaterialLoader(const vkutil::VulkanState & state, const VkRender
 
 std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::string fname) {
 
-    CompoundNode * root = ConfigLoader::loadFileTree(fname);
+    //CompoundNode * root = ConfigLoader::loadFileTree(fname);
+    std::shared_ptr<NodeCompound> root = config::parseFile(fname);
 
-    std::string shaderFname(root->get<const char *>("shader"));
+    std::string shaderFname(root->getNode<char>("shader")->getRawData().get());
     //std::cout << "Pushing " << shaderFname << " on the queue" << std::endl;
     LoadingResource shaderRes = this->loadDependency("Shader", shaderFname);
 
     //std::cout << "Dependency queued" << std::endl;
 
-    std::vector<CompoundNode *> textureComps = root->getArray<CompoundNode *>("textures")->getValue();
+    std::shared_ptr<Node<std::shared_ptr<NodeCompound>>> textureComps = root->getNode<std::shared_ptr<NodeCompound>>("textures");
     std::cout << "Texture Array is ok" << std::endl;
-    std::vector<LoadingResource> textureRes(textureComps.size());
+    std::vector<LoadingResource> textureRes(textureComps->getElementCount());
 
     std::cout << "Loading textures " << std::endl;
 
-    for (CompoundNode * texComp : textureComps) {
+    for (unsigned int i = 0; i < textureComps->getElementCount(); ++i) {
 
-        std::string tFname(texComp->get<const char *>("fname"));
-        int index = texComp->get<int>("index");
+        std::shared_ptr<NodeCompound> texComp = textureComps->getElement(i);
+
+        std::string tFname(texComp->getNode<char>("fname")->getRawData().get());
+        int index = texComp->getNode<int>("index")->getElement(0);
 
         textureRes[index] = this->loadDependency("Texture", tFname);
 
