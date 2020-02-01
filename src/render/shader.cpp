@@ -1,7 +1,9 @@
 #include "shader.h"
 
 #include <iostream>
-#include <configloader.h>
+//#include <configloader.h>
+
+#include <configloading.h>
 
 #include "model.h"
 
@@ -225,10 +227,12 @@ ShaderLoader::ShaderLoader(const vkutil::VulkanState & state) : state(state) {
 
 std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string fname) {
 
-    CompoundNode * root = ConfigLoader::loadFileTree(fname);
+    //CompoundNode * root = ConfigLoader::loadFileTree(fname);
 
-    std::string vertFname(root->get<const char *>("vertex"));
-    std::string fragFname(root->get<const char *>("fragment"));
+    std::shared_ptr<NodeCompound> tmpRoot = config::parseFile(fname);
+
+    std::string vertFname(tmpRoot->getNode<char>("vertex")->getRawData().get());
+    std::string fragFname(tmpRoot->getNode<char>("fragment")->getRawData().get());
 
 
     //std::cout << vertFname << "  " << fragFname << std::endl;

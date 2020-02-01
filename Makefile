@@ -3,6 +3,7 @@ CFLAGS :=-g
 CXXFLAGS :=-g
 PROGNAME :=VkEngine
 
+SRC_LIBS := 
 LIBS := glfw vulkan ply tga pthread configloader stack
 
 # Finding source files
@@ -107,5 +108,4 @@ cleanRelease: clean
 
 clean:
 	@rm -r obj
-	@rm -r generated
 	@rm -r bin
