@@ -41,6 +41,16 @@ void ResourceManager::addLoader(std::string name, ResourceLoader<Resource> * loa
 
 }
 
+ResourceLoader<Resource> * ResourceManager::getLoader(std::string name, int index) {
+
+    if (this->registries.find(name) == this->registries.end()) {
+        throw dbg::trace_exception("Unable to add loader to non-existent registry");
+    }
+
+    return this->registries[name]->getLoader(index);
+
+}
+
 std::shared_ptr<Resource> ResourceManager::registerResource(std::string regName, std::string name, Resource * res) {
     return this->registries[regName]->registerObject(name, res);
 }
@@ -54,28 +64,44 @@ bool ResourceManager::isLoaded(std::string regName, std::string name) {
 
 }
 
+void ResourceManager::submitUpload(LoadingResource resource) {
+
+    this->rescheduleUpload(resource);
+
+}
+
 void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
-    while (resourceManager->keepThreadsRunning) {
+    try {
 
-        LoadingResource fres = resourceManager->getNextResource();
-        if (!fres->isPresent) continue;
+        while (resourceManager->keepThreadsRunning) {
 
-        if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
+            LoadingResource fres = resourceManager->getNextResource();
+            if (!fres->isPresent) continue;
 
-        std::cout << "Loading " << fres->regName << " / " << fres->name << std::endl;
+            if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
 
-        std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
-        fres->uploader = uploader;
+            std::cout << "Loading " << fres->regName << " / " << fres->name << std::endl;
 
-        fres->status.isLoaded = true;
+            std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
+            fres->uploader = uploader;
 
-        resourceManager->rescheduleUpload(fres);
+            std::cout << fres->name << " : " << uploader << std::endl;
 
-        /// TODO TEMP:
-        //fres->status.isUseable = true;
+            fres->status.isLoaded = true;
 
-        std::cout << "Loading Done" << std::endl;
+            resourceManager->rescheduleUpload(fres);
+
+            /// TODO TEMP:
+            //fres->status.isUseable = true;
+
+            std::cout << "Loading Done " << fres->name << std::endl;
+
+        }
+    } catch (std::exception e) {
+
+        std::cerr << e.what() << std::endl;
+        exit(1);
 
     }
 
@@ -100,7 +126,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
             throw dbg::trace_exception("Non-loaded element in uploading queue");
 
         if (!(fres->uploader))
-            throw dbg::trace_exception("Missing uploader for future resource");
+            throw dbg::trace_exception(std::string("Missing uploader for future resource ").append(fres->regName).append(" / ").append(fres->name));
 
         if (!fres->uploader->uploadReady()) {
 
@@ -225,4 +251,20 @@ void ResourceManager::joinLoadingThreads() {
 
 LoadingResource scheduleResourceLoad(ResourceManager * manager, std::string rName, std::string name) {
     return manager->loadResourceBg(rName, name);
+}
+
+LoadingResource scheduleSubresourceUpload(ResourceManager * manager, std::string regName, std::string name, std::shared_ptr<ResourceUploader<Resource>> uploader) {
+
+    LoadingResource res(new FutureResource);
+    res->regName = regName;
+    res->name = name;
+    res->isPresent = true;
+    res->uploader = uploader;
+
+    res->status.isLoaded = true;
+
+    manager->submitUpload(res);
+
+    return res;
+
 }

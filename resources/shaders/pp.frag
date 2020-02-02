@@ -70,7 +70,7 @@ vec3 calculateRadiance(vec3 lPos, vec3 lColor, int type, vec3 WorldPos, vec3 V, 
         float distance    = length(lPos - WorldPos);
         float attenuation = 1.0 / (distance * distance);
         return lColor * attenuation;
-    } else if (type == 2) {
+    } else if (type <= 2) {
 
         return lColor;
 
@@ -96,7 +96,7 @@ vec3 computeLO(vec3 WorldPos, int i, vec3 V, vec3 N, float roughness, vec3 F0, v
         vec3 L = normalize(inLights.position[i].xyz - WorldPos);
         //if (types[i] == 2) L = -normalize(inLights.position[i]);
         vec3 H = normalize(V + L);
-        vec3 radiance = calculateRadiance(inLights.position[i].xyz, inLights.color[i].rgb, 1, WorldPos, V, 0.2);
+        vec3 radiance = calculateRadiance(inLights.position[i].xyz, inLights.color[i].rgb, int(inLights.position[i].w), WorldPos, V, 0.2);
 
         // cook-torrance brdf
         float NDF = DistributionGGX(N, H, roughness);
@@ -148,7 +148,7 @@ vec4 getGColor(float shadow) {
         vec3 L = normalize(reflect(-V, N));
 
         vec3 H = normalize(V + L);
-        vec3 radiance = vec3(0.1);// * texture(skybox, L).rgb;
+        vec3 radiance = vec3(0.0001);// * texture(skybox, L).rgb;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G   = GeometrySmith(N, V, L, roughness);

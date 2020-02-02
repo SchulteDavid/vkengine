@@ -50,6 +50,10 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
 
         }
 
+        ResourceLoader<T> * getLoader(int index) {
+            return loaders[index];
+        }
+
         std::shared_ptr<ResourceUploader<T>> load(std::string name) {
 
             for (ResourceLoader<T> * l : loaders) {

@@ -27,6 +27,7 @@ class ResourceManager {
 
         void addRegistry(std::string name, ResourceRegistry<Resource> * registry);
         void addLoader(std::string name, ResourceLoader<Resource> * loader);
+        ResourceLoader<Resource> * getLoader(std::string name, int index = 0);
 
         template<typename T> std::shared_ptr<ResourceUploader<T>> loadResource(std::string regName, std::string name) {
             return ((ResourceRegistry<T> *) this->registries[regName])->load(name);
@@ -42,6 +43,8 @@ class ResourceManager {
         void startLoadingThreads(unsigned int threadCount);
         void joinLoadingThreads();
         LoadingResource loadResourceBg(std::string regName, std::string name);
+
+        void submitUpload(LoadingResource resource);
 
         void printSummary();
 

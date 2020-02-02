@@ -16,6 +16,8 @@
 
 #include "util/debug/trace_exception.h"
 
+#include "structure/structure.h"
+
 #include <mathutils/matrix.h>
 
 static bool run = true;
@@ -67,16 +69,20 @@ int main(int argc, char ** argv) {
 
     resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
     resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
+    resourceManager->addRegistry("Structure", (ResourceRegistry<Resource>*) new ResourceRegistry<Structure>());
 
     resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
     resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
     resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
     resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader());
 
     resourceManager->startLoadingThreads(1);
 
     LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
     LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
+
+    LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
@@ -113,11 +119,11 @@ int main(int argc, char ** argv) {
     std::vector<RenderElement::Transform> transforms;
 
     //view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
-    view->addLight(glm::vec4(1.0, -0.5, 0.85, 0.0), glm::vec4(2.0, 2.0, 2.0, 1.0));
-    view->addLight(glm::vec4(0.2, 0.0, 1.0, 2.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
+    view->addLight(glm::vec4(1.0, 1.2, 1.5, 2.0), glm::vec4(2.0, 2.0, 2.0, 0.0));
+    //view->addLight(glm::vec4(0.2, 0.0, 1.0, 2.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
     //view->addLight(glm::vec4(1.0, -1.0, 1.0, 2.0), glm::vec4(1.5, 1.5, 1.5, 1.2));
 
-    view->addLight(glm::vec4(12.5, 12.5, 0.5, 2.0), glm::vec4(10, 10, 10, 0.0));
+    //view->addLight(glm::vec4(12.5, 12.5, 0.5, 0.0), glm::vec4(10, 10, 10, 0.0));
 
     for (unsigned int k = 0; k < 2; ++k) {
 
