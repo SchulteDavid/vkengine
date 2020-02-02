@@ -75,8 +75,8 @@ int main(int argc, char ** argv) {
 
     resourceManager->startLoadingThreads(1);
 
-    LoadingResource matRes = resourceManager->loadResourceBg("Material", "test.mat");
-    LoadingResource fres = resourceManager->loadResourceBg("Model", "cube.ply");
+    LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
+    LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
@@ -87,10 +87,10 @@ int main(int argc, char ** argv) {
     resourceManager->printSummary();
     std::cout << "Done" << std::endl;
 
-    std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "shaders/std.shader");
-    std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "cube.ply");
+    std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "resources/shaders/std.shader");
+    std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "resources/models/cube.ply");
 
-    std::vector<std::shared_ptr<Texture>> textures = {resourceManager->get<Texture>("Texture", "test.tga"), resourceManager->get<Texture>("Texture", "normals.tga")};
+    //std::vector<std::shared_ptr<Texture>> textures = {resourceManager->get<Texture>("Texture", "test.tga"), resourceManager->get<Texture>("Texture", "normals.tga")};
 
 
     RenderElement::Transform trans;
@@ -101,7 +101,7 @@ int main(int argc, char ** argv) {
     //std::shared_ptr<Material> material(new Material(shader, textures));
     //material->setupPipeline(window->getState(), view->getRenderpass(), view->getSwapchainExtent());
 
-    std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "test.mat");
+    std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "resources/materials/test.mat");
 
     std::shared_ptr<RenderElement> e(new RenderElement(view, model, material, view->getSwapchainSize(), trans));
 

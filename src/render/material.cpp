@@ -89,10 +89,12 @@ MaterialLoader::MaterialLoader(const vkutil::VulkanState & state, const VkRender
 
 std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::string fname) {
 
+    using namespace config;
+
     //CompoundNode * root = ConfigLoader::loadFileTree(fname);
     std::shared_ptr<NodeCompound> root = config::parseFile(fname);
 
-    std::string shaderFname(root->getNode<char>("shader")->getRawData().get());
+    std::string shaderFname(root->getNode<char>("shader")->getRawData());
     //std::cout << "Pushing " << shaderFname << " on the queue" << std::endl;
     LoadingResource shaderRes = this->loadDependency("Shader", shaderFname);
 
@@ -108,7 +110,7 @@ std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::st
 
         std::shared_ptr<NodeCompound> texComp = textureComps->getElement(i);
 
-        std::string tFname(texComp->getNode<char>("fname")->getRawData().get());
+        std::string tFname(texComp->getNode<char>("fname")->getRawData());
         int index = texComp->getNode<int>("index")->getElement(0);
 
         textureRes[index] = this->loadDependency("Texture", tFname);

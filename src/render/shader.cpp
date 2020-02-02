@@ -227,10 +227,12 @@ ShaderLoader::ShaderLoader(const vkutil::VulkanState & state) : state(state) {
 
 std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string fname) {
 
+    using namespace config;
+
     std::shared_ptr<NodeCompound> tmpRoot = config::parseFile(fname);
 
-    std::string vertFname(tmpRoot->getNode<char>("vertex")->getRawData().get());
-    std::string fragFname(tmpRoot->getNode<char>("fragment")->getRawData().get());
+    std::string vertFname(tmpRoot->getNode<char>("vertex")->getValueString());
+    std::string fragFname(tmpRoot->getNode<char>("fragment")->getValueString());
 
     std::vector<uint8_t> vertCode = readFile(vertFname);
     std::vector<uint8_t> fragCode = readFile(fragFname);

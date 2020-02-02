@@ -67,8 +67,6 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
         std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
         fres->uploader = uploader;
-        /*Resource * tmpModel = uploader->uploadResource();
-        fres->location = resourceManager->registerResource(fres->regName, fres->name, tmpModel);*/
 
         fres->status.isLoaded = true;
 
@@ -96,10 +94,13 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
     while (resourceManager->keepThreadsRunning) {
 
         std::shared_ptr<FutureResource> fres = resourceManager->getNextUploadingResource();
-        if (!fres->isPresent) continue;
+        if (!fres || !fres->isPresent) continue;
 
         if (!fres->status.isLoaded)
             throw dbg::trace_exception("Non-loaded element in uploading queue");
+
+        if (!(fres->uploader))
+            throw dbg::trace_exception("Missing uploader for future resource");
 
         if (!fres->uploader->uploadReady()) {
 

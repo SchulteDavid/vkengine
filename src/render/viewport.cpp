@@ -52,7 +52,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 
     createTransferCommandBuffer();
 
-    ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "cube.ply"));
+    ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "resources/models/cube.ply"));
 
     ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
 
@@ -508,13 +508,13 @@ void Viewport::setupPostProcessingPipeline() {
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages(2);
 
-    shaderStages[0].module = vkutil::createShaderModule(readFile("shaders/id.vert.spirv"), state.device);
+    shaderStages[0].module = vkutil::createShaderModule(readFile("resources/shaders/id.vert.spirv"), state.device);
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
     shaderStages[0].pName = "main";
 
 
-    shaderStages[1].module = vkutil::createShaderModule(readFile("shaders/pp.frag.spirv"), state.device);
+    shaderStages[1].module = vkutil::createShaderModule(readFile("resources/shaders/pp.frag.spirv"), state.device);
     shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     shaderStages[1].pName = "main";

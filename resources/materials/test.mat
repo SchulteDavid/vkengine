@@ -1,0 +1,16 @@
+string shader = "resources/shaders/std.shader"
+
+comp textures = [
+     {
+	string fname = "resources/textures/test.tga"
+	int32 index = 0
+     },
+     {
+	string fname = "resources/textures/normals.tga"
+	int32 index = 1
+     },
+     {
+	string fname = "resources/textures/cube_specular.tga"
+	int32 index = 2
+     }
+]
