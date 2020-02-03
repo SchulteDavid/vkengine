@@ -13,6 +13,9 @@ class Structure : public Resource {
         Structure(std::shared_ptr<Model> model, std::shared_ptr<Material> material);
         virtual ~Structure();
 
+        std::shared_ptr<Model> getModel();
+        std::shared_ptr<Material> getMaterial();
+
     protected:
 
     private:

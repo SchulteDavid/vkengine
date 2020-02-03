@@ -13,6 +13,7 @@
 #include <mathutils/quaternion.h>
 #include "memorytransferhandler.h"
 #include "material.h"
+#include "structure/structure.h"
 
 class Viewport;
 
@@ -38,6 +39,7 @@ class RenderElement : public MemoryTransferer {
             uint32_t id;
         };
         RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTrasnsform);
+        RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
         virtual ~RenderElement();
 
         glm::mat4 getTransformationMatrix(Transform & instance);

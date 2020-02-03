@@ -17,6 +17,15 @@ Structure::~Structure() {
 
 }
 
+std::shared_ptr<Model> Structure::getModel() {
+    return model;
+}
+
+std::shared_ptr<Material> Structure::getMaterial() {
+    return material;
+}
+
+
 StructureUploader::StructureUploader(LoadingResource model, LoadingResource mat) {
 
     this->model = model;
@@ -31,6 +40,9 @@ Structure * StructureUploader::uploadResource() {
 }
 
 bool StructureUploader::uploadReady() {
+
+    //std::cout << "model.isUseable " << model->status.isUseable << std::endl;
+    //std::cout << "mat.isUseable " << mat->status.isUseable << std::endl;
 
     return mat->status.isUseable && model->status.isUseable;
 

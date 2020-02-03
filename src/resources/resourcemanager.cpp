@@ -26,6 +26,7 @@ ResourceManager::~ResourceManager() {
 void ResourceManager::addRegistry(std::string name, ResourceRegistry<Resource> * registry) {
 
     this->registries[name] = registry;
+    this->pipelineInfo[name] = {};
 
 }
 
@@ -79,9 +80,30 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
             LoadingResource fres = resourceManager->getNextResource();
             if (!fres->isPresent) continue;
 
-            if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
+            if (resourceManager->isLoaded(fres->regName, fres->name)) {
+
+                std::cout << "Skipping loading of " << fres->name << " is already loaded" << std::endl;
+
+                fres->status.isLoaded = true;
+                fres->status.isUploaded = true;
+                fres->status.isUseable = true;
+                fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
+
+                continue;
+
+            }
+
+            if (resourceManager->isResourceInPipeline(fres)){
+
+                /// Reschedule loading for later checks.
+                std::cout << "Reschedule of " << fres->name << std::endl;
+                resourceManager->rescheduleLoad(fres);
+
+            }
 
             std::cout << "Loading " << fres->regName << " / " << fres->name << std::endl;
+
+            resourceManager->markResourceInPipeline(fres);
 
             std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
             fres->uploader = uploader;
@@ -115,12 +137,22 @@ void ResourceManager::rescheduleUpload(LoadingResource res) {
 
 }
 
+void ResourceManager::rescheduleLoad(LoadingResource res) {
+
+    loadingQueueMutex.lock();
+    loadingQueue.push(res);
+    loadingQueueMutex.unlock();
+
+}
+
 void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager) {
 
     while (resourceManager->keepThreadsRunning) {
 
         std::shared_ptr<FutureResource> fres = resourceManager->getNextUploadingResource();
         if (!fres || !fres->isPresent) continue;
+
+        if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
 
         if (!fres->status.isLoaded)
             throw dbg::trace_exception("Non-loaded element in uploading queue");
@@ -140,6 +172,8 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
         fres->status.isUploaded = true;
         fres->status.isUseable  = true;
+
+        resourceManager->unmarkResourceInPipeline(fres);
 
     }
 
@@ -246,6 +280,30 @@ void ResourceManager::joinLoadingThreads() {
     for (std::thread * th : loadingThreads) {
         th->join();
     }
+
+}
+
+void ResourceManager::markResourceInPipeline(LoadingResource res) {
+    pipelineInfoMutex.lock();
+    this->pipelineInfo[res->regName].insert(this->pipelineInfo[res->regName].begin(), res->name);
+    pipelineInfoMutex.unlock();
+}
+
+void ResourceManager::unmarkResourceInPipeline(LoadingResource res) {
+    pipelineInfoMutex.lock();
+    this->pipelineInfo[res->regName].erase(res->name);
+    pipelineInfoMutex.unlock();
+}
+
+bool ResourceManager::isResourceInPipeline(LoadingResource res) {
+
+    pipelineInfoMutex.lock();
+
+    auto it = this->pipelineInfo[res->regName].find(res->name);
+
+    pipelineInfoMutex.unlock();
+
+    return it != this->pipelineInfo[res->regName].end();
 
 }
 

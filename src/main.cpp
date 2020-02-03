@@ -87,7 +87,11 @@ int main(int argc, char ** argv) {
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
 
-    while (!matRes->status.isUseable);
+    while (!sres->status.isUseable) {
+
+    }
+
+    resourceManager->joinLoadingThreads();
 
     std::cout << "Resource-summary: " << std::endl;
     resourceManager->printSummary();
@@ -107,9 +111,10 @@ int main(int argc, char ** argv) {
     //std::shared_ptr<Material> material(new Material(shader, textures));
     //material->setupPipeline(window->getState(), view->getRenderpass(), view->getSwapchainExtent());
 
-    std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "resources/materials/test.mat");
+    //std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "resources/materials/test.mat");
+    std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "resources/structure/test.strc");
 
-    std::shared_ptr<RenderElement> e(new RenderElement(view, model, material, view->getSwapchainSize(), trans));
+    std::shared_ptr<RenderElement> e(new RenderElement(view, strc, trans));
 
     view->addRenderElement(e);
 
@@ -118,9 +123,9 @@ int main(int argc, char ** argv) {
     std::vector<RenderElement::Instance> instances;
     std::vector<RenderElement::Transform> transforms;
 
-    //view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
-    view->addLight(glm::vec4(1.0, 1.2, 1.5, 2.0), glm::vec4(2.0, 2.0, 2.0, 0.0));
-    //view->addLight(glm::vec4(0.2, 0.0, 1.0, 2.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
+    view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
+    view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
+    view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
     //view->addLight(glm::vec4(1.0, -1.0, 1.0, 2.0), glm::vec4(1.5, 1.5, 1.5, 1.2));
 
     //view->addLight(glm::vec4(12.5, 12.5, 0.5, 0.0), glm::vec4(10, 10, 10, 0.0));
@@ -142,8 +147,6 @@ int main(int argc, char ** argv) {
         }
     }
     }
-
-    resourceManager->joinLoadingThreads();
 
     double d = 0;
 
