@@ -70,7 +70,7 @@ vec3 calculateRadiance(vec3 lPos, vec3 lColor, int type, vec3 WorldPos, vec3 V, 
         float distance    = length(lPos - WorldPos);
         float attenuation = 1.0 / (distance * distance);
         return lColor * attenuation;
-    } else if (type <= 2) {
+    } else if (type == 2) {
 
         return lColor;
 
@@ -94,7 +94,7 @@ vec3 computeLO(vec3 WorldPos, int i, vec3 V, vec3 N, float roughness, vec3 F0, v
 
     // calculate per-light radiance
         vec3 L = normalize(inLights.position[i].xyz - WorldPos);
-        //if (types[i] == 2) L = -normalize(inLights.position[i]);
+        if (int(inLights.position[i].w) == 2) L = -normalize(inLights.position[i].xyz);
         vec3 H = normalize(V + L);
         vec3 radiance = calculateRadiance(inLights.position[i].xyz, inLights.color[i].rgb, int(inLights.position[i].w), WorldPos, V, 0.2);
 
@@ -172,7 +172,7 @@ vec4 getGColor(float shadow) {
     vec3 color = ambient + Lo;
 
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0/2.2));
+    color = pow(color, vec3(2.2));
 
     return vec4(color, subpassLoad(inputPosition).a);
 

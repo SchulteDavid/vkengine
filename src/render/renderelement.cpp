@@ -69,6 +69,12 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
 }
 
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc->getModel(), strc->getMaterial(), view->getSwapchainSize(), initTransform) {
+
+
+
+}
+
 RenderElement::~RenderElement() {
 
     //destroyUniformBuffers();

@@ -4,6 +4,7 @@
 #include <mutex>
 #include <thread>
 #include <queue>
+#include <unordered_set>
 
 #include "resource.h"
 #include "resourceloader.h"
@@ -58,6 +59,9 @@ class ResourceManager {
         std::mutex uploadingQueueMutex;
         std::queue<LoadingResource> uploadingQueue;
 
+        std::mutex pipelineInfoMutex;
+        std::unordered_map<std::string, std::unordered_set<std::string>> pipelineInfo;
+
         std::vector<std::thread *> loadingThreads;
 
         bool keepThreadsRunning;
@@ -68,6 +72,11 @@ class ResourceManager {
         LoadingResource getNextUploadingResource();
 
         void rescheduleUpload(LoadingResource res);
+        void rescheduleLoad(LoadingResource res);
+
+        void markResourceInPipeline(LoadingResource res);
+        void unmarkResourceInPipeline(LoadingResource res);
+        bool isResourceInPipeline(LoadingResource res);
 
 
 };

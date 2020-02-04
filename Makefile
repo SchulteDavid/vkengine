@@ -29,7 +29,7 @@ AS := as
 SPIRV_COMP := ./tools/glslangValidator
 
 # Functions used for target-generation
-get_dependency = $(shell g++ -MM -Isrc/ ${1}| sed -e ':a;N;$$!ba;s/\\\n //g' | tee compiler_out.txt  | sed -e 's/[A-Za-z\.\/_-]*: //')
+get_dependency = $(shell g++ -MM -Isrc/ ${1}| sed -e ':a;N;$$!ba;s/\\\n //g' | sed -e 's/[A-Za-z\.\/_-]*: //')
 obj_target=obj/${2}/$(addsuffix .o,$(basename ${1}))
 lexer_target=generated/$(basename ${1}).scanner.c
 parser_target=generated/$(basename ${1}).parser.c
