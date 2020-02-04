@@ -214,7 +214,6 @@ vkutil::QueueFamilyIndices vkutil::findQueueFamilies(const VkPhysicalDevice & de
 
         if (p.queueCount > 0 && p.queueFlags & VK_QUEUE_TRANSFER_BIT) {
             indices.transferFamily = i;
-
         }
 
         VkBool32 presentSupport = false;
@@ -222,7 +221,7 @@ vkutil::QueueFamilyIndices vkutil::findQueueFamilies(const VkPhysicalDevice & de
         if (p.queueCount > 0 && presentSupport)
             indices.presentFamily = i;
 
-        if (indices.isComplete())
+        if (indices.isComplete() && indices.graphicsFamily != indices.transferFamily)
             break;
 
         ++i;
