@@ -59,7 +59,17 @@ void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Ins
 
 int main(int argc, char ** argv) {
 
-    std::shared_ptr<Window> window(new Window());
+    unsigned int width = 1280;
+    unsigned int height = 720;
+
+    if (argc >= 3) {
+
+        width = atoi(argv[1]);
+        height = atoi(argv[2]);
+
+    }
+
+    std::shared_ptr<Window> window(new Window(width, height));
 
     Camera * cam = new Camera(70.0, 0.1, 100.0, 1280.0/720.0, glm::vec3(0,0,0));
 

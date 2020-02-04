@@ -1,0 +1,13 @@
+
+# Compiled C/C++ Files
+*.o
+
+# Compiled shaders
+*.spirv
+
+# Emacs backup files
+*~
+
+# IDE-Files
+*.depend
+*.layout

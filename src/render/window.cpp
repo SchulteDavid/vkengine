@@ -37,12 +37,12 @@ bool isDeviceSuitable(VkPhysicalDevice & device, VkSurfaceKHR & surface) {
     return indices.isComplete() && extensions && swapChainOK && supportedFeatures.samplerAnisotropy;
 }
 
-Window::Window() {
+Window::Window(unsigned int width, unsigned int height) {
 
     this->oldMouseX = 0;
     this->oldMouseY = 0;
 
-    state.glfwWindow = vkutil::createWindow(1280, 720, this);
+    state.glfwWindow = vkutil::createWindow(width, height, this);
 
     glfwSetKeyCallback(state.glfwWindow, glfw_inputs::onKeyboard);
     glfwSetMouseButtonCallback(state.glfwWindow, glfw_inputs::onMouseButton);

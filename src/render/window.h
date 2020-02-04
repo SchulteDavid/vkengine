@@ -13,7 +13,7 @@
 class Window
 {
     public:
-        Window();
+        Window(unsigned int width, unsigned int height);
         virtual ~Window();
 
         VkPhysicalDevice & getPhysicalDevice();
