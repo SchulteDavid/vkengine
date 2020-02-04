@@ -26,7 +26,7 @@ LEX := lex
 YACC := yacc
 AS := as
 
-SPIRV_COMP := /home/david/Documents/Projects/vulkan/SDK/x86_64/bin/glslangValidator
+SPIRV_COMP := ./tools/glslangValidator
 
 # Functions used for target-generation
 get_dependency = $(shell g++ -MM -Isrc/ ${1}| sed -e ':a;N;$$!ba;s/\\\n //g' | tee compiler_out.txt  | sed -e 's/[A-Za-z\.\/_-]*: //')

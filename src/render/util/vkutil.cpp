@@ -212,8 +212,10 @@ vkutil::QueueFamilyIndices vkutil::findQueueFamilies(const VkPhysicalDevice & de
         if (p.queueCount > 0 && p.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             indices.graphicsFamily = i;
 
-        if (p.queueCount > 0 && p.queueFlags & VK_QUEUE_TRANSFER_BIT)
+        if (p.queueCount > 0 && p.queueFlags & VK_QUEUE_TRANSFER_BIT) {
             indices.transferFamily = i;
+
+        }
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);

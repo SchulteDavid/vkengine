@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <functional>
+#include <iostream>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -17,7 +18,8 @@ struct QueueFamilyIndices {
     int transferFamily = -1;
 
     bool isComplete() {
-        return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0 && transferFamily != graphicsFamily;
+        std::cerr << (transferFamily == graphicsFamily ? "transfer is graphics" : "transfer != graphics") << std::endl;
+        return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0;// && transferFamily != graphicsFamily;
     }
 
 };
