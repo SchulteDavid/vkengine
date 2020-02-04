@@ -527,7 +527,7 @@ void vkutil::createImage(const VmaAllocator & allocator, VkDevice device, int wi
     imageInfo.arrayLayers = 1;
     imageInfo.format = format;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;//VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage; //
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
