@@ -22,6 +22,7 @@
 					<Add directory="src/animation" />
 					<Add directory="src/util/debug" />
 					<Add directory="src/structure" />
+					<Add directory="src/util" />
 				</Compiler>
 				<Linker>
 					<Add option="-rdynamic" />
@@ -40,6 +41,7 @@
 					<Add directory="src/animation" />
 					<Add directory="src/util/debug" />
 					<Add directory="src/structure" />
+					<Add directory="src/util" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -118,6 +120,8 @@
 		<Unit filename="src/util/math/matrix.h" />
 		<Unit filename="src/util/math/quaternion.h" />
 		<Unit filename="src/util/math/vector.h" />
+		<Unit filename="src/util/mesh.cpp" />
+		<Unit filename="src/util/mesh.h" />
 		<Unit filename="src/util/meshhelper.cpp" />
 		<Unit filename="src/util/meshhelper.h" />
 		<Unit filename="src/util/simplexnoise.cpp" />

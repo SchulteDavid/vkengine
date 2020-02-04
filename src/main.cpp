@@ -85,7 +85,7 @@ int main(int argc, char ** argv) {
     resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
     resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
     resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader());
+    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
 
     resourceManager->startLoadingThreads(1);
 
@@ -140,10 +140,10 @@ int main(int argc, char ** argv) {
 
     //view->addLight(glm::vec4(12.5, 12.5, 0.5, 0.0), glm::vec4(10, 10, 10, 0.0));
 
-    for (unsigned int k = 0; k < 2; ++k) {
+    for (unsigned int k = 0; k < 1; ++k) {
 
-    for (unsigned int i = 0; i < 32; ++i) {
-        for (unsigned int j = 0; j < 32; ++j) {
+    for (unsigned int i = 0; i < 8; ++i) {
+        for (unsigned int j = 0; j < 8; ++j) {
 
             RenderElement::Transform trans2;
             trans2.position = Math::Vector<4, float>(2 * i, 2 * j, 2 * k, 0);

@@ -24,12 +24,13 @@ Shader::Shader(std::string vertShader, std::string fragShader, const VkDevice & 
 
 }
 
-Shader::Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state) : device(state.device) {
+Shader::Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state, unsigned int textureSlots) : device(state.device) {
 
     vertShaderCode = vertCode;
     fragShaderCode = fragCode;
 
     hasDescSets = false;
+    this->textureSlots = textureSlots;
 
 }
 
@@ -50,9 +51,10 @@ void Shader::createModules(const vkutil::VulkanState & state) {
 
 }
 
-std::vector<VkDescriptorSetLayoutBinding> Shader::getBindings(VkSampler & sampler, unsigned int textureCount) {
+std::vector<VkDescriptorSetLayoutBinding> Shader::getBindings(VkSampler & sampler) {
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings(1 + textureCount);
+    //std::vector<VkDescriptorSetLayoutBinding> bindings(1 + textureCount);
+    std::vector<VkDescriptorSetLayoutBinding> bindings(2);
 
     VkDescriptorSetLayoutBinding uboLayoutBinding = {};
     uboLayoutBinding.binding = 0;
@@ -63,7 +65,7 @@ std::vector<VkDescriptorSetLayoutBinding> Shader::getBindings(VkSampler & sample
 
     bindings[0] = uboLayoutBinding;
 
-    for (unsigned int i = 0; i < textureCount; ++i) {
+    /*for (unsigned int i = 0; i < textureCount; ++i) {
 
         VkDescriptorSetLayoutBinding texLayoutBinding = {};
         texLayoutBinding.binding = i+1;
@@ -74,15 +76,31 @@ std::vector<VkDescriptorSetLayoutBinding> Shader::getBindings(VkSampler & sample
 
         bindings[i + 1] = texLayoutBinding;
 
-    }
+    }*/
+
+    VkDescriptorSetLayoutBinding texLayoutBinding = {};
+    texLayoutBinding.binding = 1;
+    texLayoutBinding.descriptorCount = textureSlots;
+    texLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+    VkSampler arr[10];// = {sampler, sampler, sampler};
+    for (int i = 0; i < 10; ++i)
+        arr[i] = sampler;
+
+    std::cout << "Sampler : " << sampler << std::endl;
+
+    texLayoutBinding.pImmutableSamplers = 0;
+    texLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    bindings[1] = texLayoutBinding;
 
     return bindings;
 
 }
 
-void Shader::setupDescriptorSetLayout(VkSampler & sampler, unsigned int textures) {
+void Shader::setupDescriptorSetLayout(VkSampler & sampler) {
 
-    std::vector<VkDescriptorSetLayoutBinding> bindings = getBindings(sampler, textures);
+    std::vector<VkDescriptorSetLayoutBinding> bindings = getBindings(sampler);
     descSetLayout = vkutil::createDescriptorSetLayout(bindings, device);
 
 }
@@ -110,7 +128,7 @@ VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs
 
 }
 
-VkDescriptorPool Shader::setupDescriptorPool(const VkDevice& device, int scSize, int textureCount) {
+VkDescriptorPool Shader::setupDescriptorPool(const VkDevice& device, int scSize) {
 
     VkDescriptorPoolSize poolSize = {};
     poolSize.type =  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -121,14 +139,14 @@ VkDescriptorPool Shader::setupDescriptorPool(const VkDevice& device, int scSize,
     samplerSize.descriptorCount = scSize;
 
     //VkDescriptorPoolSize sizes[] = {poolSize, samplerSize, samplerSize};
-    std::vector<VkDescriptorPoolSize> sizes(1 + textureCount);
+    std::vector<VkDescriptorPoolSize> sizes(1 + textureSlots);
     sizes[0] = poolSize;
-    for (int i = 1; i < textureCount+1; ++i)
+    for (int i = 1; i < textureSlots+1; ++i)
         sizes[i] = samplerSize;
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1 + textureCount;
+    poolInfo.poolSizeCount = 1 + textureSlots;
     poolInfo.pPoolSizes = sizes.data();
     poolInfo.maxSets = scSize;
 
@@ -164,7 +182,8 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(const VkDevice & devic
 
         int index = 0;
 
-        std::vector<VkWriteDescriptorSet> descriptorWrites(1 + tex.size());
+        //std::vector<VkWriteDescriptorSet> descriptorWrites(1 + tex.size());
+        std::vector<VkWriteDescriptorSet> descriptorWrites(2);
 
             VkDescriptorBufferInfo bufferInfo = {};
             bufferInfo.buffer = uniformBuffers[i];
@@ -182,7 +201,7 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(const VkDevice & devic
             descriptorWrites[index].pTexelBufferView = nullptr;
             index++;
 
-        std::vector<VkDescriptorImageInfo> imageInfos(tex.size());
+        std::vector<VkDescriptorImageInfo> imageInfos(textureSlots);
 
         for (unsigned int j = 0; j < tex.size(); ++j) {
 
@@ -190,20 +209,31 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(const VkDevice & devic
             imageInfos[j].sampler = tex[j]->getSampler();
             imageInfos[j].imageLayout = tex[j]->getLayout();
 
+        }
 
-            descriptorWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[index].dstSet = descSets[i];
-            descriptorWrites[index].dstBinding = index;
-            descriptorWrites[index].dstArrayElement = 0;
-            descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[index].descriptorCount = 1;
-            descriptorWrites[index].pBufferInfo = nullptr;
-            descriptorWrites[index].pImageInfo = &imageInfos[j];
-            descriptorWrites[index].pTexelBufferView = nullptr;
+        for (unsigned int j = tex.size(); j < textureSlots; ++j) {
 
-            index++;
+            imageInfos[j].imageView = tex[0]->getView();
+            imageInfos[j].sampler = tex[0]->getSampler();
+            imageInfos[j].imageLayout = tex[0]->getLayout();
 
         }
+
+        /// FOR
+
+        descriptorWrites[index].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[index].dstSet = descSets[i];
+        descriptorWrites[index].dstBinding = index;
+        descriptorWrites[index].dstArrayElement = 0;
+        descriptorWrites[index].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[index].descriptorCount = textureSlots;
+        descriptorWrites[index].pBufferInfo = nullptr;
+        descriptorWrites[index].pImageInfo = imageInfos.data();
+        descriptorWrites[index].pTexelBufferView = nullptr;
+
+        index++;
+
+        /// END
 
         vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
@@ -237,7 +267,9 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
     std::vector<uint8_t> vertCode = readFile(vertFname);
     std::vector<uint8_t> fragCode = readFile(fragFname);
 
-    Shader * shader = new Shader(vertCode, fragCode, state);
+    unsigned int textureCount = tmpRoot->getNode<int32_t>("textureCount")->getElement(0);
+
+    Shader * shader = new Shader(vertCode, fragCode, state, textureCount);
 
     return std::shared_ptr<ShaderUploader>(new ShaderUploader(state, shader));
 

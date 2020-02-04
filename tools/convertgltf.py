@@ -34,4 +34,4 @@ for c in chunks:
     if c[0] == 0x004E4942:
         binaryData = c[2]
 
-
+print(fileInfo["meshes"])

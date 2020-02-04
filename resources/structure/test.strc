@@ -14,6 +14,18 @@ comp material = {
 	  {
 		string fname = "resources/textures/cube_specular.tga"
 		int32 index = 2
+	  },
+	  {
+		string fname = "resources/textures/metall_diffuse.tga"
+		int32 index = 3
+	  },
+	  {
+		string fname = "resources/textures/metall_normals.tga"
+		int32 index = 4
+	  },
+	  {
+		string fname = "resources/textures/metall_specular.tga"
+		int32 index = 5
 	  }
      ]
 
@@ -28,22 +40,23 @@ comp elements = [
 	     float32 rotation = [1, 0, 0, 0]
      	     float32 scale = 1
 	 }
+	 int32 materialIndex = 1
      },
      {
 	int32 type = 1
 
-	float32 vertexPositions = [0, 0, 0, 1, 0, 0, 1, 1, 0]
-	float32 vertexNormals   = [0,0,1, 0,0,1, 0,0,1]
+	float32 vertexPositions = [0,0,0, 1,0,0, 1,0,1]
+	float32 vertexNormals   = [0,-1,0, 0,-1,0, 0,-1,0]
 	float32 vertexUvs = [0,1, 1,1, 1,0]
 
 	comp transform = {
 
 	     float32 position = [0, 0, 1]
 	     float32 rotation = [1, 0, 0, 0]
-     	     float32 scale    = 1.0
+     	     float32 scale    = 2.0
 
 	 }
 	 int32 vertexIndices = [0, 1, 2]
-
+	 int32 materialIndex = 1
      }
 ]

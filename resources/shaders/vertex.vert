@@ -12,13 +12,15 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 3) in vec2 inUv;
 layout(location = 2) in vec3 inTangent;
+layout(location = 4) in int inMat;
 
-layout(location = 4) in mat4 transform;
+layout(location = 5) in mat4 transform;
 
 layout (location = 0) out vec4 normal;
 layout (location = 1) out vec4 position;
 layout (location = 2) out vec2 uvPos;
-layout (location = 3) out mat3 toTangentMat;
+layout (location = 4) out mat3 toTangentMat;
+layout (location = 3) flat out int matIndex;
 
 
 void main() {
@@ -45,5 +47,6 @@ void main() {
 	);
 
 	normal = vec4(inTangent, 1);
+	matIndex = inMat;
 
 }

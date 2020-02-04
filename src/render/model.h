@@ -10,6 +10,8 @@
 #include "resources/resource.h"
 #include "resources/resourceloader.h"
 
+class Mesh;
+
 class Model : public Resource {
 
     public:
@@ -20,6 +22,7 @@ class Model : public Resource {
             glm::vec3 normal;
             glm::vec3 tangent;
             glm::vec2 uv;
+            int32_t matIndex;
 
             static std::vector<VkVertexInputBindingDescription> getBindingDescription();
             static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
@@ -27,6 +30,7 @@ class Model : public Resource {
         };
 
         Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices);
+        Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh);
         virtual ~Model();
 
         void uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const VkQueue & q);

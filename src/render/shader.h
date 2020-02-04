@@ -16,16 +16,15 @@
 class Shader : public Resource
 {
     public:
-        Shader(std::string vertShader, std::string fragShader, const VkDevice & device);
-        Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state);
+        Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state, unsigned int textureSlots);
         virtual ~Shader();
 
-        std::vector<VkDescriptorSetLayoutBinding> getBindings(VkSampler & sampler, unsigned int textureCount);
+        std::vector<VkDescriptorSetLayoutBinding> getBindings(VkSampler & sampler);
 
-        void setupDescriptorSetLayout(VkSampler & sampler, unsigned int texCount);
+        void setupDescriptorSetLayout(VkSampler & sampler);
         VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout);
 
-        VkDescriptorPool setupDescriptorPool(const VkDevice & device, int scSize, int textureCount);
+        VkDescriptorPool setupDescriptorPool(const VkDevice & device, int scSize);
         std::vector<VkDescriptorSet> createDescriptorSets(const VkDevice & device, VkDescriptorPool & descPool, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
         VkPipeline & getPipeline();
         VkPipelineLayout & getPipelineLayout();
@@ -36,9 +35,12 @@ class Shader : public Resource
 
     protected:
 
+        Shader(std::string vertShader, std::string fragShader, const VkDevice & device);
+
     private:
 
         const VkDevice & device;
+        unsigned int textureSlots;
 
         VkPipeline graphicsPipeline;
         VkPipelineLayout pipelineLayout;

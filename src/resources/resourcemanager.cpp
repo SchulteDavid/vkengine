@@ -313,7 +313,7 @@ LoadingResource scheduleResourceLoad(ResourceManager * manager, std::string rNam
 
 LoadingResource scheduleSubresourceUpload(ResourceManager * manager, std::string regName, std::string name, std::shared_ptr<ResourceUploader<Resource>> uploader) {
 
-    LoadingResource res(new FutureResource);
+    LoadingResource res(new FutureResource());
     res->regName = regName;
     res->name = name;
     res->isPresent = true;
