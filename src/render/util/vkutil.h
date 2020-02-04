@@ -19,7 +19,7 @@ struct QueueFamilyIndices {
 
     bool isComplete() {
         std::cerr << (transferFamily == graphicsFamily ? "transfer is graphics" : "transfer != graphics") << std::endl;
-        return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0 && transferFamily != graphicsFamily;
+        return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0;// && transferFamily != graphicsFamily;
     }
 
 };

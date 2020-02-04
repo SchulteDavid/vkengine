@@ -432,6 +432,8 @@ void Viewport::createPPObjects() {
     ppCameraBuffers.resize(swapchain.images.size());
     ppCameraBuffersMemory.resize(swapchain.images.size());
 
+    std::cout << "Images created" << std::endl;
+
     for (int i = 0; i < swapchain.images.size(); ++i) {
 
         {
@@ -446,6 +448,8 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
+            std::cout << "Creatinf light Buffer" << std::endl;
+
             vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppLightBuffers[i], &ppLightBuffersMemory[i], &stagingBufferAllocInfo);
         }
         {
@@ -459,6 +463,8 @@ void Viewport::createPPObjects() {
             stAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
+
+            std::cout << "Creatinf camera Buffer" << std::endl;
 
             vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppCameraBuffers[i], &ppCameraBuffersMemory[i], &stagingBufferAllocInfo);
         }
