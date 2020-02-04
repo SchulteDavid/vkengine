@@ -58,8 +58,8 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 }
 
 void Mesh::setMaterialIndex(int32_t index) {
-    for (Model::Vertex v : verts) {
-        v.matIndex = index;
+    for (unsigned int i = 0; i < verts.size(); ++i) {
+        verts[i].matIndex = index;
     }
 }
 

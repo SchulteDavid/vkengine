@@ -16,15 +16,15 @@ comp material = {
 		int32 index = 2
 	  },
 	  {
-		string fname = "resources/textures/metall_diffuse.tga"
+		string fname = "resources/textures/stonebricks_diffuse.tga"
 		int32 index = 3
 	  },
 	  {
-		string fname = "resources/textures/metall_normals.tga"
+		string fname = "resources/textures/stonebricks_normals.tga"
 		int32 index = 4
 	  },
 	  {
-		string fname = "resources/textures/metall_specular.tga"
+		string fname = "resources/textures/stonebricks_specular.tga"
 		int32 index = 5
 	  }
      ]
@@ -40,7 +40,7 @@ comp elements = [
 	     float32 rotation = [1, 0, 0, 0]
      	     float32 scale = 1
 	 }
-	 int32 materialIndex = 1
+	 int32 materialIndex = 0
      },
      {
 	int32 type = 1
@@ -53,7 +53,7 @@ comp elements = [
 
 	     float32 position = [0, 0, 1]
 	     float32 rotation = [1, 0, 0, 0]
-     	     float32 scale    = 2.0
+     	     float32 scale    = 1.0
 
 	 }
 	 int32 vertexIndices = [0, 1, 2]
