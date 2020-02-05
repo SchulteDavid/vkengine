@@ -4,7 +4,7 @@ CXXFLAGS :=-g -rdynamic
 PROGNAME :=VkEngine
 
 SRC_LIBS := config
-LIBS := glfw vulkan ply tga pthread
+LIBS := glfw vulkan ply tga pthread z
 
 # Finding source files
 C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c")# | sed ':a;N;$!ba;s/\n/ /g')

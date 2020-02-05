@@ -77,8 +77,16 @@ class TextureLoader : public ResourceLoader<Texture> {
 
         std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
-    private:
+    protected:
         const vkutil::VulkanState & state;
+
+};
+
+class PNGLoader : public TextureLoader {
+
+    public:
+        PNGLoader(const vkutil::VulkanState & state);
+        std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
 };
 

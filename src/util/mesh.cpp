@@ -41,8 +41,6 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 
         Model::Vertex nVert;
 
-        std::cout << p << " -> " << p2 << std::endl;
-
         nVert.pos = glm::vec3(p2[0] / p2[3], p2[1] / p2[3], p2[2] / p2[3]);
         nVert.normal = glm::vec3(n[0], n[1], n[2]);
         nVert.tangent = glm::vec3(t[0], t[1], t[2]);

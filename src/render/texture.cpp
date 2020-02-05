@@ -403,6 +403,10 @@ TextureLoader::TextureLoader(const vkutil::VulkanState & state) : state(state) {
 
 std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::string fname) {
 
+    if (fname.substr(fname.length() - 3).compare("tga")) {
+        throw std::exception();
+    }
+
     TGA_FILE * tgaImage = tgaOpen(fname.c_str());
     int width, height;
     tgaGetSize(tgaImage, &width, &height);
@@ -412,5 +416,35 @@ std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::stri
     tgaClose(tgaImage);
 
     return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader(state, imageData, width, height, 1));
+
+}
+
+PNGLoader::PNGLoader(const vkutil::VulkanState & state) : TextureLoader(state) {
+
+}
+
+#include "util/image/png.h"
+
+std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string fname) {
+
+    FILE * file = fopen(fname.c_str(), "rb");
+
+    uint32_t width, height;
+    uint8_t * data = pngLoadImageData(file, &width, &height);
+
+    if (!data)
+        throw dbg::trace_exception("Unable to load PNG");
+
+    fclose(file);
+
+    std::vector<float> fData(width * height * 4);
+
+    for (unsigned int i; i < width * height * 4; ++i) {
+        fData[i] = (float) data[i] / 255.0;
+    }
+
+    free(data);
+
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader(state, fData, width, height, 1));
 
 }

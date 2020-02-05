@@ -87,6 +87,8 @@ int main(int argc, char ** argv) {
     resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
     resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
 
+    resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
+
     resourceManager->startLoadingThreads(1);
 
     LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");

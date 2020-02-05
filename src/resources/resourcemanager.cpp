@@ -106,6 +106,8 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
             resourceManager->markResourceInPipeline(fres);
 
             std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
+            if (!uploader)
+                throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name));
             fres->uploader = uploader;
 
             std::cout << fres->name << " : " << uploader << std::endl;
