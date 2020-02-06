@@ -116,8 +116,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
             resourceManager->rescheduleUpload(fres);
 
-            /// TODO TEMP:
-            //fres->status.isUseable = true;
+
 
             std::cout << "Loading Done " << fres->name << std::endl;
 

@@ -257,6 +257,8 @@ ShaderLoader::ShaderLoader(const vkutil::VulkanState & state) : state(state) {
 
 std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string fname) {
 
+    /// TODO: add location information for texture bindings.
+
     using namespace config;
 
     std::shared_ptr<NodeCompound> tmpRoot = config::parseFile(fname);

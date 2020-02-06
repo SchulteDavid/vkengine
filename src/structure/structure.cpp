@@ -109,6 +109,9 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
     using namespace config;
     using namespace Math;
 
+    if (fname.substr(fname.length()-4).compare("strc"))
+        throw std::runtime_error("Wrong file ending, expected strc");
+
     try {
 
         std::cout << "Loading Structure " << fname << std::endl;

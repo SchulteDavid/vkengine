@@ -54,7 +54,7 @@ void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Ins
 }
 
 #include <execinfo.h>
-
+#include "structure/gltf.h"
 #define BM_SIZE ( 1 << 24 )
 
 int main(int argc, char ** argv) {
@@ -86,20 +86,23 @@ int main(int argc, char ** argv) {
     resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
     resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
     resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
+    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new GLTFLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
 
     resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
 
     resourceManager->startLoadingThreads(1);
 
-    LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
+    //LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
     LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
 
-    LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
+    //LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
+    LoadingResource tres = resourceManager->loadResourceBg("Structure", "exports.glb");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
 
-    while (!sres->status.isUseable) {
+    //!sres->status.isUseable ||
+    while (!tres->status.isUseable) {
 
     }
 
@@ -109,8 +112,8 @@ int main(int argc, char ** argv) {
     resourceManager->printSummary();
     std::cout << "Done" << std::endl;
 
-    std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "resources/shaders/std.shader");
-    std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "resources/models/cube.ply");
+    /*std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "resources/shaders/std.shader");
+    std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "resources/models/cube.ply");*/
 
     //std::vector<std::shared_ptr<Texture>> textures = {resourceManager->get<Texture>("Texture", "test.tga"), resourceManager->get<Texture>("Texture", "normals.tga")};
 
@@ -124,7 +127,8 @@ int main(int argc, char ** argv) {
     //material->setupPipeline(window->getState(), view->getRenderpass(), view->getSwapchainExtent());
 
     //std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "resources/materials/test.mat");
-    std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "resources/structure/test.strc");
+    //std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "resources/structure/test.strc");
+    std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "exports.glb");
 
     std::shared_ptr<RenderElement> e(new RenderElement(view, strc, trans));
 

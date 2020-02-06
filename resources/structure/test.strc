@@ -1,7 +1,7 @@
 
 comp material = {
 
-     string shader = "resources/shaders/std.shader"
+     string shader = "resources/shaders/bump.shader"
      comp textures = [
      	  {
 		string fname = "resources/textures/cube_diffuse.png"
@@ -12,51 +12,26 @@ comp material = {
 		int32 index = 1
 	  },
 	  {
-		string fname = "resources/textures/cube_specular.tga"
+		string fname = "resources/textures/stonebricks_specular.tga"
 		int32 index = 2
 	  },
 	  {
-		string fname = "resources/textures/stonebricks_diffuse.tga"
-		int32 index = 3
-	  },
-	  {
-		string fname = "resources/textures/stonebricks_normals.tga"
-		int32 index = 4
-	  },
-	  {
-		string fname = "resources/textures/stonebricks_specular.tga"
-		int32 index = 5
+        string fname = "resources/textures/test_bump.png"
+        int32 index = 3
 	  }
-     ]
+    ]
 
 }
 
 comp elements = [
      {
-	int32 type = 0
-	string model = "resources/models/cube.ply"
-	comp transform = {
-	     float32 position = [0, 0, 0]
-	     float32 rotation = [1, 0, 0, 0]
-     	     float32 scale = 1
-	 }
-	 int32 materialIndex = 0
-     },
-     {
-	int32 type = 1
-
-	float32 vertexPositions = [0,0,0, 1,0,0, 1,0,1]
-	float32 vertexNormals   = [0,-1,0, 0,-1,0, 0,-1,0]
-	float32 vertexUvs = [0,1, 1,1, 1,0]
-
-	comp transform = {
-
-	     float32 position = [0, 0, 1]
-	     float32 rotation = [1, 0, 0, 0]
-     	     float32 scale    = 1.0
-
-	 }
-	 int32 vertexIndices = [0, 1, 2]
-	 int32 materialIndex = 1
+        int32 type = 0
+        string model = "resources/models/cube.ply"
+        comp transform = {
+            float32 position = [0, 0, 0]
+            float32 rotation = [1, 0, 0, 0]
+     	    float32 scale = 1
+        }
+        int32 materialIndex = 0
      }
 ]
