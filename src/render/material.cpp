@@ -30,7 +30,7 @@ std::vector<std::shared_ptr<Texture>> Material::getTextures() {
 void Material::prepareDescriptors() {
 
     VkSampler sampler = textures[0]->getSampler();
-    shader->setupDescriptorSetLayout(sampler, textures.size());
+    shader->setupDescriptorSetLayout(sampler);
 
 }
 

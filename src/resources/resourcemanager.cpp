@@ -106,6 +106,8 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
             resourceManager->markResourceInPipeline(fres);
 
             std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->regName, fres->name);
+            if (!uploader)
+                throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name));
             fres->uploader = uploader;
 
             std::cout << fres->name << " : " << uploader << std::endl;
@@ -114,8 +116,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
             resourceManager->rescheduleUpload(fres);
 
-            /// TODO TEMP:
-            //fres->status.isUseable = true;
+
 
             std::cout << "Loading Done " << fres->name << std::endl;
 
@@ -313,7 +314,7 @@ LoadingResource scheduleResourceLoad(ResourceManager * manager, std::string rNam
 
 LoadingResource scheduleSubresourceUpload(ResourceManager * manager, std::string regName, std::string name, std::shared_ptr<ResourceUploader<Resource>> uploader) {
 
-    LoadingResource res(new FutureResource);
+    LoadingResource res(new FutureResource());
     res->regName = regName;
     res->name = name;
     res->isPresent = true;

@@ -34,4 +34,15 @@ for c in chunks:
     if c[0] == 0x004E4942:
         binaryData = c[2]
 
+print(json.dumps(fileInfo))
 
+for img in fileInfo["images"]:
+    bv = fileInfo["bufferViews"][img["bufferView"]]
+    offset = bv["byteOffset"]
+    length = bv["byteLength"]
+
+    iData = binaryData[offset:(offset+length)]
+
+    f = open(img["name"] + ".png", "wb")
+    f.write(iData)
+    f.close()

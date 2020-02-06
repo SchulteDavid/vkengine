@@ -35,7 +35,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     this->createUniformBuffers(scSize);
 
-    this->descPool = this->shader->setupDescriptorPool(state.device, scSize, texture.size());
+    this->descPool = this->shader->setupDescriptorPool(state.device, scSize);
     this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
 
 }
@@ -64,7 +64,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), model.get(), pipelineLayout);
 
-    this->descPool = this->shader->setupDescriptorPool(state.device, scSize, texture.size());
+    this->descPool = this->shader->setupDescriptorPool(state.device, scSize);
     this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
 
 }
@@ -227,7 +227,7 @@ void RenderElement::recreateResources(VkRenderPass & renderPass, int scSize, con
 
     pipeline = shader->setupGraphicsPipeline(descs, renderPass, state, swapchain.extent, pipelineLayout);
 
-    descPool = shader->setupDescriptorPool(state.device, scSize, texture.size());
+    descPool = shader->setupDescriptorPool(state.device, scSize);
     createUniformBuffers(scSize);
     this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
 }

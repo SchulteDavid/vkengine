@@ -64,6 +64,57 @@ Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & d
 
 }
 
+Texture::Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
+
+    //format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    format = VK_FORMAT_R8G8B8A8_UINT;
+    layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkDeviceSize imageSize = sizeof(uint8_t) * data.size();
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferMemory;
+
+    VkBufferCreateInfo stBufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    stBufferCreateInfo.size = imageSize;
+    stBufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo stAllocCreateInfo = {};
+    stAllocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+    stAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    VmaAllocationInfo stagingBufferAllocInfo = {};
+
+    vmaCreateBuffer(allocator, &stBufferCreateInfo, &stAllocCreateInfo, &stagingBuffer, &stagingBufferMemory, &stagingBufferAllocInfo);
+
+    memcpy(stagingBufferAllocInfo.pMappedData, data.data(), imageSize);
+
+    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+    vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
+
+    this->transitionLayout(state, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(state, stagingBuffer, image, width, height, depth);
+    //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    std::cout << "Generating mipmaps" << std::endl;
+    generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
+    std::cout << "done" << std::endl;
+
+    this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
+    /*vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingMemory, nullptr);*/
+
+    view = vkutil::createImageView(device, image, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+
+    this->sampler = createSampler(state, mipLevels);
+
+}
+
 Texture::~Texture() {
 
     vkDestroyImageView(device, view, nullptr);
@@ -378,23 +429,6 @@ Texture * Texture::createTexture(const vkutil::VulkanState & state, std::string 
 
 }
 
-TextureUploader::TextureUploader(const vkutil::VulkanState & state, std::vector<float> data, int width, int height, int depth) : state(state) {
-
-    this->data = data;
-    this->width = width;
-    this->height = height;
-    this->depth = depth;
-
-}
-
-bool TextureUploader::uploadReady() {
-    return true;
-}
-
-Texture * TextureUploader::uploadResource() {
-    return new Texture(state, data, width, height, depth);
-}
-
 TextureLoader::TextureLoader(const vkutil::VulkanState & state) : state(state) {
 
 
@@ -402,6 +436,10 @@ TextureLoader::TextureLoader(const vkutil::VulkanState & state) : state(state) {
 }
 
 std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::string fname) {
+
+    if (fname.substr(fname.length() - 3).compare("tga")) {
+        throw std::exception();
+    }
 
     TGA_FILE * tgaImage = tgaOpen(fname.c_str());
     int width, height;
@@ -411,6 +449,46 @@ std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::stri
     free(rawData);
     tgaClose(tgaImage);
 
-    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader(state, imageData, width, height, 1));
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<float>(state, imageData, width, height, 1));
+
+}
+
+PNGLoader::PNGLoader(const vkutil::VulkanState & state) : TextureLoader(state) {
+
+}
+
+#include "util/image/png.h"
+
+std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string fname) {
+
+    FILE * file = fopen(fname.c_str(), "rb");
+
+    uint32_t width, height, chanelCount;
+    uint8_t * data = pngLoadImageData(file, &width, &height, &chanelCount);
+
+    if (!data)
+        throw dbg::trace_exception("Unable to load PNG");
+
+    fclose(file);
+
+    std::vector<float> fData(width * height * 4);
+
+    for (unsigned int i = 0; i < height; ++i) {
+        for (unsigned int j = 0; j < width; ++j) {
+            for (unsigned int c = 0; c < chanelCount; ++c) {
+                fData[(i * width + j) * 4 + c] = (float) data[(i * width + j) * chanelCount + c] / 255.0;
+            }
+
+            if (chanelCount < 4) {
+                fData[(i * width + j) * 4 + 3] = 1.0;
+            }
+
+        }
+        //fData[i] = (float) data[i] / 255.0;
+    }
+
+    free(data);
+
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<float>(state, fData, width, height, 1));
 
 }

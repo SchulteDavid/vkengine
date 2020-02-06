@@ -22,6 +22,8 @@
 					<Add directory="src/animation" />
 					<Add directory="src/util/debug" />
 					<Add directory="src/structure" />
+					<Add directory="src/util" />
+					<Add directory="src/util/structure" />
 				</Compiler>
 				<Linker>
 					<Add option="-rdynamic" />
@@ -40,6 +42,8 @@
 					<Add directory="src/animation" />
 					<Add directory="src/util/debug" />
 					<Add directory="src/structure" />
+					<Add directory="src/util" />
+					<Add directory="src/util/structure" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -64,13 +68,18 @@
 			<Add directory="SDK/x86_64/lib" />
 			<Add directory="lib/linux_amd64" />
 		</Linker>
+		<Unit filename="resources/shaders/bump.shader" />
+		<Unit filename="resources/shaders/cloud.shader" />
 		<Unit filename="resources/shaders/fragment.frag" />
+		<Unit filename="resources/shaders/glsl/bump_fragment.frag" />
+		<Unit filename="resources/shaders/glsl/cloud_fragment.frag" />
 		<Unit filename="resources/shaders/id.vert" />
 		<Unit filename="resources/shaders/normals.frag" />
 		<Unit filename="resources/shaders/pp.frag" />
 		<Unit filename="resources/shaders/std.shader" />
 		<Unit filename="resources/shaders/terrain.frag" />
 		<Unit filename="resources/shaders/vertex.vert" />
+		<Unit filename="resources/structure/test.strc" />
 		<Unit filename="src/animation/skeletalrig.cpp" />
 		<Unit filename="src/animation/skeletalrig.h" />
 		<Unit filename="src/inputs/inputhandler.cpp" />
@@ -110,14 +119,19 @@
 		<Unit filename="src/resources/resourcemanager.h" />
 		<Unit filename="src/resources/resourceregistry.h" />
 		<Unit filename="src/resources/resourceuploader.h" />
+		<Unit filename="src/structure/gltf.cpp" />
+		<Unit filename="src/structure/gltf.h" />
 		<Unit filename="src/structure/structure.cpp" />
 		<Unit filename="src/structure/structure.h" />
 		<Unit filename="src/util/debug/stacktrace.h" />
 		<Unit filename="src/util/debug/trace_exception.cpp" />
 		<Unit filename="src/util/debug/trace_exception.h" />
-		<Unit filename="src/util/math/matrix.h" />
-		<Unit filename="src/util/math/quaternion.h" />
-		<Unit filename="src/util/math/vector.h" />
+		<Unit filename="src/util/image/png.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/util/image/png.h" />
+		<Unit filename="src/util/mesh.cpp" />
+		<Unit filename="src/util/mesh.h" />
 		<Unit filename="src/util/meshhelper.cpp" />
 		<Unit filename="src/util/meshhelper.h" />
 		<Unit filename="src/util/simplexnoise.cpp" />

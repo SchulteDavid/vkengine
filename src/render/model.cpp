@@ -1,5 +1,6 @@
 #include "model.h"
 
+#include "util/mesh.h"
 #include "util/meshhelper.h"
 
 #include <ply.hpp>
@@ -25,7 +26,7 @@ std::vector<VkVertexInputBindingDescription> Model::Vertex::getBindingDescriptio
 
 std::vector<VkVertexInputAttributeDescription> Model::Vertex::getAttributeDescriptions() {
 
-    std::vector<VkVertexInputAttributeDescription> descriptions(8);
+    std::vector<VkVertexInputAttributeDescription> descriptions(9);
 
     descriptions[0].binding = 0;
     descriptions[0].location = 0;
@@ -47,25 +48,30 @@ std::vector<VkVertexInputAttributeDescription> Model::Vertex::getAttributeDescri
     descriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
     descriptions[3].offset = offsetof(Vertex, uv);
 
-    descriptions[4].binding = 1;
+    descriptions[4].binding = 0;
     descriptions[4].location = 4;
-    descriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[4].offset = 0;
+    descriptions[4].format = VK_FORMAT_R32_SINT;
+    descriptions[4].offset = offsetof(Vertex, matIndex);
 
     descriptions[5].binding = 1;
     descriptions[5].location = 5;
     descriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[5].offset = sizeof(glm::vec4);
+    descriptions[5].offset = 0;
 
     descriptions[6].binding = 1;
     descriptions[6].location = 6;
     descriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[6].offset = 2*sizeof(glm::vec4);
+    descriptions[6].offset = sizeof(glm::vec4);
 
     descriptions[7].binding = 1;
     descriptions[7].location = 7;
     descriptions[7].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[7].offset = 3*sizeof(glm::vec4);
+    descriptions[7].offset = 2*sizeof(glm::vec4);
+
+    descriptions[8].binding = 1;
+    descriptions[8].location = 8;
+    descriptions[8].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    descriptions[8].offset = 3*sizeof(glm::vec4);
 
     return descriptions;
 
@@ -80,6 +86,10 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
 
     this->vCount = verts.size();
     this->iCount = indices.size();
+
+}
+
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) : Model(state, mesh->getVerts(), mesh->getIndices()) {
 
 }
 
@@ -105,7 +115,7 @@ int Model::getIndexCount() {
 
 Model * Model::loadFromFile(const vkutil::VulkanState & state, std::string fname) {
 
-    PlyFile * plyFile = new PlyFile(fname);
+    /*PlyFile * plyFile = new PlyFile(fname);
     int indexCount;
     int * indexData = plyFile->getIndexData(&indexCount);
 
@@ -125,9 +135,12 @@ Model * Model::loadFromFile(const vkutil::VulkanState & state, std::string fname
     std::vector<uint16_t> indices(indexCount);
 
     for (int i = 0; i < indexCount; ++i)
-        indices[i] = indexData[i];
+        indices[i] = indexData[i];*/
 
-    return new Model(state, vertices, indices);
+    std::shared_ptr<Mesh> mesh = Mesh::loadFromFile(fname);
+    return new Model(state, mesh);
+
+    //return new Model(state, vertices, indices);
 
 }
 

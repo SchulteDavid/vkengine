@@ -45,9 +45,11 @@ class StructureLoader : public ResourceLoader<Structure> {
 
     public:
 
-        StructureLoader();
-
+        StructureLoader(const vkutil::VulkanState & state);
         std::shared_ptr<ResourceUploader<Structure>> loadResource(std::string fname);
+
+    private:
+        const vkutil::VulkanState & state;
 
 };
 

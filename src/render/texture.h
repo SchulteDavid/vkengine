@@ -45,6 +45,8 @@ class Texture : public Resource
 
     private:
 
+        Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth);
+
         const VkDevice & device;
         const VmaAllocator & allocator;
 
@@ -52,18 +54,30 @@ class Texture : public Resource
 
 };
 
-class TextureUploader : public ResourceUploader<Texture> {
+template <typename T> class TextureUploader : public ResourceUploader<Texture> {
 
     public:
-        TextureUploader(const vkutil::VulkanState & state, std::vector<float> data, int width, int height, int depth);
+        TextureUploader(const vkutil::VulkanState & state, std::vector<T> data, int width, int height, int depth) : state(state) {
 
-        bool uploadReady();
-        Texture * uploadResource();
+            this->data = data;
+            this->width = width;
+            this->height = height;
+            this->depth = depth;
+
+        }
+
+        bool uploadReady() {
+            return true;
+        }
+
+        Texture * uploadResource() {
+            return new Texture(state, data, width, height, depth);
+        }
 
     private:
 
         const vkutil::VulkanState & state;
-        std::vector<float> data;
+        std::vector<T> data;
         int width;
         int height;
         int depth;
@@ -77,8 +91,16 @@ class TextureLoader : public ResourceLoader<Texture> {
 
         std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
-    private:
+    protected:
         const vkutil::VulkanState & state;
+
+};
+
+class PNGLoader : public TextureLoader {
+
+    public:
+        PNGLoader(const vkutil::VulkanState & state);
+        std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
 };
 
