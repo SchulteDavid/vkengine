@@ -4,11 +4,11 @@ comp material = {
      string shader = "resources/shaders/std.shader"
      comp textures = [
      	  {
-		string fname = "resources/textures/test.tga"
+		string fname = "resources/textures/cube_diffuse.png"
 		int32 index = 0
 	  },
 	  {
-		string fname = "resources/textures/normals.tga"
+		string fname = "resources/textures/cube_normals.png"
 		int32 index = 1
 	  },
 	  {

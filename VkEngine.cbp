@@ -117,9 +117,10 @@
 		<Unit filename="src/util/debug/stacktrace.h" />
 		<Unit filename="src/util/debug/trace_exception.cpp" />
 		<Unit filename="src/util/debug/trace_exception.h" />
-		<Unit filename="src/util/math/matrix.h" />
-		<Unit filename="src/util/math/quaternion.h" />
-		<Unit filename="src/util/math/vector.h" />
+		<Unit filename="src/util/image/png.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/util/image/png.h" />
 		<Unit filename="src/util/mesh.cpp" />
 		<Unit filename="src/util/mesh.h" />
 		<Unit filename="src/util/meshhelper.cpp" />

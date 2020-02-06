@@ -116,7 +116,7 @@ uint8_t applyFilters(uint8_t filter, uint8_t * imageData, uint8_t * infData, uns
 
 }
 
-uint8_t * pngLoadImageData(FILE * file, uint32_t * width, uint32_t * height) {
+uint8_t * pngLoadImageData(FILE * file, uint32_t * width, uint32_t * height, uint32_t * cCount) {
 
     uint64_t hdr;
     fread(&hdr, sizeof(uint64_t), 1, file);
@@ -198,6 +198,7 @@ uint8_t * pngLoadImageData(FILE * file, uint32_t * width, uint32_t * height) {
 
     *height = header.height;
     *width  = header.width;
+    *cCount = chanelCount;
 
     free(iData);
 
@@ -219,7 +220,7 @@ uint8_t * pngLoadImageData(FILE * file, uint32_t * width, uint32_t * height) {
 
 }
 
-uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * height) {
+uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * height, uint32_t * cCount) {
 
     uint32_t fOffset = 0;
 
@@ -323,6 +324,7 @@ uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * he
 
     *height = header.height;
     *width  = header.width;
+    *cCount = chanelCount;
 
     free(iData);
 

@@ -429,8 +429,8 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
     FILE * file = fopen(fname.c_str(), "rb");
 
-    uint32_t width, height;
-    uint8_t * data = pngLoadImageData(file, &width, &height);
+    uint32_t width, height, chanelCount;
+    uint8_t * data = pngLoadImageData(file, &width, &height, &chanelCount);
 
     if (!data)
         throw dbg::trace_exception("Unable to load PNG");
@@ -439,8 +439,18 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
     std::vector<float> fData(width * height * 4);
 
-    for (unsigned int i; i < width * height * 4; ++i) {
-        fData[i] = (float) data[i] / 255.0;
+    for (unsigned int i = 0; i < height; ++i) {
+        for (unsigned int j = 0; j < width; ++j) {
+            for (unsigned int c = 0; c < chanelCount; ++c) {
+                fData[(i * width + j) * 4 + c] = (float) data[(i * width + j) * chanelCount + c] / 255.0;
+            }
+
+            if (chanelCount < 4) {
+                fData[(i * width + j) * 4 + 3] = 1.0;
+            }
+
+        }
+        //fData[i] = (float) data[i] / 255.0;
     }
 
     free(data);
