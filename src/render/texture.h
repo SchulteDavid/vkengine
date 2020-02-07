@@ -14,7 +14,8 @@
 class Texture : public Resource
 {
     public:
-        Texture(const vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth);
+        Texture(vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth);
+        Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth);
         virtual ~Texture();
 
         void transitionLayout(const vkutil::VulkanState & state, VkImageLayout layout);
@@ -24,9 +25,9 @@ class Texture : public Resource
 
         VkSampler & getSampler();
 
-        static Texture * createTexture(const vkutil::VulkanState & state, std::string fname);
+        static Texture * createTexture(vkutil::VulkanState & state, std::string fname);
 
-        static void createImage(const vkutil::VulkanState & state, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory);
+        static void createImage(vkutil::VulkanState & state, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory);
         static void copyBufferToImage(const vkutil::VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth);
         static VkImageView createImageView(const vkutil::VulkanState & state, VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);
         static VkSampler createSampler(const vkutil::VulkanState & state, int mipLevels);
@@ -45,8 +46,6 @@ class Texture : public Resource
 
     private:
 
-        Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth);
-
         const VkDevice & device;
         const VmaAllocator & allocator;
 
@@ -57,7 +56,7 @@ class Texture : public Resource
 template <typename T> class TextureUploader : public ResourceUploader<Texture> {
 
     public:
-        TextureUploader(const vkutil::VulkanState & state, std::vector<T> data, int width, int height, int depth) : state(state) {
+        TextureUploader(vkutil::VulkanState & state, std::vector<T> data, int width, int height, int depth) : state(state) {
 
             this->data = data;
             this->width = width;
@@ -76,7 +75,7 @@ template <typename T> class TextureUploader : public ResourceUploader<Texture> {
 
     private:
 
-        const vkutil::VulkanState & state;
+        vkutil::VulkanState & state;
         std::vector<T> data;
         int width;
         int height;
@@ -87,19 +86,19 @@ template <typename T> class TextureUploader : public ResourceUploader<Texture> {
 class TextureLoader : public ResourceLoader<Texture> {
 
     public:
-        TextureLoader(const vkutil::VulkanState & state);
+        TextureLoader(vkutil::VulkanState & state);
 
         std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
     protected:
-        const vkutil::VulkanState & state;
+        vkutil::VulkanState & state;
 
 };
 
 class PNGLoader : public TextureLoader {
 
     public:
-        PNGLoader(const vkutil::VulkanState & state);
+        PNGLoader(vkutil::VulkanState & state);
         std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
 };

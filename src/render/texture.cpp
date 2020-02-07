@@ -14,7 +14,7 @@
 
 using namespace vkutil;
 
-Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
+Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
 
     format = VK_FORMAT_R32G32B32A32_SFLOAT;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -47,7 +47,9 @@ Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & d
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     std::cout << "Generating mipmaps" << std::endl;
+    state.graphicsQueueMutex.lock();
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
+    state.graphicsQueueMutex.unlock();
     std::cout << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -64,10 +66,10 @@ Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & d
 
 }
 
-Texture::Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
+Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
 
     //format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    format = VK_FORMAT_R8G8B8A8_UINT;
+    format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkDeviceSize imageSize = sizeof(uint8_t) * data.size();
@@ -91,14 +93,19 @@ Texture::Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> &
 
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
+
     vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
+    state.graphicsQueueMutex.lock();
     this->transitionLayout(state, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    state.graphicsQueueMutex.unlock();
     copyBufferToImage(state, stagingBuffer, image, width, height, depth);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     std::cout << "Generating mipmaps" << std::endl;
+    state.graphicsQueueMutex.lock();
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
+    state.graphicsQueueMutex.unlock();
     std::cout << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -199,7 +206,7 @@ VkSampler & Texture::getSampler() {
 
 void Texture::copyBufferToImage(const VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth) {
 
-    VkCommandBuffer commandBuffer = vkutil::beginSingleCommand(state);
+    VkCommandBuffer commandBuffer = vkutil::beginSingleCommand(state.transferCommandPool, state.device);
 
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
@@ -216,7 +223,7 @@ void Texture::copyBufferToImage(const VulkanState & state, VkBuffer & buffer, Vk
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    vkutil::endSingleCommand(commandBuffer, state);
+    vkutil::endSingleCommand(commandBuffer, state.transferCommandPool, state.device, state.transferQueue);
 
 }
 
@@ -239,7 +246,7 @@ VkImageLayout Texture::getLayout() {
 
 /** static helper functions **/
 
-void Texture::createImage(const VulkanState & state, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory) {
+void Texture::createImage(VulkanState & state, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory) {
 
     VkImageCreateInfo imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -415,7 +422,7 @@ std::vector<float> convertTgaDataToFloat(uint8_t * data, int width, int height) 
 
 }
 
-Texture * Texture::createTexture(const vkutil::VulkanState & state, std::string fname) {
+Texture * Texture::createTexture(vkutil::VulkanState & state, std::string fname) {
 
     TGA_FILE * tgaImage = tgaOpen(fname.c_str());
     int width, height;
@@ -429,7 +436,7 @@ Texture * Texture::createTexture(const vkutil::VulkanState & state, std::string 
 
 }
 
-TextureLoader::TextureLoader(const vkutil::VulkanState & state) : state(state) {
+TextureLoader::TextureLoader(vkutil::VulkanState & state) : state(state) {
 
 
 
@@ -453,7 +460,7 @@ std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::stri
 
 }
 
-PNGLoader::PNGLoader(const vkutil::VulkanState & state) : TextureLoader(state) {
+PNGLoader::PNGLoader(vkutil::VulkanState & state) : TextureLoader(state) {
 
 }
 
@@ -471,7 +478,7 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
     fclose(file);
 
-    std::vector<float> fData(width * height * 4);
+    /*std::vector<float> fData(width * height * 4);
 
     for (unsigned int i = 0; i < height; ++i) {
         for (unsigned int j = 0; j < width; ++j) {
@@ -485,10 +492,26 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
         }
         //fData[i] = (float) data[i] / 255.0;
+    }*/
+
+    std::vector<uint8_t> fData(width * height * 4);
+
+    for (unsigned int i = 0; i < height; ++i) {
+        for (unsigned int j = 0; j < width; ++j) {
+            for (unsigned int c = 0; c < chanelCount; ++c) {
+                fData[(i * width + j) * 4 + c] = data[(i * width + j) * chanelCount + c];
+            }
+
+            if (chanelCount < 4) {
+                fData[(i * width + j) * 4 + 3] = 255;
+            }
+
+        }
+        //fData[i] = (float) data[i] / 255.0;
     }
 
     free(data);
 
-    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<float>(state, fData, width, height, 1));
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<uint8_t>(state, fData, width, height, 1));
 
 }

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <future>
 
 #include "resourceuploader.h"
 #include "util/debug/trace_exception.h"
@@ -24,6 +25,9 @@ struct FutureResource {
     bool isPresent;
     std::shared_ptr<ResourceUploader<Resource>> uploader;
     std::shared_ptr<Resource> location;
+
+    std::future<void> fut;
+    std::promise<void> prom;
 
     LoadingStatus status;
 

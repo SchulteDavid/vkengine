@@ -26,9 +26,9 @@ class Viewport : public MemoryTransferHandler
 
         struct CameraData;
 
-        void drawFrame();
+        void drawFrame(bool updateElements = true);
 
-        const vkutil::VulkanState & getState();
+        vkutil::VulkanState & getState();
         const VkRenderPass & getRenderpass();
         const VkExtent2D & getSwapchainExtent();
         unsigned int getSwapchainSize();
@@ -75,7 +75,7 @@ class Viewport : public MemoryTransferHandler
 
         } swapchain;
 
-        const vkutil::VulkanState & state;
+        vkutil::VulkanState & state;
 
         Camera * camera;
         bool framebufferResized;

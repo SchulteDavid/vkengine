@@ -9,12 +9,12 @@
 class GLTFLoader : public ResourceLoader<Structure> {
 
     public:
-        GLTFLoader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
+        GLTFLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
 
         std::shared_ptr<ResourceUploader<Structure>> loadResource(std::string fname);
 
     private:
-        const vkutil::VulkanState & state;
+        vkutil::VulkanState & state;
         const VkRenderPass & renderPass;
         const VkExtent2D & swapChainExtent;
 

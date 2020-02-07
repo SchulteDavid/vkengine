@@ -62,9 +62,9 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 
 }
 
-Viewport::~Viewport()
-{
-    //dtor
+Viewport::~Viewport() {
+    for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        vkWaitForFences(state.device, 1, &inFlightFences[i], VK_TRUE, std::numeric_limits<uint64_t>::max());
 }
 
 void Viewport::createSyncObjects() {
@@ -123,10 +123,14 @@ void Viewport::prepareRenderElements() {
 
     if (needsUpdate) {
 
-
+        //state.graphicsQueueMutex.lock();
+        //vkDeviceWaitIdle(state.device);
+        for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+            vkWaitForFences(state.device, 1, &inFlightFences[i], VK_TRUE, std::numeric_limits<uint64_t>::max());
         vkFreeCommandBuffers(state.device, state.graphicsCommandPool, commandBuffers.size(), commandBuffers.data());
         setupCommandBuffers();
         recordCommandBuffers();
+        //state.graphicsQueueMutex.unlock();
 
 
     }
@@ -157,7 +161,7 @@ void Viewport::manageMemoryTransfer() {
 
 }
 
-void Viewport::drawFrame() {
+void Viewport::drawFrame(bool updateElements) {
 
     static auto startRenderTime = std::chrono::high_resolution_clock::now();
 
@@ -169,13 +173,14 @@ void Viewport::drawFrame() {
 
     //std::cout << camera->getView() << std::endl;
 
-    prepareRenderElements();
+    if (updateElements)
+        prepareRenderElements();
+
+    vkWaitForFences(state.device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     //std::cout << "Done preparing render elements" << std::endl;
 
     //std::cout << "Waiting for fences" << std::endl;
-
-    vkWaitForFences(state.device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     uint32_t imageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
@@ -216,8 +221,10 @@ void Viewport::drawFrame() {
 
     //std::cout << frameIndex << " : " << inFlightFences[frameIndex] << std::endl;
 
+    state.graphicsQueueMutex.lock();
     if (vkQueueSubmit(state.graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
         throw dbg::trace_exception("Unable to submit command buffer");
+    state.graphicsQueueMutex.unlock();
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -979,7 +986,7 @@ void Viewport::setupCommandBuffers() {
 
 }
 
-const vkutil::VulkanState & Viewport::getState() {
+vkutil::VulkanState & Viewport::getState() {
     return state;
 }
 

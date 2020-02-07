@@ -74,6 +74,7 @@ int main(int argc, char ** argv) {
     Camera * cam = new Camera(70.0, 0.1, 100.0, 1280.0/720.0, glm::vec3(0,0,0));
 
     Viewport * view = new Viewport(window, cam);
+    Viewport * loadView = new Viewport(window, cam);
 
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
@@ -93,18 +94,28 @@ int main(int argc, char ** argv) {
     resourceManager->startLoadingThreads(1);
 
     //LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
-    LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
+    //LoadingResource logoRes = resourceManager->loadResourceBg("Texture", "resources/textures/logo.png");
+    //LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
 
     //LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
     LoadingResource tres = resourceManager->loadResourceBg("Structure", "exports.glb");
+    //LoadingResource ires = resourceManager->loadResourceBg("Texture", "resources/textures/test.png");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
 
     //!sres->status.isUseable ||
+    //logoRes->fut.wait();
     while (!tres->status.isUseable) {
-
+        //std::cout << "graphicsQueue " << view->getState().graphicsQueue << " transferQueue " << view->getState().transferQueue << std::endl;
+        view->drawFrame(false);
+        glfwPollEvents();
+        //loadView->drawFrame(false);
+        //std::cout << "Main thread waits" << std::endl;
     }
+    tres->fut.wait();
+
+    delete loadView;
 
     resourceManager->joinLoadingThreads();
 

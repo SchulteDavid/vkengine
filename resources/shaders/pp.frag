@@ -210,6 +210,9 @@ void main() {
     //ppResult = vec4(inCamera.position, 1);
 
     ppResult = getGColor(1.0);
+
+    //ppResult = pow(ppResult / (ppResult + vec4(1.0, 1.0, 1.0, 0.0)))
+
     //ppResult = vec4(light, 1) * subpassLoad(inputAlbedo);
     //ppResult = subpassLoad(inputAlbedo);
     //ppResult = subpassLoad(inputNormal);

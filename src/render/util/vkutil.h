@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <iostream>
+#include <mutex>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -60,11 +61,14 @@ struct VulkanState {
     VkPhysicalDevice physicalDevice;
     VkQueue presentQueue;
     VkQueue graphicsQueue;
+    VkQueue loadingGraphicsQueue;
     VkQueue transferQueue;
     VkDevice device;
     VmaAllocator vmaAllocator;
     VkCommandPool graphicsCommandPool;
     VkCommandPool transferCommandPool;
+
+    std::mutex graphicsQueueMutex;
 
 };
 
@@ -82,7 +86,7 @@ SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice & device, c
 
 VkPhysicalDevice pickPhysicalDevice(VkInstance instance, std::function<bool(VkPhysicalDevice &)> isDeviceSuitable);
 
-VkDevice createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, VkQueue * tQueue, const std::vector<const char*> deviceExtensions);
+VkDevice createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, VkQueue * tQueue, VkQueue * lgQueue, const std::vector<const char*> deviceExtensions);
 
 VmaAllocator createAllocator(VkDevice & device, VkPhysicalDevice & pDevice);
 
