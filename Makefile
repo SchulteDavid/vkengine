@@ -1,6 +1,6 @@
 #Configure flags etc.
-CFLAGS :=-g -rdynamic
-CXXFLAGS :=-g -rdynamic
+CFLAGS :=
+CXXFLAGS :=
 PROGNAME :=VkEngine
 
 SRC_LIBS := config
@@ -63,9 +63,15 @@ $(call shader_target,${1}) : ${1} |
 shaders.spirv+=$(call shader_target,${1})
 endef
 
-all: bin/Debug/${PROGNAME}
+all: Debug
 
+Debug: CFLAGS +=-g -rdynamic -DDEBUG
+Debug: CXXFLAGS +=-g -rdynamic -DDEBUG
 Debug: bin/Debug/${PROGNAME}
+
+Release: CFLAGS +=-O2
+Release: CXXFLAGS += -O2
+Release: bin/Release/${PROGNAME}
 
 Library: lib/lib${PROGNAME}.a
 
@@ -84,44 +90,55 @@ SHADER_SPIRVS := $(foreach shdr,${VERT_SHADER_FILES},$(call shader_target,${shdr
 bin/Debug/${PROGNAME}: ${O_FILES} | bin/Debug/ ${SRC_LIB_ARCHS} ${SHADER_SPIRVS}
 	@mkdir -p bin/Debug
 	@echo ${LIBRARY_DIRS}
-	$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS}) $(CXXFLAGS)
+	@$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS}) $(CXXFLAGS)
+
+bin/Release/${PROGNAME}: ${O_FILES} | bin/Release/ ${SRC_LIB_ARCHS} ${SHADER_SPIRVS}
+	@mkdir -p bin/Debug
+	@echo ${LIBRARY_DIRS}
+	@$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS}) $(CXXFLAGS)
 
 lib/lib${PROGNAME}.a: ${LIBRARY_O_FILES} | lib/
 	@echo Creating library
-	$(AR) -rcs $@ $^
+	@$(AR) -rcs $@ $^
 
 ${obj.c} : % :
 	@echo Compiling $@
 	@mkdir -p $(dir $@)
-	$(CC) -c -o $@ $< $(CFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
+	@$(CC) -c -o $@ $< $(CFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${obj.cpp} : % :
 	@echo Compiling $@
 	@mkdir -p $(dir $@)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
+	@$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${obj.cc} : % :
 	@echo Compiling $@
 	@mkdir -p $(dir $@)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
+	@$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${scanner.l} : % :
-	$(LEX) -o $@ $^
+	@echo Generating lexer $@
+	@$(LEX) -o $@ $^
 
 ${parser.y} : % :
-	$(YACC) -v -d $^ -o $@
+	@echo Generating parser $@
+	@$(YACC) -v -d $^ -o $@
 
 ${srclibs} : % :
 	cd srclibs/$(word 2,$(subst /, ,$@))/ && make Library
 
 ${shaders.spirv} : % :
-	$(SPIRV_COMP) -V $< -o $@
+	@echo Compiling shader $@
+	@$(SPIRV_COMP) -V $< -o $@
 
 obj/Debug/:
 	@mkdir -p obj/Debug/
 
 bin/Debug/:
 	@mkdir -p bin/Debug/
+
+bin/Release/:
+	@mkdir -p bin/Release/
 
 generated/:
 	@mkdir -p generated/

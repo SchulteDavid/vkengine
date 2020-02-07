@@ -168,11 +168,15 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
         }
 
+        std::cout << "Uploading " << fres->name << std::endl;
+
         Resource * tmpResource = fres->uploader->uploadResource();
         fres->location = resourceManager->registerResource(fres->regName, fres->name, tmpResource);
 
         fres->status.isUploaded = true;
         fres->status.isUseable  = true;
+
+        fres->prom.set_value();
 
         resourceManager->unmarkResourceInPipeline(fres);
 
@@ -234,6 +238,7 @@ LoadingResource ResourceManager::loadResourceBg(std::string regName, std::string
     res->regName = regName;
     res->name = name;
     res->status = status;
+    res->fut = res->prom.get_future();
 
     loadingQueueMutex.lock();
     loadingQueue.push(res);

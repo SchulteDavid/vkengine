@@ -9,9 +9,14 @@ const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
+#if DEBUG
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
+#else
+const std::vector<const char*> validationLayers = {
+};
+#endif // DEBUG
 
 namespace glfw_inputs {
 void onKeyboard(GLFWwindow * window, int key, int scancode, int action, int mods);
@@ -57,7 +62,7 @@ Window::Window(unsigned int width, unsigned int height) {
         return isDeviceSuitable(d, state.surface);
     });
 
-    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &state.graphicsQueue, &state.presentQueue, &state.transferQueue, deviceExtensions);
+    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &state.graphicsQueue, &state.presentQueue, &state.transferQueue, &state.loadingGraphicsQueue, deviceExtensions);
 
     state.vmaAllocator = vkutil::createAllocator(state.device, state.physicalDevice);
 

@@ -297,7 +297,7 @@ VkPhysicalDevice vkutil::pickPhysicalDevice(VkInstance instance, std::function<b
 
 }
 
-VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, VkQueue * tQueue, const std::vector<const char*> deviceExtensions) {
+VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & surface, VkQueue * gQueue, VkQueue * pQueue, VkQueue * tQueue, VkQueue * lgQueue, const std::vector<const char*> deviceExtensions) {
 
     QueueFamilyIndices indices = findQueueFamilies(pDevice, surface);
 
@@ -309,6 +309,8 @@ VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & 
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = family;
         queueCreateInfo.queueCount = 1;
+        if (family == indices.graphicsFamily)
+            queueCreateInfo.queueCount = 2;
         float priority = 1.0;
         queueCreateInfo.pQueuePriorities = &priority;
 
@@ -336,6 +338,7 @@ VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & 
         throw dbg::trace_exception("Unable to create logical device.");
 
     vkGetDeviceQueue(device, indices.graphicsFamily, 0, gQueue);
+    vkGetDeviceQueue(device, indices.graphicsFamily, 1, lgQueue);
     vkGetDeviceQueue(device, indices.presentFamily, 0, pQueue);
     vkGetDeviceQueue(device, indices.transferFamily, 0, tQueue);
 
