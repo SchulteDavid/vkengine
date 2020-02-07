@@ -97,6 +97,7 @@ int main(int argc, char ** argv) {
 
     //LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
     LoadingResource tres = resourceManager->loadResourceBg("Structure", "exports.glb");
+    //LoadingResource ires = resourceManager->loadResourceBg("Texture", "resources/textures/test.png");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);

@@ -382,7 +382,7 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
 }
 
-std::vector<float> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & bufferView, uint32_t * width, uint32_t * height) {
+std::vector<uint8_t> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & bufferView, uint32_t * width, uint32_t * height) {
 
     uint32_t chanelCount;
     uint8_t * data = pngLoadImageDataMemory(buffer + bufferView.byteOffset, width, height, &chanelCount);
@@ -390,7 +390,7 @@ std::vector<float> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & bu
     if (!data)
         throw dbg::trace_exception("Unable to load PNG");
 
-    std::vector<float> fData(*width * *height * 4);
+    /*std::vector<float> fData(*width * *height * 4);
 
     for (unsigned int i = 0; i < *height; ++i) {
         for (unsigned int j = 0; j < *width; ++j) {
@@ -406,7 +406,23 @@ std::vector<float> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & bu
         //fData[i] = (float) data[i] / 255.0;
     }
 
-    free(data);
+    free(data);*/
+
+    std::vector<uint8_t> fData(*width * *height * 4);
+
+    for (unsigned int i = 0; i < *height; ++i) {
+        for (unsigned int j = 0; j < *width; ++j) {
+            for (unsigned int c = 0; c < chanelCount; ++c) {
+                fData[(i * *width + j) * 4 + c] = data[(i * *width + j) * chanelCount + c];
+            }
+
+            if (chanelCount < 4) {
+                fData[(i * *width + j) * 4 + 3] = 255;
+            }
+
+        }
+        //fData[i] = (float) data[i] / 255.0;
+    }
 
     return fData;
 
@@ -502,9 +518,9 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
             throw dbg::trace_exception("Wrong mime-type for image texture!");
         }
         uint32_t colorWidth, colorHeight;
-        std::vector<float> colorData = gltfLoadPackedImage(binaryBuffer, bufferViews[colorImg.bufferView], &colorWidth, &colorHeight);
+        std::vector<uint8_t> colorData = gltfLoadPackedImage(binaryBuffer, bufferViews[colorImg.bufferView], &colorWidth, &colorHeight);
 
-        std::shared_ptr<ResourceUploader<Resource>> colorUploader((ResourceUploader<Resource> *) new TextureUploader<float>(state, colorData, colorWidth, colorHeight, 1));
+        std::shared_ptr<ResourceUploader<Resource>> colorUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, colorData, colorWidth, colorHeight, 1));
         LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImg.name, colorUploader);
         textureRes.push_back(colorImgRes);
 
@@ -514,9 +530,9 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
             throw dbg::trace_exception("Wrong mime-type for image texture!");
         }
         uint32_t normalWidth, normalHeight;
-        std::vector<float> normalData = gltfLoadPackedImage(binaryBuffer, bufferViews[normalImg.bufferView], &normalWidth, &normalHeight);
+        std::vector<uint8_t> normalData = gltfLoadPackedImage(binaryBuffer, bufferViews[normalImg.bufferView], &normalWidth, &normalHeight);
 
-        std::shared_ptr<ResourceUploader<Resource>> normalUploader((ResourceUploader<Resource> *) new TextureUploader<float>(state, normalData, normalWidth, normalHeight, 1));
+        std::shared_ptr<ResourceUploader<Resource>> normalUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, normalData, normalWidth, normalHeight, 1));
         LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImg.name, normalUploader);
         textureRes.push_back(normalImgRes);
 
@@ -527,9 +543,9 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
             throw dbg::trace_exception("Wrong mime-type for image texture!");
         }
         uint32_t metallWidth, metallHeight;
-        std::vector<float> metallData = gltfLoadPackedImage(binaryBuffer, bufferViews[metallImg.bufferView], &metallWidth, &metallHeight);
+        std::vector<uint8_t> metallData = gltfLoadPackedImage(binaryBuffer, bufferViews[metallImg.bufferView], &metallWidth, &metallHeight);
 
-        std::shared_ptr<ResourceUploader<Resource>> metallUploader((ResourceUploader<Resource> *) new TextureUploader<float>(state, metallData, metallWidth, metallHeight, 1));
+        std::shared_ptr<ResourceUploader<Resource>> metallUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, metallData, metallWidth, metallHeight, 1));
         LoadingResource metallImgRes = this->scheduleSubresource("Texture", metallImg.name, metallUploader);
         textureRes.push_back(metallImgRes);
 

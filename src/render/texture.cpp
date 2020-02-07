@@ -67,7 +67,7 @@ Texture::Texture(const vkutil::VulkanState & state, const std::vector<float> & d
 Texture::Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
 
     //format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    format = VK_FORMAT_R8G8B8A8_UINT;
+    format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkDeviceSize imageSize = sizeof(uint8_t) * data.size();
@@ -471,7 +471,7 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
     fclose(file);
 
-    std::vector<float> fData(width * height * 4);
+    /*std::vector<float> fData(width * height * 4);
 
     for (unsigned int i = 0; i < height; ++i) {
         for (unsigned int j = 0; j < width; ++j) {
@@ -485,10 +485,26 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
         }
         //fData[i] = (float) data[i] / 255.0;
+    }*/
+
+    std::vector<uint8_t> fData(width * height * 4);
+
+    for (unsigned int i = 0; i < height; ++i) {
+        for (unsigned int j = 0; j < width; ++j) {
+            for (unsigned int c = 0; c < chanelCount; ++c) {
+                fData[(i * width + j) * 4 + c] = data[(i * width + j) * chanelCount + c];
+            }
+
+            if (chanelCount < 4) {
+                fData[(i * width + j) * 4 + 3] = 255;
+            }
+
+        }
+        //fData[i] = (float) data[i] / 255.0;
     }
 
     free(data);
 
-    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<float>(state, fData, width, height, 1));
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<uint8_t>(state, fData, width, height, 1));
 
 }

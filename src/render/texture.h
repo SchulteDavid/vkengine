@@ -15,6 +15,7 @@ class Texture : public Resource
 {
     public:
         Texture(const vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth);
+        Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth);
         virtual ~Texture();
 
         void transitionLayout(const vkutil::VulkanState & state, VkImageLayout layout);
@@ -44,8 +45,6 @@ class Texture : public Resource
         VkSampler sampler;
 
     private:
-
-        Texture(const vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth);
 
         const VkDevice & device;
         const VmaAllocator & allocator;

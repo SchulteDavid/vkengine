@@ -68,11 +68,14 @@
 			<Add directory="SDK/x86_64/lib" />
 			<Add directory="lib/linux_amd64" />
 		</Linker>
+		<Unit filename="Makefile" />
 		<Unit filename="resources/shaders/bump.shader" />
 		<Unit filename="resources/shaders/cloud.shader" />
 		<Unit filename="resources/shaders/fragment.frag" />
 		<Unit filename="resources/shaders/glsl/bump_fragment.frag" />
 		<Unit filename="resources/shaders/glsl/cloud_fragment.frag" />
+		<Unit filename="resources/shaders/glsl/pbrMetallic.frag" />
+		<Unit filename="resources/shaders/gltf_pbrMetallic.shader" />
 		<Unit filename="resources/shaders/id.vert" />
 		<Unit filename="resources/shaders/normals.frag" />
 		<Unit filename="resources/shaders/pp.frag" />
