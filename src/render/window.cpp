@@ -22,6 +22,7 @@ namespace glfw_inputs {
 void onKeyboard(GLFWwindow * window, int key, int scancode, int action, int mods);
 void onMouseMotion(GLFWwindow * window, double xpos, double ypos);
 void onMouseButton(GLFWwindow * window, int button, int action, int mods);
+void onScroll(GLFWwindow * window, double dx, double dy);
 }
 
 bool isDeviceSuitable(VkPhysicalDevice & device, VkSurfaceKHR & surface) {
@@ -52,6 +53,7 @@ Window::Window(unsigned int width, unsigned int height) {
     glfwSetKeyCallback(state.glfwWindow, glfw_inputs::onKeyboard);
     glfwSetMouseButtonCallback(state.glfwWindow, glfw_inputs::onMouseButton);
     glfwSetCursorPosCallback(state.glfwWindow, glfw_inputs::onMouseMotion);
+    glfwSetScrollCallback(state.glfwWindow, glfw_inputs::onScroll);
 
     //std::vector<const char *> validationLayers(0);
     state.instance = vkutil::createInstance(validationLayers);
@@ -139,6 +141,16 @@ void Window::onMouseButton(int button, int action, int mods) {
 
 }
 
+void Window::onScroll(double dx, double dy) {
+
+    for (std::shared_ptr<InputHandler> h : inputHandlers) {
+
+        h->onScroll(dx, dy);
+
+    }
+
+}
+
 void Window::onMouseMotion(double xpos, double ypos) {
 
     double dx = xpos - oldMouseX;
@@ -180,4 +192,9 @@ void glfw_inputs::onMouseMotion(GLFWwindow * w, double xpos, double ypos) {
     Window * window = (Window *) glfwGetWindowUserPointer(w);
     window->onMouseMotion(xpos, ypos);
 
+}
+
+void glfw_inputs::onScroll(GLFWwindow * w, double dx, double dy) {
+    Window * window = (Window *) glfwGetWindowUserPointer(w);
+    window->onScroll(dx, dy);
 }
