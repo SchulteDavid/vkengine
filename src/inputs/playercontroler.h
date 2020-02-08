@@ -12,6 +12,7 @@ class PlayerControler : public InputHandler {
 
         void onMouseMotion(double xpos, double ypos, double dx, double dy);
         void onKeyboard(int key, int scancode, int action, int mods);
+        void onMouseButton(int button, int action, int mods);
 
     protected:
 
@@ -21,6 +22,10 @@ class PlayerControler : public InputHandler {
 
         Camera * camera;
         bool hasCursor;
+
+        double phi;
+        double theta;
+        double radius;
 
 };
 

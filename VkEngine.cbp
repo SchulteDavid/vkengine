@@ -28,6 +28,14 @@
 				<Linker>
 					<Add option="-rdynamic" />
 				</Linker>
+				<MakeCommands>
+					<Build command="$make -f $makefile $target -j 16" />
+					<CompileFile command="$make -f $makefile $file" />
+					<Clean command="$make -f $makefile clean$target" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="$make -q -f $makefile $target" />
+					<SilentBuild command="$make -f $makefile $target -j 16 &gt; $(CMD_NULL)" />
+				</MakeCommands>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/VkEngine" prefix_auto="1" extension_auto="1" />

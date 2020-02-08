@@ -13,6 +13,20 @@ struct Viewport::CameraData {
 
 };
 
+std::vector<Model::Vertex> viewModelData = {
+
+    {glm::vec3(-1, -1, 0), glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(0,0), 0},
+    {glm::vec3(1, -1, 0),  glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(1,0), 0},
+    {glm::vec3(1, 1, 0),   glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(1,1), 0},
+    {glm::vec3(-1, 1, 0),  glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(0,1), 0},
+
+};
+
+std::vector<uint16_t> viewModelIndices = {
+    0, 1, 2,
+    0, 2, 3,
+};
+
 Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(window->getState()) {
 
     this->camera = camera;
@@ -52,7 +66,8 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 
     createTransferCommandBuffer();
 
-    ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "resources/models/cube.ply"));
+    //ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "resources/models/quad.ply"));
+    ppBufferModel = std::shared_ptr<Model>(new Model(state, viewModelData, viewModelIndices));
 
     ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
 

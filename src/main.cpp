@@ -71,7 +71,7 @@ int main(int argc, char ** argv) {
 
     std::shared_ptr<Window> window(new Window(width, height));
 
-    Camera * cam = new Camera(70.0, 0.1, 100.0, 1280.0/720.0, glm::vec3(0,0,0));
+    Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
     Viewport * view = new Viewport(window, cam);
     Viewport * loadView = new Viewport(window, cam);
@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
     //LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
 
     //LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
-    LoadingResource tres = resourceManager->loadResourceBg("Structure", "exports.glb");
+    LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
     //LoadingResource ires = resourceManager->loadResourceBg("Texture", "resources/textures/test.png");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
@@ -130,7 +130,7 @@ int main(int argc, char ** argv) {
 
 
     RenderElement::Transform trans;
-    trans.position = Math::Vector<4, float>(0, 10, 0, 0);
+    trans.position = Math::Vector<4, float>(0, 0, 0, 0);
     trans.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
     trans.scale = 1.0;
 
@@ -139,13 +139,13 @@ int main(int argc, char ** argv) {
 
     //std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "resources/materials/test.mat");
     //std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "resources/structure/test.strc");
-    std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "exports.glb");
+    std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "sign.glb");
 
     std::shared_ptr<RenderElement> e(new RenderElement(view, strc, trans));
 
     view->addRenderElement(e);
 
-    cam->move(3, 0, 3);
+    //cam->move(3, 0, 3);
 
     std::vector<RenderElement::Instance> instances;
     std::vector<RenderElement::Transform> transforms;
@@ -157,7 +157,7 @@ int main(int argc, char ** argv) {
 
     //view->addLight(glm::vec4(12.5, 12.5, 0.5, 0.0), glm::vec4(10, 10, 10, 0.0));
 
-    for (unsigned int k = 0; k < 2; ++k) {
+    /*for (unsigned int k = 0; k < 2; ++k) {
 
     for (unsigned int i = 0; i < 32; ++i) {
         for (unsigned int j = 0; j < 32; ++j) {
@@ -173,7 +173,7 @@ int main(int argc, char ** argv) {
 
         }
     }
-    }
+    }*/
 
     double d = 0;
 

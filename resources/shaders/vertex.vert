@@ -32,6 +32,8 @@ void main() {
 
     uvPos = inUv;
 
+    position.w = gl_Position.z;
+
     vec3 t = normalize((transform * vec4(inTangent, 0)).xyz);
 
     vec3 bitangent = -cross(t, normal.yxz);
