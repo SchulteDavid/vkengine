@@ -1,0 +1,33 @@
+
+comp physics = {
+
+     float64 gravity = [0, 0, -9.81]
+     
+}
+
+comp elements = [
+
+     {
+	string structure = "exports.glb"
+	comp transform = {
+
+	     float64 position = [0, 0, 1]
+	     float64 rotation = [1, 0, 0, 0]
+	     float64 scale = [1, 1, 1]
+	     
+	}
+
+	comp physics = {
+
+	     float64 mass = 0.0
+
+	     comp collision = {
+	     	  string type = "box"
+
+		  float64 size = [1,1,1]
+	     }
+	     
+	}
+     }
+
+]

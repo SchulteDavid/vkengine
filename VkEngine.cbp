@@ -83,7 +83,6 @@
 			<Add directory="lib/linux_amd64" />
 		</Linker>
 		<Unit filename="Makefile" />
-		<Unit filename="physicscontext.h" />
 		<Unit filename="resources/shaders/bump.shader" />
 		<Unit filename="resources/shaders/cloud.shader" />
 		<Unit filename="resources/shaders/fragment.frag" />
@@ -143,6 +142,8 @@
 		<Unit filename="src/resources/resourceuploader.h" />
 		<Unit filename="src/structure/gltf.cpp" />
 		<Unit filename="src/structure/gltf.h" />
+		<Unit filename="src/structure/level.cpp" />
+		<Unit filename="src/structure/level.h" />
 		<Unit filename="src/structure/structure.cpp" />
 		<Unit filename="src/structure/structure.h" />
 		<Unit filename="src/util/debug/stacktrace.h" />
