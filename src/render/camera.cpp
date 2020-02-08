@@ -51,6 +51,21 @@ void Camera::move(glm::vec3 d) {
     updateView();
 }
 
+void Camera::setPosition(float x, float y, float z) {
+
+    position.x = x;
+    position.y = y;
+    position.z = z;
+
+    updateView();
+
+}
+
+void Camera::setRotation(Math::Quaternion<float> r) {
+    rotation = r;
+    updateView();
+}
+
 void Camera::rotate(Math::Quaternion<float> d) {
 
     rotation = d * rotation;
@@ -105,7 +120,7 @@ void Camera::updateView() {
 
     facing = glm::vec3(tmpFacing[0], tmpFacing[1], tmpFacing[2]);
 
-    this->view = glm::lookAt(position, position + facing, glm::vec3(up[0], up[1], up[2]));
+    this->view = glm::lookAt(position, glm::vec3(0,0,0), glm::vec3(up[0], up[1], up[2]));
 
 }
 

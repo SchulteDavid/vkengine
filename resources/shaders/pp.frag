@@ -22,6 +22,8 @@ layout (binding = 4) uniform CameraData {
 
 layout (location = 0) out vec4 ppResult;
 
+const vec3 skyColor = vec3(0.688927, 0.839366, 1.0);
+
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
@@ -148,7 +150,7 @@ vec4 getGColor(float shadow) {
         vec3 L = normalize(reflect(-V, N));
 
         vec3 H = normalize(V + L);
-        vec3 radiance = vec3(0.0001);// * texture(skybox, L).rgb;
+        vec3 radiance = skyColor;// * texture(skybox, L).rgb;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G   = GeometrySmith(N, V, L, roughness);
@@ -186,7 +188,7 @@ void main() {
     vec3 p = subpassLoad(inputPosition).xyz;
     vec3 c = inCamera.position - p;
 
-    for (int i = 0; i < 32; ++i) {
+    /*for (int i = 0; i < 32; ++i) {
 
         vec3 r = reflect(-c , n);
         vec3 l = inLights.position[i].xyz - p;
@@ -201,7 +203,7 @@ void main() {
 
         }
 
-    }
+    }*/
 
     //light = vec3(0.1);
 
@@ -210,7 +212,10 @@ void main() {
     //ppResult = vec4(inCamera.position, 1);
 
     ppResult = getGColor(1.0);
+    if (subpassLoad(inputPosition).a <= 0.0)
+        ppResult = vec4(skyColor, 1.0);
 
+    //ppResult = vec4(subpassLoad(inputPosition).a);
     //ppResult = pow(ppResult / (ppResult + vec4(1.0, 1.0, 1.0, 0.0)))
 
     //ppResult = vec4(light, 1) * subpassLoad(inputAlbedo);

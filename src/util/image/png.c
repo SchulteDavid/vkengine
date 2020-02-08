@@ -102,15 +102,18 @@ uint8_t applyFilters(uint8_t filter, uint8_t * imageData, uint8_t * infData, uns
             return imageData[getImageIndex(i - 1, j, c, chanelCount, width)] + val;
 
         case 3:
-            return val + (imageData[getImageIndex(i - 1, j, c, chanelCount, width)] + imageData[getImageIndex(i, j - 1, c, chanelCount, width)]) / 2;
+            if (j >= 1)
+                return val + (imageData[getImageIndex(i - 1, j, c, chanelCount, width)] + imageData[getImageIndex(i, j - 1, c, chanelCount, width)]) / 2;
+            else
+                return val + (imageData[getImageIndex(i - 1, j, c, chanelCount, width)]) / 2;
 
         case 4:
             if (j >= 1)
-                return (val + paethPredict(imageData[getImageIndex(i, j-1, c, chanelCount, width)],
-                                           imageData[getImageIndex(i-1, j, c, chanelCount, width)],
-                                           imageData[getImageIndex(i-1, j-1, c, chanelCount, width)]));
+                return ((uint32_t) val + paethPredict(imageData[getImageIndex(i, j-1, c, chanelCount, width)],
+                                                 imageData[getImageIndex(i-1, j, c, chanelCount, width)],
+                                                 imageData[getImageIndex(i-1, j-1, c, chanelCount, width)])) % 256;
             else
-                return (val + paethPredict(0, imageData[getImageIndex(i-1, j, c, chanelCount, width)], 0));
+                return ((uint32_t) val + paethPredict(0, imageData[getImageIndex(i-1, j, c, chanelCount, width)], 0)) % 256;
 
     }
 

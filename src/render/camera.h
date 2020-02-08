@@ -18,8 +18,12 @@ class Camera
         void move(float dx, float dy, float dz);
         void move(glm::vec3 d);
 
+        void setPosition(float x, float y, float z);
+
         void rotate(Math::Quaternion<float> dr);
         void rotate(float dPitch, float dYaw);
+
+        void setRotation(Math::Quaternion<float> r);
 
         glm::vec3 position;
 
