@@ -11,6 +11,7 @@ class InputHandler
         virtual void onKeyboard(int key, int scancode, int action, int mods);
         virtual void onMouseButton(int button, int action, int mods);
         virtual void onMouseMotion(double xpos, double ypos, double dx, double dy);
+        virtual void onScroll(double dx, double dy);
 
     protected:
 

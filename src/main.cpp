@@ -17,13 +17,16 @@
 #include "util/debug/trace_exception.h"
 
 #include "structure/structure.h"
+#include "world/entity.h"
+#include "physics/physicscontext.h"
+
 
 #include <mathutils/matrix.h>
 
 static bool run = true;
 static bool wait;
 
-void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Instance> & instances, std::vector<RenderElement::Transform> & transforms, Viewport * view) {
+void rotateFunc(PhysicsContext * context, Entity * entity, Viewport * view) {
 
     float rotAxis[3] = {0, 0, 1};
 
@@ -31,18 +34,12 @@ void rotateFunc(std::shared_ptr<RenderElement> e, std::vector<RenderElement::Ins
 
     while (run) {
 
-        double duration = std::chrono::duration<double, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
 
-        for (unsigned int i = 0; i < instances.size(); ++i) {
 
-            Math::Quaternion<float> dr = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3,float>(rotAxis), M_PI * duration);
-            transforms[i].qRot = transforms[i].qRot * dr;
-
-            e->updateInstance(instances[i], transforms[i]);
-
-        }
-
+        context->simulateStep(std::chrono::duration<double, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count());
         startRenderTime = std::chrono::high_resolution_clock::now();
+
+        entity->synchronize();
 
         view->manageMemoryTransfer();
 
@@ -99,6 +96,7 @@ int main(int argc, char ** argv) {
 
     //LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
     LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
+    LoadingResource cres = resourceManager->loadResourceBg("Structure", "exports.glb");
     //LoadingResource ires = resourceManager->loadResourceBg("Texture", "resources/textures/test.png");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
@@ -114,6 +112,7 @@ int main(int argc, char ** argv) {
         //std::cout << "Main thread waits" << std::endl;
     }
     tres->fut.wait();
+    cres->fut.wait();
 
     delete loadView;
 
@@ -142,8 +141,11 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "sign.glb");
 
     std::shared_ptr<RenderElement> e(new RenderElement(view, strc, trans));
+    trans.scale = 0.0;
+    std::shared_ptr<RenderElement> cubeElem(new RenderElement(view, resourceManager->get<Structure>("Structure", "exports.glb"), trans));
 
     view->addRenderElement(e);
+    view->addRenderElement(cubeElem);
 
     //cam->move(3, 0, 3);
 
@@ -157,27 +159,21 @@ int main(int argc, char ** argv) {
 
     //view->addLight(glm::vec4(12.5, 12.5, 0.5, 0.0), glm::vec4(10, 10, 10, 0.0));
 
-    /*for (unsigned int k = 0; k < 2; ++k) {
+    double pos[3] = {0, 0, 10};
+    std::shared_ptr<PhysicsObject> pobj(new PhysicsObject(70.0, Math::Vector<3>(pos), Math::Quaternion<double>(1,0,0,0)));
+    RenderElement::Transform trans2;
+    trans2.position = Math::Vector<4, float>(0, 0, 10.0, 0);
+    trans2.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
+    trans2.scale = 1.0;
+    Entity * ent = new Entity(cubeElem, cubeElem->addInstance(trans2), pobj);
 
-    for (unsigned int i = 0; i < 32; ++i) {
-        for (unsigned int j = 0; j < 32; ++j) {
+    PhysicsContext * context = new PhysicsContext();
 
-            RenderElement::Transform trans2;
-            trans2.position = Math::Vector<4, float>(2 * i, 2 * j, 2 * k, 0);
-            trans2.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
-            trans2.scale = 0.5;
-
-            RenderElement::Instance inst = e->addInstance(trans2);
-            instances.push_back(inst);
-            transforms.push_back(trans2);
-
-        }
-    }
-    }*/
+    context->addObject(pobj);
 
     double d = 0;
 
-    std::thread rotateThread(rotateFunc, e, std::ref(instances), std::ref(transforms), view);
+    std::thread rotateThread(rotateFunc, context, ent, view);
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 

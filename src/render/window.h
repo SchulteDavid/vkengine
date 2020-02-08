@@ -33,6 +33,7 @@ class Window
         void onKeyboard(int key, int scancode, int action, int mods);
         void onMouseButton(int button, int action, int mods);
         void onMouseMotion(double xpos, double ypos);
+        void onScroll(double dx, double dy);
 
     protected:
 

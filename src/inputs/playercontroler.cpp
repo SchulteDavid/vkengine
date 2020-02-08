@@ -4,7 +4,7 @@ PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state) 
     this->camera = c;
     this->hasCursor = true;
 
-    this->radius = camera->position.length();
+    this->radius = 10.0;
     this->theta = asin(camera->position.z / radius);
     this->phi = atan2(camera->position.x, camera->position.y);
 
@@ -90,5 +90,42 @@ void PlayerControler::onMouseButton(int button, int action, int mods) {
             break;
 
     }
+
+}
+
+void PlayerControler::onScroll(double dx, double dy) {
+
+    std::cout << "Scroll " << dx << " " << dy << std::endl;
+
+    this->radius -= dy * 0.05 * radius;
+
+    if (this->radius < 0.5)
+        radius = 0.5;
+
+    else if (radius > 100)
+        radius = 100;
+
+    double ctheta = cos(theta);
+
+        std::array<float,3> yAxisArray = {0, 1, 0};
+        std::array<float,3> posArray = {radius * cos(phi) * ctheta,
+                                        radius * sin(phi) * ctheta,
+                                        radius * sin(theta)};
+
+        Math::Vector<3, float> pos(posArray.data());
+        Math::Vector<3, float> yAxis(yAxisArray.data());
+        Math::Vector<3, float> axis = Math::cross(yAxis, -1.0f * pos);
+
+        double s = axis.length() / pos.length();
+        double c = (yAxis * (-1.0f * pos)) / pos.length();
+
+        double alpha = atan2(c, s);
+
+        axis = axis / axis.length();
+
+        Math::Quaternion<float> r = Math::Quaternion<float>::fromAxisAngle(axis, alpha);
+
+        this->camera->setPosition(pos[0], pos[1], pos[2]);
+        this->camera->setRotation(r);
 
 }

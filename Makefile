@@ -4,7 +4,7 @@ CXXFLAGS :=
 PROGNAME :=VkEngine
 
 SRC_LIBS := config
-LIBS := glfw vulkan ply tga pthread z BulletCollision BulletDynamics LinearMath
+LIBS := glfw vulkan ply tga pthread z BulletDynamics BulletCollision LinearMath
 
 # Finding source files
 C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c")# | sed ':a;N;$!ba;s/\n/ /g')
@@ -14,7 +14,7 @@ Y_FILES := $(shell find src/ -name "*.y")
 FRAG_SHADER_FILES:=$(shell find resources/ -name "*.frag")
 VERT_SHADER_FILES:=$(shell find resources/ -name "*.vert")
 
-INCLUDE_DIRS := src/ include/ $(addsuffix /,$(shell find srclibs/ -name "include"))
+INCLUDE_DIRS := src/ include/ include/bullet/ $(addsuffix /,$(shell find srclibs/ -name "include"))
 LIBRARY_DIRS := lib/linux_amd64/ $(addsuffix /,$(shell find srclibs/ -name "lib"))
 
 # Toolchain-setup

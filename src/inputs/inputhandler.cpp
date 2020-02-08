@@ -21,6 +21,8 @@ void InputHandler::onMouseButton(int button, int action, int mods) {
 
 void InputHandler::onMouseMotion(double xpos, double ypos, double dx, double dy) {
 
+}
 
+void InputHandler::onScroll(double dx, double dy) {
 
 }

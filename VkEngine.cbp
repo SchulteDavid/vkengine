@@ -24,6 +24,9 @@
 					<Add directory="src/structure" />
 					<Add directory="src/util" />
 					<Add directory="src/util/structure" />
+					<Add directory="src/physics" />
+					<Add directory="./" />
+					<Add directory="src/world" />
 				</Compiler>
 				<Linker>
 					<Add option="-rdynamic" />
@@ -52,6 +55,9 @@
 					<Add directory="src/structure" />
 					<Add directory="src/util" />
 					<Add directory="src/util/structure" />
+					<Add directory="src/physics" />
+					<Add directory="./" />
+					<Add directory="src/world" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -77,6 +83,7 @@
 			<Add directory="lib/linux_amd64" />
 		</Linker>
 		<Unit filename="Makefile" />
+		<Unit filename="physicscontext.h" />
 		<Unit filename="resources/shaders/bump.shader" />
 		<Unit filename="resources/shaders/cloud.shader" />
 		<Unit filename="resources/shaders/fragment.frag" />
@@ -98,6 +105,10 @@
 		<Unit filename="src/inputs/playercontroler.cpp" />
 		<Unit filename="src/inputs/playercontroler.h" />
 		<Unit filename="src/main.cpp" />
+		<Unit filename="src/physics/physicscontext.cpp" />
+		<Unit filename="src/physics/physicscontext.h" />
+		<Unit filename="src/physics/physicsobject.cpp" />
+		<Unit filename="src/physics/physicsobject.h" />
 		<Unit filename="src/render/camera.cpp" />
 		<Unit filename="src/render/camera.h" />
 		<Unit filename="src/render/dynamicbuffer.h" />
@@ -147,6 +158,8 @@
 		<Unit filename="src/util/meshhelper.h" />
 		<Unit filename="src/util/simplexnoise.cpp" />
 		<Unit filename="src/util/simplexnoise.h" />
+		<Unit filename="src/world/entity.cpp" />
+		<Unit filename="src/world/entity.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
