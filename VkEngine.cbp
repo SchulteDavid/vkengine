@@ -161,6 +161,8 @@
 		<Unit filename="src/util/simplexnoise.h" />
 		<Unit filename="src/world/entity.cpp" />
 		<Unit filename="src/world/entity.h" />
+		<Unit filename="src/world/world.cpp" />
+		<Unit filename="src/world/world.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

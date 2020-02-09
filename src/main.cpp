@@ -88,6 +88,8 @@ int main(int argc, char ** argv) {
 
     }
 
+    Entity::registerDefaultEntityTypes();
+
     std::shared_ptr<Window> window(new Window(width, height));
 
     Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));

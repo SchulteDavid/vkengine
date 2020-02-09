@@ -9,6 +9,7 @@ comp elements = [
 
      {
 	string structure = "sign.glb"
+	string entityType = "Entity"
 	comp transform = {
 
 	     float64 position = [0, 0, 0]
@@ -31,6 +32,7 @@ comp elements = [
      },
      {
 	string structure = "exports.glb"
+	string entityType = "Entity"
 	comp transform = {
 
 	     float64 position = [0, 0, 10]

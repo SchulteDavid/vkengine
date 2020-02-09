@@ -18,6 +18,7 @@ struct Level::Placement  {
     double mass;
     btCollisionShape * collisionShape;
 
+    std::string entityType;
 
 };
 
@@ -101,7 +102,8 @@ void Level::applyToWorld(std::shared_ptr<World> world, Viewport * view) {
 
             std::shared_ptr<PhysicsObject> physObj(new PhysicsObject(p.mass, p.pos, p.rot, p.collisionShape));
 
-            std::shared_ptr<Entity> entity(new Entity(rElem, instance, physObj));
+            //std::shared_ptr<Entity> entity(new Entity(rElem, instance, physObj));
+            std::shared_ptr<Entity> entity(Entity::buildEntityFromType(p.entityType, rElem, instance, physObj));
 
             world->addEntity(entity);
 
@@ -191,6 +193,7 @@ std::shared_ptr<ResourceUploader<Level>> LevelLoader::loadResource(std::string f
         std::shared_ptr<NodeCompound> elem = elements->getElement(i);
 
         std::string strcName(elem->getNode<char>("structure")->getRawData());
+        std::string entityType(elem->getNode<char>("entityType")->getRawData());
 
         LoadingResource strcRes = this->loadDependency("Structure", strcName);
         structureResources[i] = strcRes;
@@ -201,6 +204,8 @@ std::shared_ptr<ResourceUploader<Level>> LevelLoader::loadResource(std::string f
         Level::Placement p;
         loadPlacementTransform(trans, p);
         loadPlacementPhysics(physics, p);
+
+        p.entityType = entityType;
 
         LoadingPlacement ldPlace;
         ldPlace.p = p;
