@@ -6,6 +6,8 @@ Entity::Entity(std::shared_ptr<RenderElement> renderElement, RenderElement::Inst
     this->physObject = physObject;
     this->renderElement = renderElement;
 
+    this->isStatic = physObject->getMass() == 0;
+
 }
 
 Entity::~Entity()
@@ -14,6 +16,8 @@ Entity::~Entity()
 }
 
 void Entity::synchronize() {
+
+    if (isStatic) return;
 
     physObject->synchronize();
 
@@ -25,4 +29,13 @@ void Entity::synchronize() {
 
     this->renderElement->updateInstance(renderInstance, trans);
 
+}
+
+
+void Entity::onCollision(Entity * entity) {
+
+}
+
+std::shared_ptr<PhysicsObject> Entity::getPhysicsObject() {
+    return this->physObject;
 }

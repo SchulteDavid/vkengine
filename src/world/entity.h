@@ -10,11 +10,16 @@ class Entity
         Entity(std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject);
         virtual ~Entity();
 
-        void synchronize();
+        virtual void onCollision(Entity * entity);
+        virtual void synchronize();
+
+        std::shared_ptr<PhysicsObject> getPhysicsObject();
 
     protected:
 
     private:
+
+        bool isStatic;
 
         std::shared_ptr<RenderElement> renderElement;
         RenderElement::Instance renderInstance;
