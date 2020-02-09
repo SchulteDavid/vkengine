@@ -390,24 +390,6 @@ std::vector<uint8_t> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & 
     if (!data)
         throw dbg::trace_exception("Unable to load PNG");
 
-    /*std::vector<float> fData(*width * *height * 4);
-
-    for (unsigned int i = 0; i < *height; ++i) {
-        for (unsigned int j = 0; j < *width; ++j) {
-            for (unsigned int c = 0; c < chanelCount; ++c) {
-                fData[(i * *width + j) * 4 + c] = (float) data[(i * *width + j) * chanelCount + c] / 255.0;
-            }
-
-            if (chanelCount < 4) {
-                fData[(i * *width + j) * 4 + 3] = 1.0;
-            }
-
-        }
-        //fData[i] = (float) data[i] / 255.0;
-    }
-
-    free(data);*/
-
     std::vector<uint8_t> fData(*width * *height * 4);
 
     for (unsigned int i = 0; i < *height; ++i) {
@@ -520,9 +502,13 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         uint32_t colorWidth, colorHeight;
         std::vector<uint8_t> colorData = gltfLoadPackedImage(binaryBuffer, bufferViews[colorImg.bufferView], &colorWidth, &colorHeight);
 
+        std::string colorImgName = fname;
+        colorImgName.append(":").append(colorImg.name);
+
         std::shared_ptr<ResourceUploader<Resource>> colorUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, colorData, colorWidth, colorHeight, 1));
-        LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImg.name, colorUploader);
+        LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImgName, colorUploader);
         textureRes.push_back(colorImgRes);
+
 
         gltf_texture_t normalTex = textures[mat.normalTexture.index];
         gltf_image_t normalImg = images[normalTex.source];
@@ -532,8 +518,11 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         uint32_t normalWidth, normalHeight;
         std::vector<uint8_t> normalData = gltfLoadPackedImage(binaryBuffer, bufferViews[normalImg.bufferView], &normalWidth, &normalHeight);
 
+        std::string normalImgName = fname;
+        normalImgName.append(":").append(normalImg.name);
+
         std::shared_ptr<ResourceUploader<Resource>> normalUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, normalData, normalWidth, normalHeight, 1));
-        LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImg.name, normalUploader);
+        LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImgName, normalUploader);
         textureRes.push_back(normalImgRes);
 
 
@@ -545,8 +534,11 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         uint32_t metallWidth, metallHeight;
         std::vector<uint8_t> metallData = gltfLoadPackedImage(binaryBuffer, bufferViews[metallImg.bufferView], &metallWidth, &metallHeight);
 
+        std::string metallImgName = fname;
+        metallImgName.append(":").append(metallImg.name);
+
         std::shared_ptr<ResourceUploader<Resource>> metallUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, metallData, metallWidth, metallHeight, 1));
-        LoadingResource metallImgRes = this->scheduleSubresource("Texture", metallImg.name, metallUploader);
+        LoadingResource metallImgRes = this->scheduleSubresource("Texture", metallImgName, metallUploader);
         textureRes.push_back(metallImgRes);
 
     }
@@ -555,7 +547,9 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
     std::shared_ptr<ResourceUploader<Resource>> materialRes((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, textureRes));
     std::shared_ptr<ResourceUploader<Resource>> meshRes((ResourceUploader<Resource> *) new ModelUploader(state, new Model(state, resultMesh)));
 
-    LoadingResource materialLRes = this->scheduleSubresource("Material", materials[0].name, materialRes);
+    std::string materialName = fname;
+    materialName.append(":").append(materials[0].name);
+    LoadingResource materialLRes = this->scheduleSubresource("Material", materialName, materialRes);
     LoadingResource modelRes = this->scheduleSubresource("Model", fname, meshRes);
 
 

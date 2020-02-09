@@ -19,6 +19,10 @@
 #include "structure/structure.h"
 #include "world/entity.h"
 #include "physics/physicscontext.h"
+#include "world/world.h"
+#include <execinfo.h>
+#include "structure/gltf.h"
+#include "structure/level.h"
 
 
 #include <mathutils/matrix.h>
@@ -26,7 +30,7 @@
 static bool run = true;
 static bool wait;
 
-void rotateFunc(PhysicsContext * context, Entity * entity, Viewport * view) {
+void rotateFunc(std::shared_ptr<World> world, Viewport * view) {
 
     float rotAxis[3] = {0, 0, 1};
 
@@ -36,10 +40,10 @@ void rotateFunc(PhysicsContext * context, Entity * entity, Viewport * view) {
 
 
 
-        context->simulateStep(std::chrono::duration<double, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count());
+        world->simulateStep(std::chrono::duration<double, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count());
         startRenderTime = std::chrono::high_resolution_clock::now();
 
-        entity->synchronize();
+        world->synchronize();
 
         view->manageMemoryTransfer();
 
@@ -50,8 +54,26 @@ void rotateFunc(PhysicsContext * context, Entity * entity, Viewport * view) {
 
 }
 
-#include <execinfo.h>
-#include "structure/gltf.h"
+void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
+
+    resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
+    resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
+    resourceManager->addRegistry("Structure", (ResourceRegistry<Resource>*) new ResourceRegistry<Structure>());
+    resourceManager->addRegistry("Level", (ResourceRegistry<Resource> *) new ResourceRegistry<Level>());
+
+    resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
+    resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
+    resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
+    resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
+    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new GLTFLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+
+    resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
+
+    resourceManager->addLoader("Level", (ResourceLoader<Resource> *) new LevelLoader());
+
+}
+
 #define BM_SIZE ( 1 << 24 )
 
 int main(int argc, char ** argv) {
@@ -66,38 +88,23 @@ int main(int argc, char ** argv) {
 
     }
 
+    Entity::registerDefaultEntityTypes();
+
     std::shared_ptr<Window> window(new Window(width, height));
 
     Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
     Viewport * view = new Viewport(window, cam);
-    Viewport * loadView = new Viewport(window, cam);
 
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
-    resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
-    resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
-    resourceManager->addRegistry("Structure", (ResourceRegistry<Resource>*) new ResourceRegistry<Structure>());
-
-    resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
-    resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
-    resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
-    resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
-    resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new GLTFLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-
-    resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
+    createResourceLoaders(resourceManager, view);
 
     resourceManager->startLoadingThreads(1);
 
-    //LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
-    //LoadingResource logoRes = resourceManager->loadResourceBg("Texture", "resources/textures/logo.png");
-    //LoadingResource fres = resourceManager->loadResourceBg("Model", "resources/models/cube.ply");
-
-    //LoadingResource sres = resourceManager->loadResourceBg("Structure", "resources/structure/test.strc");
     LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
     LoadingResource cres = resourceManager->loadResourceBg("Structure", "exports.glb");
-    //LoadingResource ires = resourceManager->loadResourceBg("Texture", "resources/textures/test.png");
+    LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
@@ -105,16 +112,12 @@ int main(int argc, char ** argv) {
     //!sres->status.isUseable ||
     //logoRes->fut.wait();
     while (!tres->status.isUseable) {
-        //std::cout << "graphicsQueue " << view->getState().graphicsQueue << " transferQueue " << view->getState().transferQueue << std::endl;
         view->drawFrame(false);
         glfwPollEvents();
-        //loadView->drawFrame(false);
-        //std::cout << "Main thread waits" << std::endl;
     }
     tres->fut.wait();
     cres->fut.wait();
-
-    delete loadView;
+    llvl->fut.wait();
 
     resourceManager->joinLoadingThreads();
 
@@ -122,58 +125,18 @@ int main(int argc, char ** argv) {
     resourceManager->printSummary();
     std::cout << "Done" << std::endl;
 
-    /*std::shared_ptr<Shader> shader = resourceManager->get<Shader>("Shader", "resources/shaders/std.shader");
-    std::shared_ptr<Model> model = resourceManager->get<Model>("Model", "resources/models/cube.ply");*/
-
-    //std::vector<std::shared_ptr<Texture>> textures = {resourceManager->get<Texture>("Texture", "test.tga"), resourceManager->get<Texture>("Texture", "normals.tga")};
-
-
-    RenderElement::Transform trans;
-    trans.position = Math::Vector<4, float>(0, 0, 0, 0);
-    trans.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
-    trans.scale = 1.0;
-
-    //std::shared_ptr<Material> material(new Material(shader, textures));
-    //material->setupPipeline(window->getState(), view->getRenderpass(), view->getSwapchainExtent());
-
-    //std::shared_ptr<Material> material = resourceManager->get<Material>("Material", "resources/materials/test.mat");
-    //std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "resources/structure/test.strc");
-    std::shared_ptr<Structure> strc = resourceManager->get<Structure>("Structure", "sign.glb");
-
-    std::shared_ptr<RenderElement> e(new RenderElement(view, strc, trans));
-    trans.scale = 0.0;
-    std::shared_ptr<RenderElement> cubeElem(new RenderElement(view, resourceManager->get<Structure>("Structure", "exports.glb"), trans));
-
-    view->addRenderElement(e);
-    view->addRenderElement(cubeElem);
-
-    //cam->move(3, 0, 3);
-
-    std::vector<RenderElement::Instance> instances;
-    std::vector<RenderElement::Transform> transforms;
-
     view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
     view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
     view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
-    //view->addLight(glm::vec4(1.0, -1.0, 1.0, 2.0), glm::vec4(1.5, 1.5, 1.5, 1.2));
 
-    //view->addLight(glm::vec4(12.5, 12.5, 0.5, 0.0), glm::vec4(10, 10, 10, 0.0));
+    std::shared_ptr<World> world(new World());
+    //world->addEntity(ent);
 
-    double pos[3] = {0, 0, 10};
-    std::shared_ptr<PhysicsObject> pobj(new PhysicsObject(70.0, Math::Vector<3>(pos), Math::Quaternion<double>(1,0,0,0)));
-    RenderElement::Transform trans2;
-    trans2.position = Math::Vector<4, float>(0, 0, 10.0, 0);
-    trans2.qRot = Math::Quaternion<float>(1.0, 0.0, 0.0, 0.0);
-    trans2.scale = 1.0;
-    Entity * ent = new Entity(cubeElem, cubeElem->addInstance(trans2), pobj);
+    std::shared_ptr<Level> lvl = resourceManager->get<Level>("Level", "resources/level/test.lvl");
+    //std::cout << "Level " << lvl << std::endl;
+    lvl->applyToWorld(world, view);
 
-    PhysicsContext * context = new PhysicsContext();
-
-    context->addObject(pobj);
-
-    double d = 0;
-
-    std::thread rotateThread(rotateFunc, context, ent, view);
+    std::thread rotateThread(rotateFunc, world, view);
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 
@@ -181,8 +144,6 @@ int main(int argc, char ** argv) {
 
         view->drawFrame();
         wait = false;
-
-        d += 0.0001;
 
     }
 

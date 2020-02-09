@@ -13,6 +13,17 @@ PhysicsObject::PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quat
 
 }
 
+PhysicsObject::PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot, btCollisionShape * collisionShape) {
+
+    this->mass = mass;
+    this->collisionShape = collisionShape;
+    this->angularFactor = 1.0;
+    this->position = pos;
+    this->rotation = rot;
+    this->rigidBody = nullptr;
+
+}
+
 PhysicsObject::~PhysicsObject()
 {
     //dtor

@@ -96,8 +96,9 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
             if (resourceManager->isResourceInPipeline(fres)){
 
                 /// Reschedule loading for later checks.
-                std::cout << "Reschedule of " << fres->name << std::endl;
+                //std::cout << "Reschedule of " << fres->name << std::endl;
                 resourceManager->rescheduleLoad(fres);
+                continue;
 
             }
 

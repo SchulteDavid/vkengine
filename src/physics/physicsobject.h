@@ -14,6 +14,7 @@ class PhysicsObject {
         Math::Vector<3, double>  position;
 
         PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot);
+        PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot, btCollisionShape * collisionShape);
         virtual ~PhysicsObject();
 
         double getMass();
