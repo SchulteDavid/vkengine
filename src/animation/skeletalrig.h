@@ -23,8 +23,7 @@ class Bone {
 
 };
 
-class SkeletalRig
-{
+class SkeletalRig {
     public:
         SkeletalRig();
         virtual ~SkeletalRig();
