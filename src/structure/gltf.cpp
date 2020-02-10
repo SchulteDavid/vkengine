@@ -74,12 +74,18 @@ struct gltf_node_t {
     Math::Quaternion<float> rotation;
     Math::Vector<3, float> scale;
 
+    std::vector<int> children;
+
 };
 
 void from_json(const json & j, gltf_node_t & node) {
 
     j.at("name").get_to(node.name);
-    j.at("mesh").get_to(node.mesh);
+    try {
+        j.at("mesh").get_to(node.mesh);
+    } catch (std::exception e) {
+        node.mesh = -1;
+    }
 
     try {
         std::vector<float> tData = j.at("translation").get<std::vector<float>>();
@@ -100,6 +106,12 @@ void from_json(const json & j, gltf_node_t & node) {
     } catch (std::exception e) {
         float tmp[3] = {1,1,1};
         node.scale = Math::Vector<3,float>(tmp);
+    }
+
+    try {
+        j.at("children").get_to(node.children);
+    } catch (std::exception e) {
+
     }
 
 }
@@ -414,7 +426,22 @@ GLTFLoader::GLTFLoader(vkutil::VulkanState & state, const VkRenderPass & renderP
 
 }
 
-std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::string fname) {
+struct gltf_file_data_t {
+
+    std::vector<gltf_scene_t> scenes;
+    std::vector<gltf_node_t> nodes;
+    std::vector<gltf_material_t> materials;
+    std::vector<gltf_buffer_view_t> bufferViews;
+    std::vector<gltf_accessor_t> accessors;
+    std::vector<gltf_image_t> images;
+    std::vector<gltf_texture_t> textures;
+    std::vector<gltf_mesh_t> meshes;
+
+    uint8_t * binaryBuffer;
+
+};
+
+std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file_data_t * data) {
 
     if (fname.substr(fname.length()-3).compare("glb"))
         throw dbg::trace_exception("Wrong file ending");
@@ -467,40 +494,121 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
     std::vector<gltf_mesh_t> meshes = jsonData["meshes"].get<std::vector<gltf_mesh_t>>();
 
     int sceneID = jsonData["scene"].get<int>();
-
     uint8_t * binaryBuffer = chunks[1].rawData;
 
-    std::shared_ptr<Mesh> resultMesh = nullptr;
+    /// Loading meshes into internal format (could be moved up???)
+    std::vector<std::shared_ptr<Mesh>> meshData(meshes.size());
+    for (unsigned int i = 0; i < meshes.size(); ++i) {
+        meshData[i] = gltfLoadMesh(meshes[i], accessors, bufferViews, binaryBuffer);
+    }
+
+    /// Loading nodes
+    std::vector<std::shared_ptr<GLTFNode>> nodeData(nodes.size());
+    for (unsigned int i = 0; i < nodes.size(); ++i) {
+
+        std::shared_ptr<GLTFNode> node(new GLTFNode());
+        node->setPosition(nodes[i].translation);
+        node->setRotation(nodes[i].rotation);
+        node->setScale(nodes[i].scale);
+        node->setName(nodes[i].name);
+
+        if (nodes[i].mesh >= 0) {
+            node->setMesh(meshData[nodes[i].mesh]);
+        }
+
+        nodeData[i] = node;
+
+    }
+    /// Linking nodes with children.
+    for (unsigned int i = 0; i < nodes.size(); ++i) {
+        for (int n : nodes[i].children) {
+            nodeData[i]->addChild(nodeData[n]);
+        }
+    }
+
+    std::vector<std::shared_ptr<GLTFNode>> rootNodes(scenes[sceneID].nodes.size());
+    for (unsigned int i = 0; i < scenes[sceneID].nodes.size(); ++i) {
+        rootNodes[i] = nodeData[scenes[sceneID].nodes[i]];
+    }
+
+    if (data) {
+
+        data->accessors = accessors;
+        data->bufferViews = bufferViews;
+        data->images = images;
+        data->materials = materials;
+        data->meshes = meshes;
+        data->nodes = nodes;
+        data->scenes = scenes;
+        data->textures = textures;
+        data->binaryBuffer = binaryBuffer;
+
+    } else {
+        delete[] binaryBuffer;
+    }
+
+    return rootNodes;
+
+}
+
+std::shared_ptr<Mesh> gltfBuildMesh(std::shared_ptr<GLTFNode> node) {
+
+    if (!node) return nullptr;
+
+    if (!node->hasChildren()) {
+
+        if (node->hasMesh()) {
+            return node->getTransform() * node->getMesh();
+        } else {
+            return nullptr;
+        }
+
+    }
+
+    std::shared_ptr<Mesh> mesh = node->getMesh();
+
+    for (std::shared_ptr<GLTFNode> n : node->getChildren()) {
+
+        mesh = Mesh::merge(mesh, gltfBuildMesh(n));
+
+    }
+
+    return mesh;
+
+}
+
+std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::string fname) {
+
+    gltf_file_data_t fileData;
+    std::vector<std::shared_ptr<GLTFNode>> rootNodes = gltfLoadFile(fname, &fileData);
 
     LoadingResource shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
 
-    /// Loading model data
-    for (int nodeId : scenes[sceneID].nodes) {
+    std::shared_ptr<Mesh> resultMesh = nullptr;
+    for (std::shared_ptr<GLTFNode> node : rootNodes) {
 
-        gltf_node_t & node = nodes[nodeId];
-        gltf_mesh_t & mesh = meshes[node.mesh];
+        std::cout << "Node " << node << std::endl;
 
-        std::shared_ptr<Mesh> tmpMesh = gltfLoadMesh(mesh, accessors, bufferViews, binaryBuffer);
-
-        Math::Matrix<4,4,float> trans = node.rotation.toModelMatrix(node.translation) * Math::Matrix<4,4,float>(node.scale[0]);
-        tmpMesh = trans * tmpMesh;
+        std::shared_ptr<Mesh> tmpMesh = gltfBuildMesh(node);
 
         resultMesh = Mesh::merge(resultMesh, tmpMesh);
 
     }
 
+    std::cout << "ResultMesh : " << resultMesh << std::endl;
+
     std::vector<LoadingResource> textureRes;
 
     /// Load material data and images
-    for (gltf_material_t & mat : materials) {
+    for (gltf_material_t & mat : fileData.materials) {
 
-        gltf_texture_t colorTex = textures[mat.baseColorTexture.index];
-        gltf_image_t colorImg = images[colorTex.source];
+        gltf_texture_t colorTex = fileData.textures[mat.baseColorTexture.index];
+        gltf_image_t colorImg = fileData.images[colorTex.source];
         if (colorImg.mime != GLTF_IMAGE_PNG) {
             throw dbg::trace_exception("Wrong mime-type for image texture!");
         }
         uint32_t colorWidth, colorHeight;
-        std::vector<uint8_t> colorData = gltfLoadPackedImage(binaryBuffer, bufferViews[colorImg.bufferView], &colorWidth, &colorHeight);
+        std::vector<uint8_t> colorData = gltfLoadPackedImage(fileData.binaryBuffer, fileData.bufferViews[colorImg.bufferView], &colorWidth, &colorHeight);
 
         std::string colorImgName = fname;
         colorImgName.append(":").append(colorImg.name);
@@ -510,13 +618,13 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         textureRes.push_back(colorImgRes);
 
 
-        gltf_texture_t normalTex = textures[mat.normalTexture.index];
-        gltf_image_t normalImg = images[normalTex.source];
+        gltf_texture_t normalTex = fileData.textures[mat.normalTexture.index];
+        gltf_image_t normalImg = fileData.images[normalTex.source];
         if (normalImg.mime != GLTF_IMAGE_PNG) {
             throw dbg::trace_exception("Wrong mime-type for image texture!");
         }
         uint32_t normalWidth, normalHeight;
-        std::vector<uint8_t> normalData = gltfLoadPackedImage(binaryBuffer, bufferViews[normalImg.bufferView], &normalWidth, &normalHeight);
+        std::vector<uint8_t> normalData = gltfLoadPackedImage(fileData.binaryBuffer, fileData.bufferViews[normalImg.bufferView], &normalWidth, &normalHeight);
 
         std::string normalImgName = fname;
         normalImgName.append(":").append(normalImg.name);
@@ -526,13 +634,13 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         textureRes.push_back(normalImgRes);
 
 
-        gltf_texture_t metallTex = textures[mat.metallicRoughnessTexture.index];
-        gltf_image_t metallImg = images[metallTex.source];
+        gltf_texture_t metallTex = fileData.textures[mat.metallicRoughnessTexture.index];
+        gltf_image_t metallImg = fileData.images[metallTex.source];
         if (metallImg.mime != GLTF_IMAGE_PNG) {
             throw dbg::trace_exception("Wrong mime-type for image texture!");
         }
         uint32_t metallWidth, metallHeight;
-        std::vector<uint8_t> metallData = gltfLoadPackedImage(binaryBuffer, bufferViews[metallImg.bufferView], &metallWidth, &metallHeight);
+        std::vector<uint8_t> metallData = gltfLoadPackedImage(fileData.binaryBuffer, fileData.bufferViews[metallImg.bufferView], &metallWidth, &metallHeight);
 
         std::string metallImgName = fname;
         metallImgName.append(":").append(metallImg.name);
@@ -548,16 +656,93 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
     std::shared_ptr<ResourceUploader<Resource>> meshRes((ResourceUploader<Resource> *) new ModelUploader(state, new Model(state, resultMesh)));
 
     std::string materialName = fname;
-    materialName.append(":").append(materials[0].name);
+    materialName.append(":").append(fileData.materials[0].name);
     LoadingResource materialLRes = this->scheduleSubresource("Material", materialName, materialRes);
     LoadingResource modelRes = this->scheduleSubresource("Model", fname, meshRes);
 
-
-    /// free all data
-    for (glb_chunk_t c : chunks) {
-        delete[] c.rawData;
-    }
+    delete[] fileData.binaryBuffer;
 
     return std::shared_ptr<StructureUploader>(new StructureUploader(modelRes, materialLRes));
+
+}
+
+using namespace Math;
+
+GLTFNode::GLTFNode() {
+
+    this->name = "";
+    this->position = Vector<3, float>();
+    this->scale = Vector<3, float>();
+    this->rotation = Quaternion<float>(1,0,0,0);
+    this->mesh = nullptr;
+
+}
+
+GLTFNode::~GLTFNode() {
+
+}
+
+Quaternion<float> GLTFNode::getRotation() {
+    return rotation;
+}
+
+Vector<3,float> GLTFNode::getPosition() {
+    return position;
+}
+
+Vector<3,float> GLTFNode::getScale() {
+    return scale;
+}
+
+void GLTFNode::setPosition(Math::Vector<3, float> pos) {
+    position = pos;
+}
+
+void GLTFNode::setRotation(Math::Quaternion<float> rot) {
+    rotation = rot;
+}
+
+void GLTFNode::setScale(Math::Vector<3, float> scale) {
+    this->scale = scale;
+}
+
+void GLTFNode::addChild(std::shared_ptr<GLTFNode> c) {
+    this->children.push_back(c);
+}
+
+std::vector<std::shared_ptr<GLTFNode>> & GLTFNode::getChildren() {
+    return children;
+}
+
+void GLTFNode::setName(std::string name) {
+    this->name = name;
+}
+
+std::string GLTFNode::getName() {
+    return name;
+}
+
+void GLTFNode::setMesh(std::shared_ptr<Mesh> mesh) {
+    this->mesh = mesh;
+}
+
+std::shared_ptr<Mesh> GLTFNode::getMesh() {
+    return mesh;
+}
+
+bool GLTFNode::hasMesh() {
+    return mesh != nullptr;
+}
+
+bool GLTFNode::hasChildren() {
+    return children.size();
+}
+
+Matrix<4,4,float> GLTFNode::getTransform() {
+
+    Matrix<4,4,float> smat(scale[0]);
+    Matrix<4,4,float> tMat = this->rotation.toModelMatrix(position);
+
+    return tMat * smat;
 
 }

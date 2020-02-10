@@ -96,6 +96,10 @@ int main(int argc, char ** argv) {
 
     Viewport * view = new Viewport(window, cam);
 
+    gltfLoadFile("sign.glb");
+
+    //return 0;
+
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
     createResourceLoaders(resourceManager, view);
