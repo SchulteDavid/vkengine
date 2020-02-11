@@ -15,6 +15,8 @@ class World {
         void simulateStep(double dt);
         void synchronize();
 
+        void update(double dt);
+
     protected:
 
     private:

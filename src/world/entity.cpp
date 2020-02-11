@@ -2,6 +2,8 @@
 
 std::unordered_map<std::string, EntityBuilder> Entity::builders;
 
+using namespace Math;
+
 Entity::Entity(std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject) {
 
     this->renderInstance = instance;
@@ -33,7 +35,7 @@ void Entity::synchronize() {
 
 }
 
-Entity * Entity::buildEntityFromType(std::string type, std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject) {
+std::shared_ptr<Entity> Entity::buildEntityFromType(std::string type, std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject) {
 
     if (builders.find(type) == builders.end()) {
         throw dbg::trace_exception(std::string("No builter registered for entity type '").append(type).append("'"));
@@ -51,8 +53,8 @@ void Entity::registerEntityType(std::string type, EntityBuilder builder) {
 
 void Entity::registerDefaultEntityTypes() {
 
-    registerEntityType("Entity", [] (std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject) -> Entity * {
-        return new Entity(renderElement, instance, physObject);
+    registerEntityType("Entity", [] (std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject) -> std::shared_ptr<Entity> {
+        return std::shared_ptr<Entity>(new Entity(renderElement, instance, physObject));
     });
 
 }
@@ -61,6 +63,26 @@ void Entity::onCollision(Entity * entity) {
 
 }
 
+void Entity::onUpdate(const double dt) {
+
+}
+
 std::shared_ptr<PhysicsObject> Entity::getPhysicsObject() {
     return this->physObject;
+}
+
+
+void Entity::applyImpulse(Vector<3> impulse) {
+
+    std::cout << "EntityImpulse " << impulse << std::endl;
+    this->physObject->applyImpulse(impulse);
+
+}
+
+void Entity::applyForce(Vector<3> force, Vector<3> pos) {
+    this->physObject->applyForce(force, pos);
+}
+
+double Entity::getMass() {
+    return physObject->getMass();
 }

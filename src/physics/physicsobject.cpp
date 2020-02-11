@@ -66,3 +66,15 @@ void PhysicsObject::synchronize() {
     this->rotation = Quaternion<double>(trans.getRotation().getW(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ());
 
 }
+
+void PhysicsObject::applyForce(Vector<3> force, Vector<3> pos) {
+
+    this->rigidBody->applyForce(btVector3(force[0], force[1], force[2]), btVector3(pos[0], pos[1], pos[2]));
+
+}
+
+void PhysicsObject::applyImpulse(Vector<3> impulse) {
+
+    this->rigidBody->applyCentralImpulse(btVector3(impulse[0], impulse[1], impulse[2]));
+
+}
