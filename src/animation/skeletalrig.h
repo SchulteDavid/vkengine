@@ -31,6 +31,9 @@ class SkeletalRig {
     protected:
 
     private:
+
+        std::vector<std::shared_ptr<Bone>> bones;
+
 };
 
 #endif // SKELETALRIG_H

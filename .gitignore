@@ -11,3 +11,6 @@
 # IDE-Files
 *.depend
 *.layout
+
+# diff-files
+*.diff
