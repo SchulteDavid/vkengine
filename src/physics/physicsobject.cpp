@@ -80,3 +80,7 @@ void PhysicsObject::applyImpulse(Vector<3> impulse) {
     this->rigidBody->applyCentralImpulse(btVector3(impulse[0], impulse[1], impulse[2]));
 
 }
+
+void PhysicsObject::setAngularFactor(double f) {
+    this->angularFactor = f;
+}

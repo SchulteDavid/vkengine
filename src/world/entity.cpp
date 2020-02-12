@@ -25,6 +25,8 @@ void Entity::synchronize() {
 
     physObject->synchronize();
 
+    if (!renderElement) return;
+
     RenderElement::Transform trans;
     float tmp[4] = {physObject->position[0], physObject->position[1], physObject->position[2], 0.0};
     trans.position = Math::Vector<4, float>(tmp);
