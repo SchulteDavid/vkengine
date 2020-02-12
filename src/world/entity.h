@@ -8,22 +8,30 @@
 
 class Entity;
 
-typedef std::function<Entity *(std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject)> EntityBuilder;
+typedef std::function<std::shared_ptr<Entity>(std::shared_ptr<RenderElement>, RenderElement::Instance, std::shared_ptr<PhysicsObject>)> EntityBuilder;
 
 class Entity
 {
     public:
         Entity(std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject);
+        Entity(std::shared_ptr<RenderElement> renderElement, RenderElement::Instance * instance, std::shared_ptr<PhysicsObject> physObject);
         virtual ~Entity();
 
         virtual void onCollision(Entity * entity);
-        virtual void synchronize();
+        virtual void onUpdate(const double dt);
+        void synchronize();
+
+        void applyImpulse(Math::Vector<3, double> impulse);
+        void applyForce(Math::Vector<3, double> force, Math::Vector<3, double> pos);
+        double getMass();
+
+        Math::Vector<3,double> getPosition();
 
         std::shared_ptr<PhysicsObject> getPhysicsObject();
 
         static void registerEntityType(std::string type, EntityBuilder builder);
         static void registerDefaultEntityTypes();
-        static Entity * buildEntityFromType(std::string type, std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject);
+        static std::shared_ptr<Entity> buildEntityFromType(std::string type, std::shared_ptr<RenderElement> renderElement, RenderElement::Instance instance, std::shared_ptr<PhysicsObject> physObject);
 
     protected:
 

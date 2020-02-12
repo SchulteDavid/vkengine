@@ -10,6 +10,9 @@
 #include "render/util/vkutil.h"
 #include "inputs/inputhandler.h"
 
+class Viewport;
+class Camera;
+
 class Window
 {
     public:
@@ -35,6 +38,10 @@ class Window
         void onMouseMotion(double xpos, double ypos);
         void onScroll(double dx, double dy);
 
+        void setActiveViewport(Viewport * view);
+        Viewport * getActiveViewport();
+        Camera * getActiveCamera();
+
     protected:
 
     private:
@@ -44,6 +51,8 @@ class Window
         std::vector<std::shared_ptr<InputHandler>> inputHandlers;
         double oldMouseX;
         double oldMouseY;
+
+        Viewport * view;
 
 
 };

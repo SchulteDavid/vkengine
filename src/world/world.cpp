@@ -23,6 +23,19 @@ void World::simulateStep(double dt) {
 
     this->physicsContext->simulateStep(dt);
 
+    /*for (std::shared_ptr<Entity> e : entities) {
+        std::cout << "Updating " << e << std::endl;
+        e->onUpdate(dt);
+    }*/
+
+}
+
+void World::update(double dt) {
+
+    for (std::shared_ptr<Entity> e : entities) {
+        e->onUpdate(dt);
+    }
+
 }
 
 void World::synchronize() {

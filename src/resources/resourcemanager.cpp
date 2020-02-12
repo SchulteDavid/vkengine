@@ -71,6 +71,8 @@ void ResourceManager::submitUpload(LoadingResource resource) {
 
 }
 
+#define dbg_log (std::cout << "[ " << __FILE__ << " : " << __PRETTY_FUNCTION__ << " ] ")
+
 void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
     try {
@@ -124,6 +126,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
         }
     } catch (std::exception e) {
 
+        std::cerr << "Exception while loading" << std::endl;
         std::cerr << e.what() << std::endl;
         exit(1);
 

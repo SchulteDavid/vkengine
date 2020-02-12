@@ -89,12 +89,12 @@ SHADER_SPIRVS := $(foreach shdr,${VERT_SHADER_FILES},$(call shader_target,${shdr
 
 bin/Debug/${PROGNAME}: ${O_FILES} | bin/Debug/ ${SRC_LIB_ARCHS} ${SHADER_SPIRVS}
 	@mkdir -p bin/Debug
-	@echo ${LIBRARY_DIRS}
+	@echo Linking $@
 	@$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS}) $(CXXFLAGS)
 
 bin/Release/${PROGNAME}: ${O_FILES} | bin/Release/ ${SRC_LIB_ARCHS} ${SHADER_SPIRVS}
 	@mkdir -p bin/Debug
-	@echo ${LIBRARY_DIRS}
+	@echo Linking $@
 	@$(CXX) -o $@ $^ $(addprefix -L,${LIBRARY_DIRS}) $(addprefix -l, ${LIBS}) $(addprefix -l, ${SRC_LIBS}) $(CXXFLAGS)
 
 lib/lib${PROGNAME}.a: ${LIBRARY_O_FILES} | lib/
