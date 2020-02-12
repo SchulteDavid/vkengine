@@ -5,6 +5,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#include "viewport.h"
+
 const std::vector<const char*> deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -119,6 +121,18 @@ VkCommandPool & Window::getCommandPool() {
 
 vkutil::VulkanState & Window::getState() {
     return state;
+}
+
+void Window::setActiveViewport(Viewport * view) {
+    this->view = view;
+}
+
+Viewport * Window::getActiveViewport() {
+    return this->view;
+}
+
+Camera * Window::getActiveCamera() {
+    return view->getCamera();
 }
 
 void Window::onKeyboard(int key, int scancode, int action, int mods) {

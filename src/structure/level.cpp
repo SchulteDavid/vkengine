@@ -103,7 +103,7 @@ void Level::applyToWorld(std::shared_ptr<World> world, Viewport * view) {
             std::shared_ptr<PhysicsObject> physObj(new PhysicsObject(p.mass, p.pos, p.rot, p.collisionShape));
 
             //std::shared_ptr<Entity> entity(new Entity(rElem, instance, physObj));
-            std::shared_ptr<Entity> entity(Entity::buildEntityFromType(p.entityType, rElem, instance, physObj));
+            std::shared_ptr<Entity> entity = Entity::buildEntityFromType(p.entityType, rElem, instance, physObj);
 
             world->addEntity(entity);
 
@@ -173,7 +173,16 @@ void loadPlacementPhysics(std::shared_ptr<config::NodeCompound> physics, Level::
 
     /// TODO: add loading of different collision shapes.
 
-    p.collisionShape = new btBoxShape(btVector3(1,1,1));
+    std::shared_ptr<config::NodeCompound> collision = physics->getNodeCompound("collision");
+
+    std::string type(collision->getNode<char>("type")->getRawData());
+    if (!type.compare("box")) {
+        std::shared_ptr<config::Node<double>> s = collision->getNode<double>("size");
+        //std::cout << s << std::endl;
+        p.collisionShape = new btBoxShape(btVector3(s->getElement(0), s->getElement(1), s->getElement(2)));
+    } else {
+        p.collisionShape = new btBoxShape(btVector3(1,1,1));
+    }
 
 }
 

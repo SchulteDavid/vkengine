@@ -25,6 +25,8 @@ class Entity
         void applyForce(Math::Vector<3, double> force, Math::Vector<3, double> pos);
         double getMass();
 
+        Math::Vector<3,double> getPosition();
+
         std::shared_ptr<PhysicsObject> getPhysicsObject();
 
         static void registerEntityType(std::string type, EntityBuilder builder);

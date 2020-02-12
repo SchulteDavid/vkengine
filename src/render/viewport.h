@@ -39,6 +39,8 @@ class Viewport : public MemoryTransferHandler
 
         void manageMemoryTransfer();
 
+        Camera * getCamera();
+
     protected:
 
         void setupRenderPass();

@@ -23,7 +23,8 @@ class Bone {
 
 };
 
-class SkeletalRig {
+class SkeletalRig
+{
     public:
         SkeletalRig();
         virtual ~SkeletalRig();
@@ -31,9 +32,6 @@ class SkeletalRig {
     protected:
 
     private:
-
-        std::vector<std::shared_ptr<Bone>> bones;
-
 };
 
 #endif // SKELETALRIG_H

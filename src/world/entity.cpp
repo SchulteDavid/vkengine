@@ -86,3 +86,7 @@ void Entity::applyForce(Vector<3> force, Vector<3> pos) {
 double Entity::getMass() {
     return physObject->getMass();
 }
+
+Vector<3> Entity::getPosition() {
+    return physObject->getPosition();
+}

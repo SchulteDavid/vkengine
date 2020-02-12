@@ -19,6 +19,10 @@
 #include "structure/structure.h"
 #include "world/entity.h"
 #include "physics/physicscontext.h"
+
+#include "plugin/pyhelper.h"
+#include "plugin/pyplugin.h"
+
 #include "world/world.h"
 #include <execinfo.h>
 #include "structure/gltf.h"
@@ -26,6 +30,8 @@
 
 
 #include <mathutils/matrix.h>
+
+#include <exception>
 
 static bool run = true;
 static bool wait;
@@ -37,18 +43,25 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view) {
     auto startRenderTime = std::chrono::high_resolution_clock::now();
 
     while (run) {
-
-
-
-        world->simulateStep(std::chrono::duration<double, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count());
-        startRenderTime = std::chrono::high_resolution_clock::now();
+        //try {
+        auto now = std::chrono::high_resolution_clock::now();
+        double dt = std::chrono::duration<double, std::chrono::seconds::period>(now - startRenderTime).count();
+        startRenderTime = now;
+        world->simulateStep(dt);
 
         world->synchronize();
+        world->update(dt);
 
         view->manageMemoryTransfer();
 
         while (wait);
         wait = true;
+        /*} catch (...) {
+            std::exception_ptr e = std::current_exception();
+            std::cout << "Something happened" << std::endl;
+            std::cerr << typeid(e).name() << std::endl;
+            exit(0);
+        }*/
 
     }
 
@@ -95,6 +108,7 @@ int main(int argc, char ** argv) {
     Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
     Viewport * view = new Viewport(window, cam);
+    window->setActiveViewport(view);
 
     gltfLoadFile("sign.glb");
 
@@ -110,18 +124,22 @@ int main(int argc, char ** argv) {
     LoadingResource cres = resourceManager->loadResourceBg("Structure", "exports.glb");
     LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
-    std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
-    window->addInputHandler(playerCtl);
 
-    //!sres->status.isUseable ||
-    //logoRes->fut.wait();
+    //std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
+    //window->addInputHandler(playerCtl);
+
+    PyHelper::startPythonInterpreter();
+
     while (!tres->status.isUseable) {
-        view->drawFrame(false);
+        //view->drawFrame(false);
         glfwPollEvents();
     }
     tres->fut.wait();
     cres->fut.wait();
     llvl->fut.wait();
+
+    PyPlugin * plugin = new PyPlugin("pytest");
+    plugin->onInit(window.get());
 
     resourceManager->joinLoadingThreads();
 
@@ -142,6 +160,8 @@ int main(int argc, char ** argv) {
 
     std::thread rotateThread(rotateFunc, world, view);
 
+    pybind11::gil_scoped_release release;
+
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 
         glfwPollEvents();
@@ -155,6 +175,8 @@ int main(int argc, char ** argv) {
     wait = false;
 
     rotateThread.join();
+
+    PyHelper::stopPythonInterpreter();
 
     std::cout << "End of mainloop" << std::endl;
 

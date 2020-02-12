@@ -170,7 +170,9 @@ void Viewport::manageMemoryTransfer() {
         transferSubmit.signalSemaphoreCount = 0;
         transferSubmit.waitSemaphoreCount = 0;
 
+        state.graphicsQueueMutex.lock();
         vkQueueSubmit(state.transferQueue, 1, &transferSubmit, transferFence);
+        state.graphicsQueueMutex.unlock();
 
     }
 
@@ -262,6 +264,10 @@ void Viewport::drawFrame(bool updateElements) {
 
     startRenderTime = std::chrono::high_resolution_clock::now();
 
+}
+
+Camera * Viewport::getCamera() {
+    return camera;
 }
 
 void Viewport::updateUniformBuffer(uint32_t imageIndex) {
