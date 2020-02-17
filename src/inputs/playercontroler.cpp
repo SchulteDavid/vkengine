@@ -33,9 +33,9 @@ void PlayerControler::onMouseMotion(double xpos, double ypos, double dx, double 
         double ctheta = cos(theta);
 
         std::array<float,3> yAxisArray = {0, 1, 0};
-        std::array<float,3> posArray = {radius * cos(phi) * ctheta,
-                                        radius * sin(phi) * ctheta,
-                                        radius * sin(theta)};
+        std::array<float,3> posArray = {(float) (radius * cos(phi) * ctheta),
+                                        (float) (radius * sin(phi) * ctheta),
+                                        (float) (radius * sin(theta))};
 
         Math::Vector<3, float> pos(posArray.data());
         Math::Vector<3, float> yAxis(yAxisArray.data());
@@ -108,9 +108,9 @@ void PlayerControler::onScroll(double dx, double dy) {
     double ctheta = cos(theta);
 
         std::array<float,3> yAxisArray = {0, 1, 0};
-        std::array<float,3> posArray = {radius * cos(phi) * ctheta,
-                                        radius * sin(phi) * ctheta,
-                                        radius * sin(theta)};
+        std::array<float,3> posArray = {(float) (radius * cos(phi) * ctheta),
+                                        (float) (radius * sin(phi) * ctheta),
+                                        (float) (radius * sin(theta))};
 
         Math::Vector<3, float> pos(posArray.data());
         Math::Vector<3, float> yAxis(yAxisArray.data());

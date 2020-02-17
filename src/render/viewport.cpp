@@ -182,22 +182,11 @@ void Viewport::drawFrame(bool updateElements) {
 
     static auto startRenderTime = std::chrono::high_resolution_clock::now();
 
-    float vData[3] = {0, 0, 1};
-
-    //camera->rotate(Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(vData), 0.001));
-
-    //std::cout << "Draw Frame" << std::endl;
-
-    //std::cout << camera->getView() << std::endl;
-
     if (updateElements)
         prepareRenderElements();
 
     vkWaitForFences(state.device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-    //std::cout << "Done preparing render elements" << std::endl;
-
-    //std::cout << "Waiting for fences" << std::endl;
 
     uint32_t imageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
@@ -236,8 +225,6 @@ void Viewport::drawFrame(bool updateElements) {
 
     vkResetFences(state.device, 1, &inFlightFences[frameIndex]);
 
-    //std::cout << frameIndex << " : " << inFlightFences[frameIndex] << std::endl;
-
     state.graphicsQueueMutex.lock();
     if (vkQueueSubmit(state.graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
         throw dbg::trace_exception("Unable to submit command buffer");
@@ -272,14 +259,12 @@ Camera * Viewport::getCamera() {
 
 void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
+    //static auto startTime = std::chrono::high_resolution_clock::now();
+    //auto currentTime = std::chrono::high_resolution_clock::now();
 
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    //float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo;
-
-    float x = 50.0 * sin(time);
 
     ubo.view = this->camera->getView();//glm::lookAt(glm::vec3(0.0, -4.0f, 2.0f), glm::vec3(0,0,0), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = this->camera->getProjection();//glm::perspective(glm::radians(45.0f), swapChain.extent.width / (float) swapChain.extent.height, 0.1f, 1000.0f);
@@ -462,7 +447,7 @@ void Viewport::createPPObjects() {
 
     std::cout << "Images created" << std::endl;
 
-    for (int i = 0; i < swapchain.images.size(); ++i) {
+    for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
         {
             VkBufferCreateInfo stBufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -513,7 +498,7 @@ void Viewport::destroyPPObjects() {
     vmaDestroyImage(state.vmaAllocator, aBufferImage, aBufferImageMemory);
     vkDestroyImageView(state.device, aBufferImageView, nullptr);
 
-    for (int i = 0; i < swapchain.images.size(); ++i) {
+    for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
         vmaDestroyBuffer(state.vmaAllocator, ppLightBuffers[i], ppLightBuffersMemory[i]);
         vmaDestroyBuffer(state.vmaAllocator, ppCameraBuffers[i], ppCameraBuffersMemory[i]);
@@ -651,7 +636,7 @@ void Viewport::setupPostProcessingPipeline() {
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-    std::array<VkPipelineColorBlendAttachmentState, 4> cbAttachments = {colorBlendAttachment, colorBlendAttachment, colorBlendAttachment, colorBlendAttachment};
+    //std::array<VkPipelineColorBlendAttachmentState, 4> cbAttachments = {colorBlendAttachment, colorBlendAttachment, colorBlendAttachment, colorBlendAttachment};
 
     // global configuration
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
@@ -794,7 +779,7 @@ void Viewport::createPPDescriptorSets() {
     if (vkAllocateDescriptorSets(state.device, &allocInfo, ppDescSets.data()) != VK_SUCCESS)
         throw dbg::trace_exception("Unable to allocate descriptor sets");
 
-    for (int i = 0; i < swapchain.images.size(); ++i) {
+    for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
         std::array<VkWriteDescriptorSet, 5> descriptorWrites = {};
 
@@ -897,7 +882,7 @@ void Viewport::setupFramebuffers() {
 
     std::cout << "SwapChainSize " << swapchain.imageViews.size() << std::endl;
 
-    for (int i = 0; i < swapchain.imageViews.size(); ++i) {
+    for (unsigned int i = 0; i < swapchain.imageViews.size(); ++i) {
 
         std::array<VkImageView, 5> attachments = {swapchain.imageViews[i], depthImageView, gBufferImageView, nBufferImageView, aBufferImageView};
 
@@ -1014,7 +999,7 @@ vkutil::VulkanState & Viewport::getState() {
 void Viewport::recordCommandBuffers() {
 
 
-    for (int i = 0; i < commandBuffers.size(); ++i) {
+    for (unsigned int i = 0; i < commandBuffers.size(); ++i) {
 
         VkCommandBufferBeginInfo beginInfo = {};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

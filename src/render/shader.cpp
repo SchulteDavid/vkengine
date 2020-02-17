@@ -114,9 +114,12 @@ void Shader::bindForRender(VkCommandBuffer & cmdBuffer, VkDescriptorSet & descri
 VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout) {
 
     std::vector<vkutil::ShaderInputDescription> inputShaders(modules.size());
+
+    std::string mainName = "main";
+
     for (unsigned int i = 0; i < modules.size(); ++i) {
 
-        inputShaders[i].entryName = (const char *) "main";
+        inputShaders[i].entryName = (char *) mainName.c_str();
         inputShaders[i].module = modules[i];
         inputShaders[i].usage = stages[i];
 

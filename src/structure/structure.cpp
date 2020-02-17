@@ -188,4 +188,6 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
         std::cerr << e.what() << std::endl;
     }
 
+    return nullptr;
+
 }

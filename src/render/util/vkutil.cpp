@@ -406,7 +406,7 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabilities, GLFWw
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    VkExtent2D newExtent = {width, height};
+    VkExtent2D newExtent = {(uint32_t) width, (uint32_t) height};
 
     newExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, newExtent.width));
     newExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, newExtent.height));
@@ -439,7 +439,7 @@ SwapChain vkutil::createSwapchain(const VkPhysicalDevice & physicalDevice, const
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily, indices.presentFamily};
+    uint32_t queueFamilyIndices[] = {(uint32_t) indices.graphicsFamily, (uint32_t) indices.presentFamily};
 
     if (indices.presentFamily != indices.graphicsFamily) {
 

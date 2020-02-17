@@ -20,9 +20,6 @@
 #include "world/entity.h"
 #include "physics/physicscontext.h"
 
-#include "plugin/pyhelper.h"
-#include "plugin/pyplugin.h"
-
 #include "world/world.h"
 #include <execinfo.h>
 #include "structure/gltf.h"
@@ -37,8 +34,6 @@ static bool run = true;
 static bool wait;
 
 void rotateFunc(std::shared_ptr<World> world, Viewport * view) {
-
-    float rotAxis[3] = {0, 0, 1};
 
     auto startRenderTime = std::chrono::high_resolution_clock::now();
 
@@ -128,8 +123,6 @@ int main(int argc, char ** argv) {
     //std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     //window->addInputHandler(playerCtl);
 
-    PyHelper::startPythonInterpreter();
-
     while (!tres->status.isUseable) {
         //view->drawFrame(false);
         glfwPollEvents();
@@ -137,9 +130,6 @@ int main(int argc, char ** argv) {
     tres->fut.wait();
     cres->fut.wait();
     llvl->fut.wait();
-
-    PyPlugin * plugin = new PyPlugin("pytest");
-    plugin->onInit(window.get());
 
     resourceManager->joinLoadingThreads();
 
@@ -160,8 +150,6 @@ int main(int argc, char ** argv) {
 
     std::thread rotateThread(rotateFunc, world, view);
 
-    pybind11::gil_scoped_release release;
-
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 
         glfwPollEvents();
@@ -175,8 +163,6 @@ int main(int argc, char ** argv) {
     wait = false;
 
     rotateThread.join();
-
-    PyHelper::stopPythonInterpreter();
 
     std::cout << "End of mainloop" << std::endl;
 

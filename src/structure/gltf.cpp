@@ -244,7 +244,7 @@ size_t gltfGetElementCount(std::string type) {
 struct gltf_accessor_t {
 
     int bufferView;
-    int count;
+    unsigned int count;
 
     size_t dataTypeSize;
     size_t dataElementCount;

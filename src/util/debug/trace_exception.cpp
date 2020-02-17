@@ -56,6 +56,10 @@ dbg::trace_exception::trace_exception(std::string msg, uint32_t max_frames) {
             int status;
             char* ret = abi::__cxa_demangle(begin_name, funcName, &funcNameSize, &status);
 
+            if (!ret) {
+
+            }
+
             if (!status) {
 
                 std::string entry("\t");
