@@ -89,7 +89,17 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) : Model(state, mesh->getVerts(), mesh->getIndices()) {
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
+
+    std::vector<Vertex> verts = mesh->getVerts();
+
+    //MeshHelper::computeTangents(verts, mesh->getIndices());
+
+    this->vBuffer = new VertexBuffer<Vertex>(state, verts);
+    this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
+
+    this->vCount = verts.size();
+    this->iCount = mesh->getIndices().size();
 
 }
 

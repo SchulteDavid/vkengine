@@ -2,9 +2,68 @@
 
 #include <ply.hpp>
 
+using namespace Math;
+
 Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
 
     this->verts = verts;
+    this->indices = indices;
+
+
+    VertexAttribute positionAttr;
+    positionAttr.type = ATTRIBUTE_VEC3;
+    positionAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute normalAttr;
+    normalAttr.type = ATTRIBUTE_VEC3;
+    normalAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute uvAttr;
+    uvAttr.type = ATTRIBUTE_VEC2;
+    uvAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute tangentAttr;
+    tangentAttr.type = ATTRIBUTE_VEC3;
+    tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute matAttr;
+    matAttr.type = ATTRIBUTE_INT;
+    matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    for (unsigned int i = 0; i < verts.size(); ++i) {
+
+        float tmp[3] = {verts[i].pos.x, verts[i].pos.y, verts[i].pos.z};
+        positionAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        tmp[0] = verts[i].normal.x;
+        tmp[1] = verts[i].normal.y;
+        tmp[2] = verts[i].normal.z;
+        normalAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        tmp[0] = verts[i].tangent.x;
+        tmp[1] = verts[i].tangent.y;
+        tmp[2] = verts[i].tangent.z;
+        tangentAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        tmp[0] = verts[i].uv.x;
+        tmp[1] = verts[i].uv.y;
+        uvAttr.value[i].vec2 = Vector<2, float>(tmp);
+
+        matAttr.value[i].i = verts[i].matIndex;
+
+    }
+
+    this->attributes["POSITION"] = positionAttr;
+    this->attributes["NORMAL"] = normalAttr;
+    this->attributes["TEXCOORD_0"] = uvAttr;
+    this->attributes["TANGENT"] = tangentAttr;
+    this->attributes["MATERIAL_INDEX"] = matAttr;
+
+}
+
+Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices) {
+
+    this->attributes = attributes;
     this->indices = indices;
 
 }
@@ -15,8 +74,23 @@ Mesh::~Mesh() {
 
 }
 
-std::vector<Model::Vertex> & Mesh::getVerts() {
+std::vector<Model::Vertex> Mesh::getVerts() {
+    //return verts;
+
+    std::vector<Model::Vertex> verts(this->attributes["POSITION"].value.size());
+
+    for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+
+        verts[i].pos = glm::vec3(attributes["POSITION"].value[i].vec3[0], attributes["POSITION"].value[i].vec3[1], attributes["POSITION"].value[i].vec3[2]);
+        verts[i].normal = glm::vec3(attributes["NORMAL"].value[i].vec3[0], attributes["NORMAL"].value[i].vec3[1], attributes["NORMAL"].value[i].vec3[2]);
+        verts[i].tangent = glm::vec3(attributes["TANGENT"].value[i].vec3[0], attributes["TANGENT"].value[i].vec3[1], attributes["TANGENT"].value[i].vec3[2]);
+        verts[i].uv = glm::vec2(attributes["TEXCOORD_0"].value[i].vec2[0], attributes["TEXCOORD_0"].value[i].vec2[1]);
+        verts[i].matIndex = attributes["MATERIAL_INDEX"].value[i].i;
+
+    }
+
     return verts;
+
 }
 
 std::vector<uint16_t> & Mesh::getIndices() {
@@ -27,31 +101,54 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 
     using namespace Math;
 
-    std::vector<Model::Vertex> newVerts;
+    //std::vector<Model::Vertex> newVerts;
+    std::unordered_map<std::string, VertexAttribute> newAttributes;
 
-    for (Model::Vertex v : mesh->verts) {
+    for (auto it : mesh->attributes) {
 
-        Vector<4, float> p(v.pos.x, v.pos.y, v.pos.z, 1);
-        Vector<4, float> n(v.normal.x, v.normal.y, v.normal.z, 0);
-        Vector<4, float> t(v.tangent.x, v.tangent.y, v.tangent.z, 0);
+        std::vector<VertexAttribute::VertexAttributeData> data(it.second.value.size());
+        for (unsigned int i = 0; i < it.second.value.size(); ++i) {
+            data[i] = it.second.value[i];
+        }
 
-        Vector<4, float> p2 = m * p;
-        n = m * n;
-        t = m * t;
+        VertexAttribute attr;
+        attr.type = it.second.type;
+        attr.value = data;
 
-        Model::Vertex nVert;
-
-        nVert.pos = glm::vec3(p2[0] / p2[3], p2[1] / p2[3], p2[2] / p2[3]);
-        nVert.normal = glm::vec3(n[0], n[1], n[2]);
-        nVert.tangent = glm::vec3(t[0], t[1], t[2]);
-        nVert.uv = v.uv;
-        nVert.matIndex = v.matIndex;
-
-        newVerts.push_back(nVert);
+        newAttributes[it.first] = attr;
 
     }
 
-    return std::shared_ptr<Mesh>(new Mesh(newVerts, mesh->indices));
+    for (unsigned int i = 0; i < mesh->attributes["POSITION"].value.size(); ++i) {
+
+        Vector<3, float> pos = mesh->attributes["POSITION"].value[i].vec3;
+
+        Vector<4, float> p(pos[0], pos[1], pos[2], 1);
+        Vector<4, float> n(mesh->attributes["NORMAL"].value[i].vec3);
+        Vector<4, float> t(mesh->attributes["TANGENT"].value[i].vec3);
+
+        p = m * p;
+        n = m * n;
+        t = m * t;
+
+        //Model::Vertex nVert;
+
+        //nVert.pos = glm::vec3(p[0] / p[3], p[1] / p[3], p[2] / p[3]);
+        newAttributes["POSITION"].value[i].vec3 = Vector<3, float>(p) / p[3];
+        newAttributes["NORMAL"].value[i].vec3 = Vector<3, float>(n);
+        logger(std::cout) << p << std::endl;
+        logger(std::cout) << newAttributes["POSITION"].value[i].vec3 << std::endl;
+        newAttributes["TANGENT"].value[i].vec3 = Vector<3, float>(t);
+        //nVert.normal = glm::vec3(n[0], n[1], n[2]);
+        //nVert.tangent = glm::vec3(t[0], t[1], t[2]);
+        //nVert.uv = v.uv;
+        //nVert.matIndex = v.matIndex;
+
+        //newVerts.push_back(nVert);
+
+    }
+
+    return std::shared_ptr<Mesh>(new Mesh(newAttributes, mesh->indices));
 
 }
 
