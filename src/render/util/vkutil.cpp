@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "../../util/debug/stacktrace.h"
+#include "util/debug/stacktrace.h"
+#include "util/debug/logger.h"
 
 using namespace vkutil;
 
@@ -66,10 +67,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
         #ifdef THROW_ON_WARN
         throw dbg::trace_exception(pCallbackData->pMessage);
         #else
-        std::cerr << "WARNING : " << pCallbackData->pMessage << std::endl;
+        logger(std::cerr) << "WARNING : " << pCallbackData->pMessage << std::endl;
         #endif
     } else {
-        std::cout << "DEBUG   : " << pCallbackData->pMessage << std::endl;
+        logger(std::cout) << "DEBUG   : " << pCallbackData->pMessage << std::endl;
     }
     //exit(1);
     return VK_FALSE;
@@ -174,10 +175,10 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-    std::cout << "available extensions:" << std::endl;
+    logger(std::cout) << "available extensions:" << std::endl;
     for (int i = 0; i < extensions.size(); ++i) {
 
-        std::cout << "\t" << extensions[i].extensionName << std::endl;
+        logger(std::cout) << "\t" << extensions[i].extensionName << std::endl;
 
     }
 

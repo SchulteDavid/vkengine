@@ -1,5 +1,7 @@
 #include "playercontroler.h"
 
+#include "util/debug/logger.h"
+
 PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state) : state(state) {
     this->camera = c;
     this->hasCursor = true;
@@ -95,7 +97,7 @@ void PlayerControler::onMouseButton(int button, int action, int mods) {
 
 void PlayerControler::onScroll(double dx, double dy) {
 
-    std::cout << "Scroll " << dx << " " << dy << std::endl;
+    logger(std::cout) << "Scroll " << dx << " " << dy << std::endl;
 
     this->radius -= dy * 0.05 * radius;
 

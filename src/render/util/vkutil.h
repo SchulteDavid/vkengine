@@ -10,6 +10,8 @@
 #include <GLFW/glfw3.h>
 #include <vk_mem_alloc.h>
 
+#include "util/debug/logger.h"
+
 namespace vkutil {
 
 struct QueueFamilyIndices {
@@ -21,7 +23,7 @@ struct QueueFamilyIndices {
     std::vector<int> counts;
 
     bool isComplete() {
-        std::cerr << (transferFamily == graphicsFamily ? "transfer is graphics" : "transfer != graphics") << std::endl;
+        logger(std::cerr) << (transferFamily == graphicsFamily ? "transfer is graphics" : "transfer != graphics") << std::endl;
         return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0;// && transferFamily != graphicsFamily;
     }
 

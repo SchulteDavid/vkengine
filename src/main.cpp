@@ -25,6 +25,7 @@
 #include "structure/gltf.h"
 #include "structure/level.h"
 
+#include "util/debug/logger.h"
 
 #include <mathutils/matrix.h>
 
@@ -133,9 +134,9 @@ int main(int argc, char ** argv) {
 
     resourceManager->joinLoadingThreads();
 
-    std::cout << "Resource-summary: " << std::endl;
+    logger(std::cout) << "Resource-summary: " << std::endl;
     resourceManager->printSummary();
-    std::cout << "Done" << std::endl;
+    logger(std::cout) << "Done" << std::endl;
 
     view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
     view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
@@ -164,7 +165,7 @@ int main(int argc, char ** argv) {
 
     rotateThread.join();
 
-    std::cout << "End of mainloop" << std::endl;
+    logger(std::cout) << "End of mainloop" << std::endl;
 
     return 0;
 

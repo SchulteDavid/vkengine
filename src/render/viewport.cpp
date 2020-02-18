@@ -6,6 +6,7 @@
 #define MAX_FRAMES_IN_FLIGHT 3
 
 #include "util/debug/trace_exception.h"
+#include "util/debug/logger.h"
 
 struct Viewport::CameraData {
 
@@ -33,7 +34,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
     this->lightIndex = 0;
     //camera->move(0,0,1);
 
-    std::cout << "Creating swapchain" << std::endl;
+    logger(std::cout) << "Creating swapchain" << std::endl;
 
     vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), state.device, window->getSurface(), window->getGlfwWindow());
 
@@ -42,7 +43,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
     swapchain.format = tmpChain.format;
     swapchain.images = tmpChain.images;
 
-    std::cout << "setting up render pass" << std::endl;
+    logger(std::cout) << "setting up render pass" << std::endl;
 
     setupRenderPass();
 
@@ -246,7 +247,7 @@ void Viewport::drawFrame(bool updateElements) {
 
     if (!frameIndex) {
         double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
-        std::cout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
+        logger(std::cout) << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
     }
 
     startRenderTime = std::chrono::high_resolution_clock::now();
@@ -445,7 +446,7 @@ void Viewport::createPPObjects() {
     ppCameraBuffers.resize(swapchain.images.size());
     ppCameraBuffersMemory.resize(swapchain.images.size());
 
-    std::cout << "Images created" << std::endl;
+    logger(std::cout) << "Images created" << std::endl;
 
     for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
@@ -461,7 +462,7 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
-            std::cout << "Creatinf light Buffer" << std::endl;
+            logger(std::cout) << "Creating light Buffer" << std::endl;
 
             vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppLightBuffers[i], &ppLightBuffersMemory[i], &stagingBufferAllocInfo);
         }
@@ -477,7 +478,7 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
-            std::cout << "Creatinf camera Buffer" << std::endl;
+            logger(std::cout) << "Creating camera Buffer" << std::endl;
 
             vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppCameraBuffers[i], &ppCameraBuffersMemory[i], &stagingBufferAllocInfo);
         }
@@ -523,7 +524,7 @@ void Viewport::setupPostProcessingPipeline() {
 
     /** shaders **/
 
-    std::cout << "Creating ppPipeline" << std::endl;
+    logger(std::cout) << "Creating ppPipeline" << std::endl;
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages(2);
 
@@ -880,7 +881,7 @@ void Viewport::setupFramebuffers() {
 
     swapchain.framebuffers.resize(swapchain.imageViews.size());
 
-    std::cout << "SwapChainSize " << swapchain.imageViews.size() << std::endl;
+    logger(std::cout) << "SwapChainSize " << swapchain.imageViews.size() << std::endl;
 
     for (unsigned int i = 0; i < swapchain.imageViews.size(); ++i) {
 
@@ -951,12 +952,12 @@ void Viewport::recreateSwapChain() {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT; /// <- this can be chosen by a function later
 
     vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-    std::cout << "Creating depth image view" << std::endl;
+    logger(std::cout) << "Creating depth image view" << std::endl;
     depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
     vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
 
-    std::cout << "Creating PP objects" << std::endl;
+    logger(std::cout) << "Creating PP objects" << std::endl;
     createPPObjects();
 
     vkutil::transitionImageLayout(gBufferImage, swapchain.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);

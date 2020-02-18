@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "util/debug/trace_exception.h"
+#include "util/debug/logger.h"
 
 using namespace vkutil;
 
@@ -46,11 +47,11 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, i
     copyBufferToImage(state, stagingBuffer, image, width, height, depth);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    std::cout << "Generating mipmaps" << std::endl;
+    logger(std::cout) << "Generating mipmaps" << std::endl;
     state.graphicsQueueMutex.lock();
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
     state.graphicsQueueMutex.unlock();
-    std::cout << "done" << std::endl;
+    logger(std::cout) << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -102,11 +103,11 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data,
     copyBufferToImage(state, stagingBuffer, image, width, height, depth);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    std::cout << "Generating mipmaps" << std::endl;
+    logger(std::cout) << "Generating mipmaps" << std::endl;
     state.graphicsQueueMutex.lock();
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
     state.graphicsQueueMutex.unlock();
-    std::cout << "done" << std::endl;
+    logger(std::cout) << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -227,7 +228,7 @@ void Texture::copyBufferToImage(const VulkanState & state, VkBuffer & buffer, Vk
 
 }
 
-void Texture::transitionLayout(const VulkanState & state, VkImageLayout newLayout) {
+void Texture::transitionLayout(VulkanState & state, VkImageLayout newLayout) {
 
 
     transitionImageLayout(state, image, format, layout, newLayout, mipLevels);
@@ -314,7 +315,7 @@ VkImageView Texture::createImageView(const VulkanState & state, VkImage & image,
 
 VkSampler Texture::createSampler(const VulkanState & state, int mipLevels) {
 
-    std::cout << "Creating sampler with " << mipLevels << " mip levels" << std::endl;
+    logger(std::cout) << "Creating sampler with " << mipLevels << " mip levels" << std::endl;
 
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -346,7 +347,7 @@ VkSampler Texture::createSampler(const VulkanState & state, int mipLevels) {
 
 }
 
-void Texture::transitionImageLayout(const VulkanState & state, VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels) {
+void Texture::transitionImageLayout(VulkanState & state, VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels) {
 
     VkCommandBuffer commandBuffer = vkutil::beginSingleCommand(state);
 
@@ -407,7 +408,9 @@ void Texture::transitionImageLayout(const VulkanState & state, VkImage & image, 
         1, &barrier
     );
 
+    //state.graphicsQueueMutex.lock();
     vkutil::endSingleCommand(commandBuffer, state);
+    //state.graphicsQueueMutex.unlock();
 
 }
 
