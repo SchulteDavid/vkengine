@@ -38,12 +38,12 @@ class VertexAttribute {
             }
 
             VertexAttributeData(const VertexAttributeData & d) {
-                memccpy(this, &d, 1, sizeof(VertexAttributeData));
+                memcpy(this, &d, sizeof(VertexAttributeData));
             }
 
             VertexAttributeData & operator=(const VertexAttributeData & d) {
 
-                memccpy(this, &d, 1, sizeof(VertexAttributeData));
+                memcpy(this, &d, sizeof(VertexAttributeData));
                 return *this;
 
             }

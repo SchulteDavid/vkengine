@@ -59,6 +59,12 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
     this->attributes["TANGENT"] = tangentAttr;
     this->attributes["MATERIAL_INDEX"] = matAttr;
 
+    for (auto it : attributes) {
+
+        logger(std::cout) << it.first << " -> " << it.second.type << std::endl;
+
+    }
+
 }
 
 Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices) {
@@ -127,14 +133,14 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
         Vector<4, float> n(mesh->attributes["NORMAL"].value[i].vec3);
         Vector<4, float> t(mesh->attributes["TANGENT"].value[i].vec3);
 
-        p = m * p;
+        Vector<4,float> p2 = m * p;
         n = m * n;
         t = m * t;
 
         //Model::Vertex nVert;
 
         //nVert.pos = glm::vec3(p[0] / p[3], p[1] / p[3], p[2] / p[3]);
-        newAttributes["POSITION"].value[i].vec3 = Vector<3, float>(p) / p[3];
+        newAttributes["POSITION"].value[i].vec3 = Vector<3, float>(p2) / p2[3];
         newAttributes["NORMAL"].value[i].vec3 = Vector<3, float>(n);
         logger(std::cout) << p << std::endl;
         logger(std::cout) << newAttributes["POSITION"].value[i].vec3 << std::endl;
