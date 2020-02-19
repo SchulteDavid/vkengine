@@ -142,8 +142,6 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
         //nVert.pos = glm::vec3(p[0] / p[3], p[1] / p[3], p[2] / p[3]);
         newAttributes["POSITION"].value[i].vec3 = Vector<3, float>(p2) / p2[3];
         newAttributes["NORMAL"].value[i].vec3 = Vector<3, float>(n);
-        logger(std::cout) << p << std::endl;
-        logger(std::cout) << newAttributes["POSITION"].value[i].vec3 << std::endl;
         newAttributes["TANGENT"].value[i].vec3 = Vector<3, float>(t);
         //nVert.normal = glm::vec3(n[0], n[1], n[2]);
         //nVert.tangent = glm::vec3(t[0], t[1], t[2]);
@@ -159,9 +157,25 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 }
 
 void Mesh::setMaterialIndex(int32_t index) {
-    for (unsigned int i = 0; i < verts.size(); ++i) {
+    /*for (unsigned int i = 0; i < verts.size(); ++i) {
         verts[i].matIndex = index;
+    }*/
+
+    if (attributes.find("MATERIAL_INDEX") == attributes.end()) {
+
+        VertexAttribute matAttr;
+        matAttr.type = ATTRIBUTE_INT;
+        matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(attributes["POSITION"].value.size());
+        attributes["MATERIAL_INDEX"] = matAttr;
+
     }
+
+    for (unsigned int i = 0; i < attributes["MATERIAL_INDEX"].value.size(); ++i) {
+
+        attributes["MATERIAL_INDEX"].value[i].i = index;
+
+    }
+
 }
 
 std::shared_ptr<Mesh> operator*(Math::Matrix<4,4,float> m, std::shared_ptr<Mesh> mesh) {

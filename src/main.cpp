@@ -97,6 +97,8 @@ int main(int argc, char ** argv) {
 
     }
 
+    gltfLoadFile("sign.glb");
+
     Entity::registerDefaultEntityTypes();
 
     std::shared_ptr<Window> window(new Window(width, height));
@@ -105,8 +107,6 @@ int main(int argc, char ** argv) {
 
     Viewport * view = new Viewport(window, cam);
     window->setActiveViewport(view);
-
-    gltfLoadFile("sign.glb");
 
     //return 0;
 
