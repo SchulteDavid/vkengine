@@ -128,7 +128,7 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
 
 Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
 
-    std::vector<Mesh::InterleaveElement> elements(5);
+    std::vector<InterleaveElement> elements(5);
 
     elements[0].attributeName = "POSITION";
     elements[0].offset = offsetof(Vertex, pos);
@@ -145,6 +145,18 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
     elements[4].attributeName = "MATERIAL_INDEX";
     elements[4].offset = offsetof(Vertex, matIndex);
 
+
+    std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
+
+    this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
+    this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
+
+    this->vCount = mesh->getVertexCount();
+    this->iCount = mesh->getIndices().size();
+
+}
+
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements) {
 
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
 

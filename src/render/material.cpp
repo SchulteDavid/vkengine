@@ -76,6 +76,7 @@ bool MaterialUploader::uploadReady() {
     bool texturesOk = true;
 
     for (LoadingResource r : textures) {
+
         texturesOk &= r->status.isUseable;
     }
 

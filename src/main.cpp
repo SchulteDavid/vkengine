@@ -97,7 +97,7 @@ int main(int argc, char ** argv) {
 
     }
 
-    gltfLoadFile("sign.glb");
+    //gltfLoadFile("sheep_.glb");
 
     Entity::registerDefaultEntityTypes();
 
@@ -116,21 +116,26 @@ int main(int argc, char ** argv) {
 
     resourceManager->startLoadingThreads(1);
 
-    LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
-    LoadingResource cres = resourceManager->loadResourceBg("Structure", "exports.glb");
+    //LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
+    //LoadingResource cres = resourceManager->loadResourceBg("Structure", "sheep_.glb");
     LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
 
-    //std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
-    //window->addInputHandler(playerCtl);
+    std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
+    window->addInputHandler(playerCtl);
 
-    while (!tres->status.isUseable) {
+    /*while (!llvl->status.isUseable) {
         //view->drawFrame(false);
         glfwPollEvents();
-    }
+    }*/
+    /*std::cout << "Start wait for tres" << std::endl;
     tres->fut.wait();
-    cres->fut.wait();
+    std::cout << "Start wait for cres" << std::endl;
+    cres->fut.wait();*/
+    std::cout << "Start wait for llvl" << std::endl;
     llvl->fut.wait();
+
+    std::cout << "All futures are ok" << std::endl;
 
     resourceManager->joinLoadingThreads();
 

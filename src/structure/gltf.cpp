@@ -594,11 +594,23 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     gltf_asset_t asset = jsonData["asset"].get<gltf_asset_t>();
     std::vector<gltf_scene_t> scenes = jsonData["scenes"].get<std::vector<gltf_scene_t>>();
     std::vector<gltf_node_t> nodes = jsonData["nodes"].get<std::vector<gltf_node_t>>();
-    std::vector<gltf_material_t> materials = jsonData["materials"].get<std::vector<gltf_material_t>>();
+    std::vector<gltf_material_t> materials;
+    std::vector<gltf_image_t> images;
+    std::vector<gltf_texture_t> textures;
+
+    try {
+
+        materials = jsonData["materials"].get<std::vector<gltf_material_t>>();
+        images = jsonData["images"].get<std::vector<gltf_image_t>>();
+        textures = jsonData["textures"].get<std::vector<gltf_texture_t>>();
+
+    } catch (json::type_error & e) {
+
+        throw dbg::trace_exception("Missing material information from gltf file");
+
+    }
     std::vector<gltf_buffer_view_t> bufferViews = jsonData["bufferViews"].get<std::vector<gltf_buffer_view_t>>();
     std::vector<gltf_accessor_t> accessors = jsonData["accessors"].get<std::vector<gltf_accessor_t>>();
-    std::vector<gltf_image_t> images = jsonData["images"].get<std::vector<gltf_image_t>>();
-    std::vector<gltf_texture_t> textures = jsonData["textures"].get<std::vector<gltf_texture_t>>();
     std::vector<gltf_mesh_t> meshes = jsonData["meshes"].get<std::vector<gltf_mesh_t>>();
 
     int sceneID = jsonData["scene"].get<int>();
@@ -722,8 +734,6 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         colorImgName.append(":").append(colorImg.name);
 
         std::shared_ptr<ResourceUploader<Resource>> colorUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, colorData, colorWidth, colorHeight, 1));
-        LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImgName, colorUploader);
-        textureRes.push_back(colorImgRes);
 
 
         gltf_texture_t normalTex = fileData.textures[mat.normalTexture.index];
@@ -738,8 +748,6 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         normalImgName.append(":").append(normalImg.name);
 
         std::shared_ptr<ResourceUploader<Resource>> normalUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, normalData, normalWidth, normalHeight, 1));
-        LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImgName, normalUploader);
-        textureRes.push_back(normalImgRes);
 
 
         gltf_texture_t metallTex = fileData.textures[mat.metallicRoughnessTexture.index];
@@ -754,6 +762,13 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         metallImgName.append(":").append(metallImg.name);
 
         std::shared_ptr<ResourceUploader<Resource>> metallUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, metallData, metallWidth, metallHeight, 1));
+
+        LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImgName, colorUploader);
+        textureRes.push_back(colorImgRes);
+
+        LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImgName, normalUploader);
+        textureRes.push_back(normalImgRes);
+
         LoadingResource metallImgRes = this->scheduleSubresource("Texture", metallImgName, metallUploader);
         textureRes.push_back(metallImgRes);
 

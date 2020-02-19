@@ -55,16 +55,16 @@ class VertexAttribute {
 
 };
 
+struct InterleaveElement {
+
+    std::string attributeName;
+    uint32_t offset;
+
+};
+
 class Mesh {
 
     public:
-
-        struct InterleaveElement {
-
-            std::string attributeName;
-            uint32_t offset;
-
-        };
 
         Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices);
         Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices);

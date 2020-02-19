@@ -110,7 +110,7 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
     using namespace Math;
 
     if (fname.substr(fname.length()-4).compare("strc"))
-        throw std::runtime_error("Wrong file ending, expected strc");
+        throw dbg::trace_exception("Wrong file ending, expected strc");
 
     try {
 

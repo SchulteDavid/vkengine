@@ -120,7 +120,7 @@ void Camera::updateView() {
 
     facing = glm::vec3(tmpFacing[0], tmpFacing[1], tmpFacing[2]);
 
-    this->view = glm::lookAt(position, position + facing, glm::vec3(up[0], up[1], up[2]));
+    this->view = glm::lookAt(position, glm::vec3(0,0,0), glm::vec3(up[0], up[1], up[2]));
 
 }
 

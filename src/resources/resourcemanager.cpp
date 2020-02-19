@@ -80,6 +80,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
         while (resourceManager->keepThreadsRunning) {
 
+            //std::cout << "Getting new Resource to load" << std::endl;
             LoadingResource fres = resourceManager->getNextResource();
             if (!fres->isPresent) continue;
 
@@ -87,10 +88,11 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
                 logger(std::cout) << "Skipping loading of " << fres->name << " is already loaded" << std::endl;
 
+                fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
                 fres->status.isLoaded = true;
                 fres->status.isUploaded = true;
                 fres->status.isUseable = true;
-                fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
+                fres->prom.set_value();
 
                 continue;
 
@@ -164,7 +166,17 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
         std::shared_ptr<FutureResource> fres = resourceManager->getNextUploadingResource();
         if (!fres || !fres->isPresent) continue;
 
-        if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
+        if (resourceManager->isLoaded(fres->regName, fres->name)) {
+
+            fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
+            fres->status.isLoaded = true;
+            fres->status.isUploaded = true;
+            fres->status.isUseable = true;
+            fres->prom.set_value();
+
+            continue;
+
+        }
 
         if (!fres->status.isLoaded)
             throw dbg::trace_exception("Non-loaded element in uploading queue");
