@@ -454,6 +454,8 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
         attr.type = gltfDecodeAttributeType(acc);
         attr.value = std::vector<VertexAttribute::VertexAttributeData>(acc.count);
 
+        logger(std::cout) << "Loading buffer of type " << attr.type << " for " << it.first << std::endl;
+
         switch (attr.type) {
 
             case ATTRIBUTE_FLOAT:
@@ -465,11 +467,11 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
                 break;
 
             case ATTRIBUTE_VEC3:
-                gltfLoadVec2Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                gltfLoadVec3Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
                 break;
 
             case ATTRIBUTE_VEC4:
-                gltfLoadVec2Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                gltfLoadVec4Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
                 break;
 
             case ATTRIBUTE_INT:
@@ -484,29 +486,6 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
     gltf_accessor_t & indexAcc = accessors[prim.indices];
 
-    /*gltf_accessor_t & posAcc = accessors[prim.position];
-    gltf_accessor_t & normalAcc = accessors[prim.normal];
-    gltf_accessor_t & uvAcc = accessors[prim.uv];
-
-    std::vector<Model::Vertex> verts(posAcc.count);
-
-    for (unsigned int i = 0; i < posAcc.count; ++i) {
-
-        verts[i].pos.x = gltfGetBufferData<float>(posAcc, bufferViews, buffer, i*3);
-        verts[i].pos.y = gltfGetBufferData<float>(posAcc, bufferViews, buffer, i*3+1);
-        verts[i].pos.z = gltfGetBufferData<float>(posAcc, bufferViews, buffer, i*3+2);
-
-        verts[i].normal.x = gltfGetBufferData<float>(normalAcc, bufferViews, buffer, i*3);
-        verts[i].normal.y = gltfGetBufferData<float>(normalAcc, bufferViews, buffer, i*3+1);
-        verts[i].normal.z = gltfGetBufferData<float>(normalAcc, bufferViews, buffer, i*3+2);
-
-        verts[i].uv.x = gltfGetBufferData<float>(uvAcc, bufferViews, buffer, i*2);
-        verts[i].uv.y = gltfGetBufferData<float>(uvAcc, bufferViews, buffer, i*2+1);
-
-        verts[i].matIndex = prim.material;
-
-    }*/
-
     std::vector<uint16_t> indices(indexAcc.count);
 
     for (unsigned int i = 0; i < indexAcc.count; ++i) {
@@ -514,12 +493,6 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
         indices[i] = gltfGetBufferData<uint16_t>(indexAcc, bufferViews[indexAcc.bufferView], buffer, i);
 
     }
-
-    //MeshHelper::computeTangents(verts, indices);
-
-    /*for (unsigned int i = 0; i < verts.size(); ++i) {
-        verts[i].matIndex = prim.material;
-    }*/
 
     std::shared_ptr<Mesh> mmesh(new Mesh(attributes, indices));
 

@@ -125,6 +125,12 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
             logger(std::cout) << "Loading Done " << fres->name << std::endl;
 
         }
+    } catch (dbg::trace_exception e) {
+
+        logger(std::cerr) << "Exception while loading" << std::endl;
+        logger(std::cerr) << e.what() << std::endl;
+        exit(1);
+
     } catch (std::exception e) {
 
         logger(std::cerr) << "Exception while loading" << std::endl;
