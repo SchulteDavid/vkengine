@@ -12,7 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "../../util/debug/stacktrace.h"
+#include "util/debug/stacktrace.h"
+#include "util/debug/logger.h"
 
 using namespace vkutil;
 
@@ -66,10 +67,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
         #ifdef THROW_ON_WARN
         throw dbg::trace_exception(pCallbackData->pMessage);
         #else
-        std::cerr << "WARNING : " << pCallbackData->pMessage << std::endl;
+        logger(std::cerr) << "WARNING : " << pCallbackData->pMessage << std::endl;
         #endif
     } else {
-        std::cout << "DEBUG   : " << pCallbackData->pMessage << std::endl;
+        logger(std::cout) << "DEBUG   : " << pCallbackData->pMessage << std::endl;
     }
     //exit(1);
     return VK_FALSE;
@@ -174,10 +175,10 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-    std::cout << "available extensions:" << std::endl;
+    logger(std::cout) << "available extensions:" << std::endl;
     for (int i = 0; i < extensions.size(); ++i) {
 
-        std::cout << "\t" << extensions[i].extensionName << std::endl;
+        logger(std::cout) << "\t" << extensions[i].extensionName << std::endl;
 
     }
 
@@ -406,7 +407,7 @@ VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR & capabilities, GLFWw
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    VkExtent2D newExtent = {width, height};
+    VkExtent2D newExtent = {(uint32_t) width, (uint32_t) height};
 
     newExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, newExtent.width));
     newExtent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, newExtent.height));
@@ -439,7 +440,7 @@ SwapChain vkutil::createSwapchain(const VkPhysicalDevice & physicalDevice, const
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily, indices.presentFamily};
+    uint32_t queueFamilyIndices[] = {(uint32_t) indices.graphicsFamily, (uint32_t) indices.presentFamily};
 
     if (indices.presentFamily != indices.graphicsFamily) {
 

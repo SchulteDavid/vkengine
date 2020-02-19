@@ -19,6 +19,7 @@ class PhysicsObject {
 
         double getMass();
         double getAngularFactor();
+        void setAngularFactor(double f);
         btCollisionShape * getCollisionShape();
 
         Math::Quaternion<double> getRotation();

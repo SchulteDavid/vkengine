@@ -13,6 +13,7 @@
 
 
 using json = nlohmann::json;
+using namespace Math;
 
 typedef struct glb_header_t {
 
@@ -244,10 +245,12 @@ size_t gltfGetElementCount(std::string type) {
 struct gltf_accessor_t {
 
     int bufferView;
-    int count;
+    unsigned int count;
 
     size_t dataTypeSize;
     size_t dataElementCount;
+
+    int rawDataType;
 
 };
 
@@ -258,6 +261,8 @@ void from_json(const json & j, gltf_accessor_t & acc) {
 
     acc.dataTypeSize = gltfGetDataSize(j.at("componentType").get<int>());
     acc.dataElementCount = gltfGetElementCount(j.at("type").get<std::string>());
+
+    j.at("componentType").get_to(acc.rawDataType);
 
 }
 
@@ -326,21 +331,28 @@ void from_json(const json & j, gltf_mesh_primitive_t & prim) {
 struct gltf_mesh_t {
 
     std::vector<gltf_mesh_primitive_t> primitives;
+    std::unordered_map<std::string, int> attributes;
 
 };
 
 void from_json(const json & j, gltf_mesh_t & mesh) {
 
     j.at("primitives").get_to(mesh.primitives);
+    /*for (auto it : ) {
+
+        std::cout << it << std::endl;
+
+    }*/
+    j.at("primitives")[0].at("attributes").get_to(mesh.attributes);
 
 }
 
-template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, std::vector<gltf_buffer_view_t> & bufferViews, uint8_t * data, int index) {
+template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, gltf_buffer_view_t & bufferView, uint8_t * data, int index) {
 
     /*if (index > acc.count)
         throw dbg::trace_exception("No enougth elements in buffer view");*/
 
-    uint32_t offset = bufferViews[acc.bufferView].byteOffset;
+    uint32_t offset = bufferView.byteOffset;
 
     offset += index * sizeof(T);
 
@@ -348,49 +360,145 @@ template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, std::vector<glt
 
 }
 
+VertexAttributeType gltfDecodeAttributeType(const gltf_accessor_t & acc) {
+
+    if (acc.dataElementCount > 1) {
+        return (VertexAttributeType) acc.dataElementCount;
+    } else if (acc.rawDataType == 5125) {
+        return ATTRIBUTE_INT;
+    }
+
+    return ATTRIBUTE_FLOAT;
+
+}
+
+void gltfLoadFloatBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+
+    for (unsigned int i = 0; i < acc.count; ++i) {
+
+        value[i].f = gltfGetBufferData<float>(acc, view, buffer, i);
+
+    }
+
+}
+
+void gltfLoadIntBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+
+    for (unsigned int i = 0; i < acc.count; ++i) {
+
+        value[i].i = gltfGetBufferData<int32_t>(acc, view, buffer, i);
+
+    }
+
+}
+
+void gltfLoadVec2Buffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+
+    for (unsigned int i = 0; i < acc.count; ++i) {
+
+        float tmp[2];
+
+        tmp[0] = gltfGetBufferData<float>(acc, view, buffer, i*2);
+        tmp[1] = gltfGetBufferData<float>(acc, view, buffer, i*2+1);
+
+        value[i].vec2 = Vector<2, float>(tmp);
+
+    }
+
+}
+
+void gltfLoadVec3Buffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+
+    for (unsigned int i = 0; i < acc.count; ++i) {
+
+        float tmp[3];
+
+        tmp[0] = gltfGetBufferData<float>(acc, view, buffer, i*3);
+        tmp[1] = gltfGetBufferData<float>(acc, view, buffer, i*3+1);
+        tmp[2] = gltfGetBufferData<float>(acc, view, buffer, i*3+2);
+
+        value[i].vec3 = Vector<3, float>(tmp);
+
+    }
+
+}
+
+void gltfLoadVec4Buffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+
+    for (unsigned int i = 0; i < acc.count; ++i) {
+
+        float tmp[4];
+
+        tmp[0] = gltfGetBufferData<float>(acc, view, buffer, i*4);
+        tmp[1] = gltfGetBufferData<float>(acc, view, buffer, i*4+1);
+        tmp[2] = gltfGetBufferData<float>(acc, view, buffer, i*4+2);
+        tmp[3] = gltfGetBufferData<float>(acc, view, buffer, i*4+3);
+
+        value[i].vec4 = Vector<4, float>(tmp);
+
+    }
+
+}
+
 std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor_t> & accessors, std::vector<gltf_buffer_view_t> & bufferViews, uint8_t * buffer) {
 
     gltf_mesh_primitive_t prim = mesh.primitives[0];
 
-    gltf_accessor_t & posAcc = accessors[prim.position];
-    gltf_accessor_t & normalAcc = accessors[prim.normal];
-    gltf_accessor_t & uvAcc = accessors[prim.uv];
-    gltf_accessor_t & indexAcc = accessors[prim.indices];
+    std::unordered_map<std::string, VertexAttribute> attributes;
 
-    std::vector<Model::Vertex> verts(posAcc.count);
+    for (auto it : mesh.attributes) {
 
-    for (unsigned int i = 0; i < posAcc.count; ++i) {
+        gltf_accessor_t acc = accessors[it.second];
 
-        verts[i].pos.x = gltfGetBufferData<float>(posAcc, bufferViews, buffer, i*3);
-        verts[i].pos.y = gltfGetBufferData<float>(posAcc, bufferViews, buffer, i*3+1);
-        verts[i].pos.z = gltfGetBufferData<float>(posAcc, bufferViews, buffer, i*3+2);
+        VertexAttribute attr;
+        attr.type = gltfDecodeAttributeType(acc);
+        attr.value = std::vector<VertexAttribute::VertexAttributeData>(acc.count);
 
-        verts[i].normal.x = gltfGetBufferData<float>(normalAcc, bufferViews, buffer, i*3);
-        verts[i].normal.y = gltfGetBufferData<float>(normalAcc, bufferViews, buffer, i*3+1);
-        verts[i].normal.z = gltfGetBufferData<float>(normalAcc, bufferViews, buffer, i*3+2);
+        logger(std::cout) << "Loading buffer of type " << attr.type << " for " << it.first << std::endl;
 
-        verts[i].uv.x = gltfGetBufferData<float>(uvAcc, bufferViews, buffer, i*2);
-        verts[i].uv.y = gltfGetBufferData<float>(uvAcc, bufferViews, buffer, i*2+1);
+        switch (attr.type) {
 
-        verts[i].matIndex = prim.material;
+            case ATTRIBUTE_FLOAT:
+                gltfLoadFloatBuffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                break;
+
+            case ATTRIBUTE_VEC2:
+                gltfLoadVec2Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                break;
+
+            case ATTRIBUTE_VEC3:
+                gltfLoadVec3Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                break;
+
+            case ATTRIBUTE_VEC4:
+                gltfLoadVec4Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                break;
+
+            case ATTRIBUTE_INT:
+                gltfLoadIntBuffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+                break;
+
+        }
+
+        attributes[it.first] = attr;
 
     }
+
+    gltf_accessor_t & indexAcc = accessors[prim.indices];
 
     std::vector<uint16_t> indices(indexAcc.count);
 
     for (unsigned int i = 0; i < indexAcc.count; ++i) {
 
-        indices[i] = gltfGetBufferData<uint16_t>(indexAcc, bufferViews, buffer, i);
+        indices[i] = gltfGetBufferData<uint16_t>(indexAcc, bufferViews[indexAcc.bufferView], buffer, i);
 
     }
 
-    MeshHelper::computeTangents(verts, indices);
+    std::shared_ptr<Mesh> mmesh(new Mesh(attributes, indices));
 
-    for (unsigned int i = 0; i < verts.size(); ++i) {
-        verts[i].matIndex = prim.material;
-    }
+    mmesh->setMaterialIndex(0);
 
-    return std::shared_ptr<Mesh>(new Mesh(verts, indices));
+    return mmesh;
 
 }
 
@@ -486,11 +594,23 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     gltf_asset_t asset = jsonData["asset"].get<gltf_asset_t>();
     std::vector<gltf_scene_t> scenes = jsonData["scenes"].get<std::vector<gltf_scene_t>>();
     std::vector<gltf_node_t> nodes = jsonData["nodes"].get<std::vector<gltf_node_t>>();
-    std::vector<gltf_material_t> materials = jsonData["materials"].get<std::vector<gltf_material_t>>();
+    std::vector<gltf_material_t> materials;
+    std::vector<gltf_image_t> images;
+    std::vector<gltf_texture_t> textures;
+
+    try {
+
+        materials = jsonData["materials"].get<std::vector<gltf_material_t>>();
+        images = jsonData["images"].get<std::vector<gltf_image_t>>();
+        textures = jsonData["textures"].get<std::vector<gltf_texture_t>>();
+
+    } catch (json::type_error & e) {
+
+        throw dbg::trace_exception("Missing material information from gltf file");
+
+    }
     std::vector<gltf_buffer_view_t> bufferViews = jsonData["bufferViews"].get<std::vector<gltf_buffer_view_t>>();
     std::vector<gltf_accessor_t> accessors = jsonData["accessors"].get<std::vector<gltf_accessor_t>>();
-    std::vector<gltf_image_t> images = jsonData["images"].get<std::vector<gltf_image_t>>();
-    std::vector<gltf_texture_t> textures = jsonData["textures"].get<std::vector<gltf_texture_t>>();
     std::vector<gltf_mesh_t> meshes = jsonData["meshes"].get<std::vector<gltf_mesh_t>>();
 
     int sceneID = jsonData["scene"].get<int>();
@@ -614,8 +734,6 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         colorImgName.append(":").append(colorImg.name);
 
         std::shared_ptr<ResourceUploader<Resource>> colorUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, colorData, colorWidth, colorHeight, 1));
-        LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImgName, colorUploader);
-        textureRes.push_back(colorImgRes);
 
 
         gltf_texture_t normalTex = fileData.textures[mat.normalTexture.index];
@@ -630,8 +748,6 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         normalImgName.append(":").append(normalImg.name);
 
         std::shared_ptr<ResourceUploader<Resource>> normalUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, normalData, normalWidth, normalHeight, 1));
-        LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImgName, normalUploader);
-        textureRes.push_back(normalImgRes);
 
 
         gltf_texture_t metallTex = fileData.textures[mat.metallicRoughnessTexture.index];
@@ -646,6 +762,13 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         metallImgName.append(":").append(metallImg.name);
 
         std::shared_ptr<ResourceUploader<Resource>> metallUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, metallData, metallWidth, metallHeight, 1));
+
+        LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImgName, colorUploader);
+        textureRes.push_back(colorImgRes);
+
+        LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImgName, normalUploader);
+        textureRes.push_back(normalImgRes);
+
         LoadingResource metallImgRes = this->scheduleSubresource("Texture", metallImgName, metallUploader);
         textureRes.push_back(metallImgRes);
 

@@ -20,14 +20,12 @@
 #include "world/entity.h"
 #include "physics/physicscontext.h"
 
-#include "plugin/pyhelper.h"
-#include "plugin/pyplugin.h"
-
 #include "world/world.h"
 #include <execinfo.h>
 #include "structure/gltf.h"
 #include "structure/level.h"
 
+#include "util/debug/logger.h"
 
 #include <mathutils/matrix.h>
 
@@ -37,8 +35,6 @@ static bool run = true;
 static bool wait;
 
 void rotateFunc(std::shared_ptr<World> world, Viewport * view) {
-
-    float rotAxis[3] = {0, 0, 1};
 
     auto startRenderTime = std::chrono::high_resolution_clock::now();
 
@@ -101,6 +97,8 @@ int main(int argc, char ** argv) {
 
     }
 
+    //gltfLoadFile("sheep_.glb");
+
     Entity::registerDefaultEntityTypes();
 
     std::shared_ptr<Window> window(new Window(width, height));
@@ -110,8 +108,6 @@ int main(int argc, char ** argv) {
     Viewport * view = new Viewport(window, cam);
     window->setActiveViewport(view);
 
-    gltfLoadFile("sign.glb");
-
     //return 0;
 
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
@@ -120,32 +116,32 @@ int main(int argc, char ** argv) {
 
     resourceManager->startLoadingThreads(1);
 
-    LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
-    LoadingResource cres = resourceManager->loadResourceBg("Structure", "exports.glb");
+    //LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
+    //LoadingResource cres = resourceManager->loadResourceBg("Structure", "sheep_.glb");
     LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
 
-    //std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
-    //window->addInputHandler(playerCtl);
+    std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
+    window->addInputHandler(playerCtl);
 
-    PyHelper::startPythonInterpreter();
-
-    while (!tres->status.isUseable) {
+    /*while (!llvl->status.isUseable) {
         //view->drawFrame(false);
         glfwPollEvents();
-    }
+    }*/
+    /*std::cout << "Start wait for tres" << std::endl;
     tres->fut.wait();
-    cres->fut.wait();
+    std::cout << "Start wait for cres" << std::endl;
+    cres->fut.wait();*/
+    std::cout << "Start wait for llvl" << std::endl;
     llvl->fut.wait();
 
-    PyPlugin * plugin = new PyPlugin("pytest");
-    plugin->onInit(window.get());
+    std::cout << "All futures are ok" << std::endl;
 
     resourceManager->joinLoadingThreads();
 
-    std::cout << "Resource-summary: " << std::endl;
+    logger(std::cout) << "Resource-summary: " << std::endl;
     resourceManager->printSummary();
-    std::cout << "Done" << std::endl;
+    logger(std::cout) << "Done" << std::endl;
 
     view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
     view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
@@ -159,8 +155,6 @@ int main(int argc, char ** argv) {
     lvl->applyToWorld(world, view);
 
     std::thread rotateThread(rotateFunc, world, view);
-
-    pybind11::gil_scoped_release release;
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 
@@ -176,9 +170,7 @@ int main(int argc, char ** argv) {
 
     rotateThread.join();
 
-    PyHelper::stopPythonInterpreter();
-
-    std::cout << "End of mainloop" << std::endl;
+    logger(std::cout) << "End of mainloop" << std::endl;
 
     return 0;
 

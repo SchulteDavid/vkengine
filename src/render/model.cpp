@@ -77,11 +77,48 @@ std::vector<VkVertexInputAttributeDescription> Model::Vertex::getAttributeDescri
 
 }
 
+std::vector<uint8_t> convertToByteBuffer(std::vector<Model::Vertex> & verts) {
+
+    std::vector<uint8_t> data(sizeof(Model::Vertex) * verts.size());
+
+    uint32_t stride = sizeof(Model::Vertex);
+    uint32_t offset = 0;
+
+    for (unsigned int i = 0; i < verts.size(); ++i) {
+
+        offset = offsetof(Model::Vertex, pos);
+        *((float*) &data.data()[i*stride+offset])   = verts[i].pos.x;
+        *((float*) &data.data()[i*stride+offset+1]) = verts[i].pos.y;
+        *((float*) &data.data()[i*stride+offset+2]) = verts[i].pos.z;
+
+        offset = offsetof(Model::Vertex, normal);
+        *((float*) &data.data()[i*stride+offset])   = verts[i].normal.x;
+        *((float*) &data.data()[i*stride+offset+1]) = verts[i].normal.y;
+        *((float*) &data.data()[i*stride+offset+2]) = verts[i].normal.z;
+
+        offset = offsetof(Model::Vertex, tangent);
+        *((float*) &data.data()[i*stride+offset])   = verts[i].tangent.x;
+        *((float*) &data.data()[i*stride+offset+1]) = verts[i].tangent.y;
+        *((float*) &data.data()[i*stride+offset+2]) = verts[i].tangent.z;
+
+        offset = offsetof(Model::Vertex, uv);
+        *((float*) &data.data()[i*stride+offset])   = verts[i].uv.x;
+        *((float*) &data.data()[i*stride+offset+1]) = verts[i].uv.y;
+
+        offset = offsetof(Model::Vertex, matIndex);
+        *((int32_t*) &data.data()[i*stride+offset])   = verts[i].matIndex;
+
+    }
+
+    return data;
+
+}
+
 Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices) {
 
     MeshHelper::computeTangents(verts, indices);
 
-    this->vBuffer = new VertexBuffer<Vertex>(state, verts);
+    this->vBuffer = (VertexBuffer<uint8_t> *) new VertexBuffer<Vertex>(state, verts);
     this->iBuffer = new IndexBuffer<uint16_t>(state, indices);
 
     this->vCount = verts.size();
@@ -89,7 +126,45 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) : Model(state, mesh->getVerts(), mesh->getIndices()) {
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
+
+    std::vector<InterleaveElement> elements(5);
+
+    elements[0].attributeName = "POSITION";
+    elements[0].offset = offsetof(Vertex, pos);
+
+    elements[1].attributeName = "NORMAL";
+    elements[1].offset = offsetof(Vertex, normal);
+
+    elements[2].attributeName = "TANGENT";
+    elements[2].offset = offsetof(Vertex, tangent);
+
+    elements[3].attributeName = "TEXCOORD_0";
+    elements[3].offset = offsetof(Vertex, uv);
+
+    elements[4].attributeName = "MATERIAL_INDEX";
+    elements[4].offset = offsetof(Vertex, matIndex);
+
+
+    std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
+
+    this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
+    this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
+
+    this->vCount = mesh->getVertexCount();
+    this->iCount = mesh->getIndices().size();
+
+}
+
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements) {
+
+    std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
+
+    this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
+    this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
+
+    this->vCount = mesh->getVertexCount();
+    this->iCount = mesh->getIndices().size();
 
 }
 

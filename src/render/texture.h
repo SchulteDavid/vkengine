@@ -18,7 +18,7 @@ class Texture : public Resource
         Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth);
         virtual ~Texture();
 
-        void transitionLayout(const vkutil::VulkanState & state, VkImageLayout layout);
+        void transitionLayout(vkutil::VulkanState & state, VkImageLayout layout);
 
         VkImageView & getView();
         VkImageLayout getLayout();
@@ -31,7 +31,7 @@ class Texture : public Resource
         static void copyBufferToImage(const vkutil::VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth);
         static VkImageView createImageView(const vkutil::VulkanState & state, VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);
         static VkSampler createSampler(const vkutil::VulkanState & state, int mipLevels);
-        static void transitionImageLayout(const vkutil::VulkanState & state, VkImage & image, VkFormat format, VkImageLayout layout, VkImageLayout newLayout, int mipLevels);
+        static void transitionImageLayout(vkutil::VulkanState & state, VkImage & image, VkFormat format, VkImageLayout layout, VkImageLayout newLayout, int mipLevels);
 
     protected:
 

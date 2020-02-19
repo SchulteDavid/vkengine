@@ -16,9 +16,12 @@ struct Level::Placement  {
     Math::Vector<3, double> scale;
 
     double mass;
+    double angularFactor;
     btCollisionShape * collisionShape;
 
     std::string entityType;
+
+    bool placeStructure;
 
 };
 
@@ -93,17 +96,22 @@ void Level::applyToWorld(std::shared_ptr<World> world, Viewport * view) {
 
         for (Placement & p : placements[strc]) {
 
-            RenderElement::Transform trans;
-            trans.scale = p.scale[0];
-            trans.qRot = Quaternion<float>(p.rot.a, p.rot.b, p.rot.c, p.rot.d);
-            trans.position = Vector<4,float>(p.pos[0], p.pos[1], p.pos[2], 0);
-
-            RenderElement::Instance instance = rElem->addInstance(trans);
-
             std::shared_ptr<PhysicsObject> physObj(new PhysicsObject(p.mass, p.pos, p.rot, p.collisionShape));
 
-            //std::shared_ptr<Entity> entity(new Entity(rElem, instance, physObj));
-            std::shared_ptr<Entity> entity = Entity::buildEntityFromType(p.entityType, rElem, instance, physObj);
+            physObj->setAngularFactor(p.angularFactor);
+
+            std::shared_ptr<Entity> entity;
+            if (!p.placeStructure) {
+                entity = Entity::buildEntityFromType(p.entityType, nullptr, (RenderElement::Instance) {0}, physObj);
+            } else {
+                RenderElement::Transform trans;
+                trans.scale = p.scale[0];
+                trans.qRot = Quaternion<float>(p.rot.a, p.rot.b, p.rot.c, p.rot.d);
+                trans.position = Vector<4,float>(p.pos[0], p.pos[1], p.pos[2], 0);
+
+                RenderElement::Instance instance = rElem->addInstance(trans);
+                entity = Entity::buildEntityFromType(p.entityType, rElem, instance, physObj);
+            }
 
             world->addEntity(entity);
 
@@ -178,10 +186,25 @@ void loadPlacementPhysics(std::shared_ptr<config::NodeCompound> physics, Level::
     std::string type(collision->getNode<char>("type")->getRawData());
     if (!type.compare("box")) {
         std::shared_ptr<config::Node<double>> s = collision->getNode<double>("size");
-        //std::cout << s << std::endl;
         p.collisionShape = new btBoxShape(btVector3(s->getElement(0), s->getElement(1), s->getElement(2)));
-    } else {
+    } else if (!type.compare("sphere")){
+        double radius = collision->getNode<double>("radius")->getElement(0);
+        p.collisionShape = new btSphereShape(radius);
+    } else if (!type.compare("capsule")) {
+        double radius = collision->getNode<double>("radius")->getElement(0);
+        double height = collision->getNode<double>("height")->getElement(0);
+        p.collisionShape = new btCapsuleShapeZ(radius, height);
+    }else {
         p.collisionShape = new btBoxShape(btVector3(1,1,1));
+    }
+
+    try {
+
+        double fac = physics->getNode<double>("angularFactor")->getElement(0);
+        p.angularFactor = fac;
+
+    } catch (...) {
+        p.angularFactor = 1.0;
     }
 
 }
@@ -210,11 +233,20 @@ std::shared_ptr<ResourceUploader<Level>> LevelLoader::loadResource(std::string f
         std::shared_ptr<NodeCompound> trans = elem->getNodeCompound("transform");
         std::shared_ptr<NodeCompound> physics = elem->getNodeCompound("physics");
 
+
+        bool placeStructure;
+        try {
+            placeStructure = elem->getNode<int32_t>("placeStructure")->getElement(0);
+        } catch (...) {
+            placeStructure = true;
+        }
+
         Level::Placement p;
         loadPlacementTransform(trans, p);
         loadPlacementPhysics(physics, p);
 
         p.entityType = entityType;
+        p.placeStructure = placeStructure;
 
         LoadingPlacement ldPlace;
         ldPlace.p = p;

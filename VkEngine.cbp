@@ -146,6 +146,7 @@
 		<Unit filename="src/structure/level.h" />
 		<Unit filename="src/structure/structure.cpp" />
 		<Unit filename="src/structure/structure.h" />
+		<Unit filename="src/util/debug/logger.h" />
 		<Unit filename="src/util/debug/stacktrace.h" />
 		<Unit filename="src/util/debug/trace_exception.cpp" />
 		<Unit filename="src/util/debug/trace_exception.h" />

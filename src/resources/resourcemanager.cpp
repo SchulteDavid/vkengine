@@ -6,6 +6,7 @@
 #include "../render/shader.h"
 
 #include "util/debug/trace_exception.h"
+#include "util/debug/logger.h"
 
 ResourceManager::ResourceManager(unsigned int regTypes) {
 
@@ -79,17 +80,19 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
         while (resourceManager->keepThreadsRunning) {
 
+            //std::cout << "Getting new Resource to load" << std::endl;
             LoadingResource fres = resourceManager->getNextResource();
             if (!fres->isPresent) continue;
 
             if (resourceManager->isLoaded(fres->regName, fres->name)) {
 
-                std::cout << "Skipping loading of " << fres->name << " is already loaded" << std::endl;
+                logger(std::cout) << "Skipping loading of " << fres->name << " is already loaded" << std::endl;
 
+                fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
                 fres->status.isLoaded = true;
                 fres->status.isUploaded = true;
                 fres->status.isUseable = true;
-                fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
+                fres->prom.set_value();
 
                 continue;
 
@@ -104,7 +107,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
             }
 
-            std::cout << "Loading " << fres->regName << " / " << fres->name << std::endl;
+            logger(std::cout) << "Loading " << fres->regName << " / " << fres->name << std::endl;
 
             resourceManager->markResourceInPipeline(fres);
 
@@ -113,7 +116,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
                 throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name));
             fres->uploader = uploader;
 
-            std::cout << fres->name << " : " << uploader << std::endl;
+            logger(std::cout) << fres->name << " : " << uploader << std::endl;
 
             fres->status.isLoaded = true;
 
@@ -121,13 +124,19 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
 
 
-            std::cout << "Loading Done " << fres->name << std::endl;
+            logger(std::cout) << "Loading Done " << fres->name << std::endl;
 
         }
+    } catch (dbg::trace_exception e) {
+
+        logger(std::cerr) << "Exception while loading" << std::endl;
+        logger(std::cerr) << e.what() << std::endl;
+        exit(1);
+
     } catch (std::exception e) {
 
-        std::cerr << "Exception while loading" << std::endl;
-        std::cerr << e.what() << std::endl;
+        logger(std::cerr) << "Exception while loading" << std::endl;
+        logger(std::cerr) << e.what() << std::endl;
         exit(1);
 
     }
@@ -157,7 +166,17 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
         std::shared_ptr<FutureResource> fres = resourceManager->getNextUploadingResource();
         if (!fres || !fres->isPresent) continue;
 
-        if (resourceManager->isLoaded(fres->regName, fres->name)) continue;
+        if (resourceManager->isLoaded(fres->regName, fres->name)) {
+
+            fres->location = resourceManager->get<Resource>(fres->regName, fres->name);
+            fres->status.isLoaded = true;
+            fres->status.isUploaded = true;
+            fres->status.isUseable = true;
+            fres->prom.set_value();
+
+            continue;
+
+        }
 
         if (!fres->status.isLoaded)
             throw dbg::trace_exception("Non-loaded element in uploading queue");
@@ -172,7 +191,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
         }
 
-        std::cout << "Uploading " << fres->name << std::endl;
+        logger(std::cout) << "Uploading " << fres->name << std::endl;
 
         Resource * tmpResource = fres->uploader->uploadResource();
         fres->location = resourceManager->registerResource(fres->regName, fres->name, tmpResource);
@@ -276,7 +295,7 @@ void ResourceManager::printSummary() {
 
     for (auto const & x : this->registries) {
 
-        std::cout << x.first << ": " << std::endl;
+        logger(std::cout) << x.first << ": " << std::endl;
         x.second->printSummary();
 
     }

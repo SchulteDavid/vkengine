@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zlib.h>
 
@@ -117,6 +118,8 @@ uint8_t applyFilters(uint8_t filter, uint8_t * imageData, uint8_t * infData, uns
 
     }
 
+    return val;
+
 }
 
 uint8_t * pngLoadImageData(FILE * file, uint32_t * width, uint32_t * height, uint32_t * cCount) {
@@ -157,8 +160,6 @@ uint8_t * pngLoadImageData(FILE * file, uint32_t * width, uint32_t * height, uin
     uint32_t chunkType;
 
     uint8_t * iData = NULL;
-
-    int i = 0;
 
     while (1) {
 
@@ -248,6 +249,10 @@ uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * he
     hdrType = *((uint32_t *) (file + fOffset));
     fOffset += sizeof(uint32_t);
 
+    if (!hdrType) {
+        return NULL;
+    }
+
     png_hdr_t header;
     //fread(&header, sizeof(png_hdr_t), 1, file);
     //fseek(file, -3, SEEK_CUR);
@@ -262,9 +267,9 @@ uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * he
         return NULL;
     }
 
-    uint32_t crc;
+    //uint32_t crc;
     //fread(&crc, sizeof(uint32_t), 1, file);
-    crc = *((uint32_t *) file + fOffset);
+    //crc = *((uint32_t *) file + fOffset);
     fOffset += sizeof(uint32_t);
 
     uint32_t dataSize = 0;
@@ -274,8 +279,6 @@ uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * he
     uint32_t chunkType;
 
     uint8_t * iData = NULL;
-
-    int i = 0;
 
     while (1) {
 
@@ -315,7 +318,7 @@ uint8_t * pngLoadImageDataMemory(uint8_t * file, uint32_t * width, uint32_t * he
         }
 
         //fread(&crc, sizeof(uint32_t), 1, file);
-        crc = *((uint32_t *) (file + fOffset));
+        //crc = *((uint32_t *) (file + fOffset));
         fOffset += sizeof(uint32_t);
 
     }

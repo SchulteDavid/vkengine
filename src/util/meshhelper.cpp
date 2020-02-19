@@ -221,14 +221,14 @@ float MeshHelper::noise(float x, float y) {
     const float bfScale = 0.012;
     const float hfScale = 0.1;
 
-    float d = sqrt(x*x + y*y);
+    //float d = sqrt(x*x + y*y);
 
     return lfHeight * SimplexNoise1234::noise(x * bfScale, y * bfScale) * SimplexNoise1234::noise(x * lfScale, y * lfScale) + hfHeight * SimplexNoise1234::noise(x * hfScale, y * hfScale) + vfHeight * SimplexNoise1234::noise(x * 0.2, y * 0.2);
 }
 
 MeshHelper::ModelInfo MeshHelper::createHexagonPlane(int amount, float radius) {
 
-    float centerDist = sqrt(3) * radius;
+    //float centerDist = sqrt(3) * radius;
 
     /*std::array<float, 9> matData = {
         1,    -0.5,       -0.5,
@@ -249,7 +249,7 @@ MeshHelper::ModelInfo MeshHelper::createHexagonPlane(int amount, float radius) {
     Matrix<3, 3, float> hexToCart(matData.data());
     Vector<3, float> vec(test.data());
 
-    std::array<float, 3> normal = {0,0,1};
+    std::array<float, 3> normal = {0.0,0.0,1.0};
 
     ModelInfo data;
 
@@ -261,7 +261,7 @@ MeshHelper::ModelInfo MeshHelper::createHexagonPlane(int amount, float radius) {
 
             if (z < -amount+1 || z >= amount) continue;
 
-            std::array<float, 3> center = {x,y,0};
+            std::array<float, 3> center = {(float) x, (float) y,0};
             Vector<3, float> hexPos(center.data());
             Vector<3, float> cartPos = radius * (hexToCart * hexPos);
 

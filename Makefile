@@ -69,6 +69,14 @@ Debug: CFLAGS +=-g -rdynamic -DDEBUG
 Debug: CXXFLAGS +=-g -rdynamic -DDEBUG
 Debug: bin/Debug/${PROGNAME}
 
+Logging: CFLAGS +=-g -rdynamic -DDEBUG -DDEBUG_LOGGING
+Logging: CXXFLAGS +=-g -rdynamic -DDEBUG -DDEBUG_LOGGING
+Logging: bin/Debug/${PROGNAME}
+
+DebugW: CFLAGS +=-g -rdynamic -DDEBUG -Werror
+DebugW: CXXFLAGS +=-g -rdynamic -DDEBUG -Werror
+DebugW: bin/Debug/${PROGNAME}
+
 Release: CFLAGS +=-O2
 Release: CXXFLAGS += -O2
 Release: bin/Release/${PROGNAME}
