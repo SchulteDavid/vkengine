@@ -49,11 +49,12 @@ dbg::trace_exception::trace_exception(std::string msg, uint32_t max_frames) {
 
         if (begin_name && begin_offset && end_offset && begin_offset < end_offset) {
 
-            *begin_name++ = '\0';
+            /**begin_name++ = '\0';
             *begin_offset++ = '\0';
-            *end_offset = '\0';
+            *end_offset = '\0';*/
 
-            int status;
+
+            int status = 0;
             char* ret = abi::__cxa_demangle(begin_name, funcName, &funcNameSize, &status);
 
             if (!ret) {

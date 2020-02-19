@@ -1,6 +1,10 @@
 #include "mesh.h"
 
+#include <unordered_set>
+
 #include <ply.hpp>
+
+#include "meshhelper.h"
 
 using namespace Math;
 
@@ -72,6 +76,41 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
     this->attributes = attributes;
     this->indices = indices;
 
+    if (this->attributes.find("MATERIAL_INDEX") == this->attributes.end()) {
+
+        VertexAttribute matAttr;
+        matAttr.type = ATTRIBUTE_INT;
+        matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
+
+        for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+            matAttr.value[i].i = 0;
+        }
+
+        this->attributes["MATERIAL_INDEX"] = matAttr;
+
+    }
+
+    if (this->attributes.find("TANGENT") == this->attributes.end()) {
+
+        std::vector<Model::Vertex> verts = getVerts();
+        MeshHelper::computeTangents(verts, indices);
+
+        VertexAttribute tangentAttr;
+        tangentAttr.type = ATTRIBUTE_VEC3;
+        tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
+
+        for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+
+            float tmp[3] = {verts[i].tangent.x, verts[i].tangent.y, verts[i].tangent.z};
+
+            tangentAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        }
+
+        this->attributes["TANGENT"] = tangentAttr;
+
+    }
+
 }
 
 Mesh::~Mesh() {
@@ -80,20 +119,31 @@ Mesh::~Mesh() {
 
 }
 
+unsigned int Mesh::getVertexCount() {
+
+    return this->attributes["POSITION"].value.size();
+
+}
+
 std::vector<Model::Vertex> Mesh::getVerts() {
-    //return verts;
 
     std::vector<Model::Vertex> verts(this->attributes["POSITION"].value.size());
+
+    bool hasTangents = attributes.find("TANGENT") != attributes.end();
 
     for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
 
         verts[i].pos = glm::vec3(attributes["POSITION"].value[i].vec3[0], attributes["POSITION"].value[i].vec3[1], attributes["POSITION"].value[i].vec3[2]);
         verts[i].normal = glm::vec3(attributes["NORMAL"].value[i].vec3[0], attributes["NORMAL"].value[i].vec3[1], attributes["NORMAL"].value[i].vec3[2]);
-        verts[i].tangent = glm::vec3(attributes["TANGENT"].value[i].vec3[0], attributes["TANGENT"].value[i].vec3[1], attributes["TANGENT"].value[i].vec3[2]);
+        if (hasTangents)
+            verts[i].tangent = glm::vec3(attributes["TANGENT"].value[i].vec3[0], attributes["TANGENT"].value[i].vec3[1], attributes["TANGENT"].value[i].vec3[2]);
         verts[i].uv = glm::vec2(attributes["TEXCOORD_0"].value[i].vec2[0], attributes["TEXCOORD_0"].value[i].vec2[1]);
         verts[i].matIndex = attributes["MATERIAL_INDEX"].value[i].i;
 
     }
+
+    if (!hasTangents)
+        MeshHelper::computeTangents(verts, indices);
 
     return verts;
 
@@ -131,20 +181,23 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 
         Vector<4, float> p(pos[0], pos[1], pos[2], 1);
         Vector<4, float> n(mesh->attributes["NORMAL"].value[i].vec3);
-        Vector<4, float> t(mesh->attributes["TANGENT"].value[i].vec3);
 
         Vector<4,float> p2 = m * p;
         n = m * n;
-        t = m * t;
 
         //Model::Vertex nVert;
 
         //nVert.pos = glm::vec3(p[0] / p[3], p[1] / p[3], p[2] / p[3]);
         newAttributes["POSITION"].value[i].vec3 = Vector<3, float>(p2) / p2[3];
         newAttributes["NORMAL"].value[i].vec3 = Vector<3, float>(n);
-        //logger(std::cout) << p << std::endl;
-        //logger(std::cout) << newAttributes["POSITION"].value[i].vec3 << std::endl;
-        newAttributes["TANGENT"].value[i].vec3 = Vector<3, float>(t);
+
+        if (mesh->attributes.find("TANGENT") != mesh->attributes.end()) {
+
+            Vector<4, float> t(mesh->attributes["TANGENT"].value[i].vec3);
+            t = m * t;
+            newAttributes["TANGENT"].value[i].vec3 = Vector<3, float>(t);
+
+        }
         //nVert.normal = glm::vec3(n[0], n[1], n[2]);
         //nVert.tangent = glm::vec3(t[0], t[1], t[2]);
         //nVert.uv = v.uv;
@@ -159,14 +212,153 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 }
 
 void Mesh::setMaterialIndex(int32_t index) {
-    for (unsigned int i = 0; i < verts.size(); ++i) {
+    /*for (unsigned int i = 0; i < verts.size(); ++i) {
         verts[i].matIndex = index;
+    }*/
+
+    if (attributes.find("MATERIAL_INDEX") == attributes.end()) {
+
+        VertexAttribute matAttr;
+        matAttr.type = ATTRIBUTE_INT;
+        matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(attributes["POSITION"].value.size());
+        attributes["MATERIAL_INDEX"] = matAttr;
+
     }
+
+    for (unsigned int i = 0; i < attributes["MATERIAL_INDEX"].value.size(); ++i) {
+
+        attributes["MATERIAL_INDEX"].value[i].i = index;
+
+    }
+
 }
 
 std::shared_ptr<Mesh> operator*(Math::Matrix<4,4,float> m, std::shared_ptr<Mesh> mesh) {
 
     return Mesh::withTransform(mesh, m);
+
+}
+
+const VertexAttribute & Mesh::getAttribute(std::string name) {
+
+    if (this->attributes.find(name) == this->attributes.end())
+        throw dbg::trace_exception("No such attribute");
+
+    return attributes[name];
+
+}
+
+void insertFloatInBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
+
+    for (unsigned int i = 0; i < fData.size(); ++i) {
+
+        *((float *) (data + (i * stride + offset))) = fData[i].f;
+
+    }
+
+}
+
+void insertIntInBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
+
+    for (unsigned int i = 0; i < fData.size(); ++i) {
+
+        *((int32_t *) (data + (i * stride + offset))) = fData[i].i;
+
+    }
+
+}
+
+void insertVec2InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
+
+    for (unsigned int i = 0; i < fData.size(); ++i) {
+
+        *((float *) (data + (i * stride + offset))) = fData[i].vec2[0];
+        *((float *) (data + (i * stride + offset+1*sizeof(float)))) = fData[i].vec2[1];
+
+    }
+
+}
+
+void insertVec3InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
+
+    for (unsigned int i = 0; i < fData.size(); ++i) {
+
+        *((float *) (data + (i * stride + offset)))   = fData[i].vec3[0];
+        *((float *) (data + (i * stride + offset+1*sizeof(float)))) = fData[i].vec3[1];
+        *((float *) (data + (i * stride + offset+2*sizeof(float)))) = fData[i].vec3[2];
+
+    }
+
+}
+
+void insertVec4InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
+
+    for (unsigned int i = 0; i < fData.size(); ++i) {
+
+        *((float *) (data + (i * stride + offset)))   = fData[i].vec4[0];
+        *((float *) (data + (i * stride + offset+1*sizeof(float)))) = fData[i].vec4[1];
+        *((float *) (data + (i * stride + offset+2*sizeof(float)))) = fData[i].vec4[2];
+        *((float *) (data + (i * stride + offset+3*sizeof(float)))) = fData[i].vec4[3];
+
+    }
+
+}
+
+std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride) {
+
+    std::vector<uint8_t> data(stride * attributes["POSITION"].value.size());
+
+    for (InterleaveElement e : elements) {
+
+        if (e.offset >= stride) {
+            throw dbg::trace_exception("Offset >= stride, would override next vertex in buffer...");
+        }
+
+        if (attributes.find(e.attributeName) == attributes.end()) {
+            throw dbg::trace_exception("No Such attribute name");
+        }
+
+        VertexAttribute attr = attributes[e.attributeName];
+
+        std::cout << "Writing to buffer: " << e.attributeName << " : " << e.offset << " type = " << attr.type << std::endl;
+
+        switch (attr.type) {
+
+            case ATTRIBUTE_FLOAT:
+                insertFloatInBuffer(attr.value, data, e.offset, stride);
+                break;
+
+            case ATTRIBUTE_VEC2:
+                insertVec2InBuffer(attr.value, data, e.offset, stride);
+                break;
+
+            case ATTRIBUTE_VEC3:
+                insertVec3InBuffer(attr.value, data, e.offset, stride);
+                break;
+
+            case ATTRIBUTE_VEC4:
+                insertVec4InBuffer(attr.value, data, e.offset, stride);
+                break;
+
+            case ATTRIBUTE_INT:
+                insertIntInBuffer(attr.value, data, e.offset, stride);
+                break;
+
+        }
+
+    }
+
+    return data;
 
 }
 
@@ -201,13 +393,61 @@ std::shared_ptr<Mesh> Mesh::loadFromFile(std::string fname) {
 
 std::shared_ptr<Mesh> Mesh::merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh> m2) {
 
+    /// TODO: update to attribute meshes
+
     if (!m1) return m2;
     if (!m2) return m1;
 
-    std::vector<Model::Vertex> verts;
+    std::unordered_map<std::string, VertexAttribute> attributes;
+    std::unordered_set<std::string> attributeNames;
+    for (auto it : m1->attributes) {
+        attributeNames.insert(attributeNames.begin(), it.first);
+    }
+
+    for (auto it : m2->attributes) {
+        attributeNames.insert(attributeNames.begin(), it.first);
+    }
+
+    uint16_t m1Count;
+
+    for (std::string name : attributeNames) {
+
+        if (m1->attributes.find(name) == m1->attributes.end()) {
+            continue;
+        } else if (m2->attributes.find(name) == m2->attributes.end()) {
+            continue;
+        }
+
+        if (m1->attributes[name].type != m2->attributes[name].type) {
+            continue;
+        }
+
+        VertexAttribute attr;
+        attr.type = m1->attributes[name].type;
+        attr.value = std::vector<VertexAttribute::VertexAttributeData>(m1->attributes[name].value.size() + m2->attributes[name].value.size());
+
+        for (unsigned int i = 0; i < m1->attributes[name].value.size(); ++i) {
+
+            attr.value[i] = m1->attributes[name].value[i];
+
+        }
+
+        m1Count = m1->attributes[name].value.size();
+
+        for (unsigned int i = 0; i < m2->attributes[name].value.size(); ++i) {
+
+            attr.value[i + m1Count] = m2->attributes[name].value[i];
+
+        }
+
+        attributes[name] = attr;
+
+    }
+
+    //std::vector<Model::Vertex> verts;
     std::vector<uint16_t> indices;
 
-    for (Model::Vertex v : m1->verts) {
+    /*for (Model::Vertex v : m1->verts) {
         verts.push_back(v);
     }
 
@@ -215,7 +455,7 @@ std::shared_ptr<Mesh> Mesh::merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh
 
     for (Model::Vertex v : m2->verts) {
         verts.push_back(v);
-    }
+    }*/
 
     for (uint16_t i : m1->indices) {
         indices.push_back(i);
@@ -225,6 +465,6 @@ std::shared_ptr<Mesh> Mesh::merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh
         indices.push_back(i+m1Count);
     }
 
-    return std::shared_ptr<Mesh>(new Mesh(verts, indices));
+    return std::shared_ptr<Mesh>(new Mesh(attributes, indices));
 
 }

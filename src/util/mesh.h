@@ -11,11 +11,11 @@
 typedef enum VertexAttributeType : uint32_t {
 
     ATTRIBUTE_NONE,
-    ATTRIBUTE_FLOAT,
-    ATTRIBUTE_VEC2,
-    ATTRIBUTE_VEC3,
-    ATTRIBUTE_VEC4,
-    ATTRIBUTE_INT,
+    ATTRIBUTE_FLOAT=1,
+    ATTRIBUTE_VEC2=2,
+    ATTRIBUTE_VEC3=3,
+    ATTRIBUTE_VEC4=4,
+    ATTRIBUTE_INT=5,
 
 } VertexAttributeType ;
 
@@ -58,12 +58,26 @@ class VertexAttribute {
 class Mesh {
 
     public:
+
+        struct InterleaveElement {
+
+            std::string attributeName;
+            uint32_t offset;
+
+        };
+
         Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices);
         Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices);
         virtual ~Mesh();
 
         std::vector<Model::Vertex> getVerts();
         std::vector<uint16_t> & getIndices();
+
+        const VertexAttribute & getAttribute(std::string name);
+
+        unsigned int getVertexCount();
+
+        std::vector<uint8_t> getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride);
 
         void setMaterialIndex(int32_t index);
 
