@@ -142,8 +142,8 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
         //nVert.pos = glm::vec3(p[0] / p[3], p[1] / p[3], p[2] / p[3]);
         newAttributes["POSITION"].value[i].vec3 = Vector<3, float>(p2) / p2[3];
         newAttributes["NORMAL"].value[i].vec3 = Vector<3, float>(n);
-        logger(std::cout) << p << std::endl;
-        logger(std::cout) << newAttributes["POSITION"].value[i].vec3 << std::endl;
+        //logger(std::cout) << p << std::endl;
+        //logger(std::cout) << newAttributes["POSITION"].value[i].vec3 << std::endl;
         newAttributes["TANGENT"].value[i].vec3 = Vector<3, float>(t);
         //nVert.normal = glm::vec3(n[0], n[1], n[2]);
         //nVert.tangent = glm::vec3(t[0], t[1], t[2]);
