@@ -76,6 +76,41 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
     this->attributes = attributes;
     this->indices = indices;
 
+    if (this->attributes.find("MATERIAL_INDEX") == this->attributes.end()) {
+
+        VertexAttribute matAttr;
+        matAttr.type = ATTRIBUTE_INT;
+        matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
+
+        for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+            matAttr.value[i].i = 0;
+        }
+
+        this->attributes["MATERIAL_INDEX"] = matAttr;
+
+    }
+
+    if (this->attributes.find("TANGENT") == this->attributes.end()) {
+
+        std::vector<Model::Vertex> verts = getVerts();
+        MeshHelper::computeTangents(verts, indices);
+
+        VertexAttribute tangentAttr;
+        tangentAttr.type = ATTRIBUTE_VEC3;
+        tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
+
+        for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+
+            float tmp[3] = {verts[i].tangent.x, verts[i].tangent.y, verts[i].tangent.z};
+
+            tangentAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        }
+
+        this->attributes["TANGENT"] = tangentAttr;
+
+    }
+
 }
 
 Mesh::~Mesh() {
@@ -207,57 +242,67 @@ const VertexAttribute & Mesh::getAttribute(std::string name) {
 
 }
 
-void insertFloatInBuffer(std::vector<VertexAttribute::VertexAttributeData> fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+void insertFloatInBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
 
     for (unsigned int i = 0; i < fData.size(); ++i) {
 
-        *((float *) &buffer.data()[i*stride+offset]) = fData[i].f;
+        *((float *) (data + (i * stride + offset))) = fData[i].f;
 
     }
 
 }
 
-void insertIntInBuffer(std::vector<VertexAttribute::VertexAttributeData> fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+void insertIntInBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
 
     for (unsigned int i = 0; i < fData.size(); ++i) {
 
-        *((int32_t *) &buffer.data()[i*stride+offset]) = fData[i].i;
+        *((int32_t *) (data + (i * stride + offset))) = fData[i].i;
 
     }
 
 }
 
-void insertVec2InBuffer(std::vector<VertexAttribute::VertexAttributeData> fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+void insertVec2InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
 
     for (unsigned int i = 0; i < fData.size(); ++i) {
 
-        *((float *) &buffer.data()[i*stride+offset]) = fData[i].vec2[0];
-        *((float *) &buffer.data()[i*stride+offset+1]) = fData[i].vec2[1];
+        *((float *) (data + (i * stride + offset))) = fData[i].vec2[0];
+        *((float *) (data + (i * stride + offset+1*sizeof(float)))) = fData[i].vec2[1];
 
     }
 
 }
 
-void insertVec3InBuffer(std::vector<VertexAttribute::VertexAttributeData> fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+void insertVec3InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
 
     for (unsigned int i = 0; i < fData.size(); ++i) {
 
-        *((float *) &buffer.data()[i*stride+offset]) = fData[i].vec3[0];
-        *((float *) &buffer.data()[i*stride+offset+1]) = fData[i].vec3[1];
-        *((float *) &buffer.data()[i*stride+offset+2]) = fData[i].vec3[2];
+        *((float *) (data + (i * stride + offset)))   = fData[i].vec3[0];
+        *((float *) (data + (i * stride + offset+1*sizeof(float)))) = fData[i].vec3[1];
+        *((float *) (data + (i * stride + offset+2*sizeof(float)))) = fData[i].vec3[2];
 
     }
 
 }
 
-void insertVec4InBuffer(std::vector<VertexAttribute::VertexAttributeData> fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+void insertVec4InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
 
     for (unsigned int i = 0; i < fData.size(); ++i) {
 
-        *((float *) &buffer.data()[i*stride+offset]) = fData[i].vec4[0];
-        *((float *) &buffer.data()[i*stride+offset+1]) = fData[i].vec4[1];
-        *((float *) &buffer.data()[i*stride+offset+2]) = fData[i].vec4[2];
-        *((float *) &buffer.data()[i*stride+offset+3]) = fData[i].vec4[3];
+        *((float *) (data + (i * stride + offset)))   = fData[i].vec4[0];
+        *((float *) (data + (i * stride + offset+1*sizeof(float)))) = fData[i].vec4[1];
+        *((float *) (data + (i * stride + offset+2*sizeof(float)))) = fData[i].vec4[2];
+        *((float *) (data + (i * stride + offset+3*sizeof(float)))) = fData[i].vec4[3];
 
     }
 
@@ -278,6 +323,8 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
         }
 
         VertexAttribute attr = attributes[e.attributeName];
+
+        std::cout << "Writing to buffer: " << e.attributeName << " : " << e.offset << " type = " << attr.type << std::endl;
 
         switch (attr.type) {
 

@@ -87,9 +87,9 @@ std::vector<uint8_t> convertToByteBuffer(std::vector<Model::Vertex> & verts) {
     for (unsigned int i = 0; i < verts.size(); ++i) {
 
         offset = offsetof(Model::Vertex, pos);
-        *((float*) data.data()[i*stride+offset])   = verts[i].pos.x;
-        *((float*) data.data()[i*stride+offset+1]) = verts[i].pos.y;
-        *((float*) data.data()[i*stride+offset+2]) = verts[i].pos.z;
+        *((float*) &data.data()[i*stride+offset])   = verts[i].pos.x;
+        *((float*) &data.data()[i*stride+offset+1]) = verts[i].pos.y;
+        *((float*) &data.data()[i*stride+offset+2]) = verts[i].pos.z;
 
         offset = offsetof(Model::Vertex, normal);
         *((float*) &data.data()[i*stride+offset])   = verts[i].normal.x;
@@ -128,8 +128,6 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
 
 Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
 
-    std::vector<Vertex> verts = mesh->getVerts();
-
     std::vector<Mesh::InterleaveElement> elements(5);
 
     elements[0].attributeName = "POSITION";
@@ -149,8 +147,6 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
 
 
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
-
-    //MeshHelper::computeTangents(verts, mesh->getIndices());
 
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
     this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
