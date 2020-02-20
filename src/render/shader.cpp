@@ -127,6 +127,8 @@ VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs
 
     VkPipeline graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descSetLayout, pipelineLayout, swapChainExtent);
 
+    this->graphicsPipeline = graphicsPipeline;
+
     return graphicsPipeline;
 
 }

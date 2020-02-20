@@ -97,6 +97,8 @@
 		<Unit filename="resources/shaders/terrain.frag" />
 		<Unit filename="resources/shaders/vertex.vert" />
 		<Unit filename="resources/structure/test.strc" />
+		<Unit filename="src/animation/animation.cpp" />
+		<Unit filename="src/animation/animation.h" />
 		<Unit filename="src/animation/skeletalrig.cpp" />
 		<Unit filename="src/animation/skeletalrig.h" />
 		<Unit filename="src/inputs/inputhandler.cpp" />
@@ -126,6 +128,8 @@
 		<Unit filename="src/render/storagebuffer.h" />
 		<Unit filename="src/render/texture.cpp" />
 		<Unit filename="src/render/texture.h" />
+		<Unit filename="src/render/util/vk_trace_exception.cpp" />
+		<Unit filename="src/render/util/vk_trace_exception.h" />
 		<Unit filename="src/render/util/vkutil.cpp" />
 		<Unit filename="src/render/util/vkutil.h" />
 		<Unit filename="src/render/util/vma_implementation.cpp" />

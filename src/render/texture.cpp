@@ -10,6 +10,8 @@
 
 #include <iostream>
 
+#include "util/vk_trace_exception.h"
+
 #include "util/debug/trace_exception.h"
 #include "util/debug/logger.h"
 
@@ -268,10 +270,10 @@ void Texture::createImage(VulkanState & state, int width, int height, int depth,
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.requiredFlags = memProps;
 
-    int retVal;
+    VkResult retVal;
 
     if ((retVal = vmaCreateImage(state.vmaAllocator, &imageInfo, &allocInfo, &image, &memory, nullptr)) != VK_SUCCESS)
-        throw dbg::trace_exception(std::string("Could not create image ").append(std::to_string(retVal)));
+        throw vkutil::vk_trace_exception("Could not create image ", retVal);
 
     /*if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
         throw dbg::trace_exception("Unable to create texture");

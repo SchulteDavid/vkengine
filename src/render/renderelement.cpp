@@ -302,6 +302,8 @@ void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
 
 void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex) {
 
+    vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
+
     model->bindForRender(buffer);
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
@@ -315,4 +317,10 @@ std::vector<VkDescriptorSet> & RenderElement::getDescriptorSets() {
 
 std::vector<VmaAllocation> & RenderElement::getMemories() {
     return this->uniformBuffersMemory;
+}
+
+RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, RenderElement::Transform & initTrans) {
+
+    return new RenderElement(view, strc, initTrans);
+
 }

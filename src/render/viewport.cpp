@@ -1028,9 +1028,21 @@ void Viewport::recordCommandBuffers() {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        for (unsigned int j = 0; j < renderElements.size(); ++j) {
+        /*for (unsigned int j = 0; j < renderElements.size(); ++j) {
 
             renderElements[j]->render(commandBuffers[i], i);
+
+        }*/
+
+        for (auto it : renderElementsByShader) {
+
+            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
+
+            for (std::shared_ptr<RenderElement> relem : it.second) {
+
+                relem->renderShaderless(commandBuffers[i], i);
+
+            }
 
         }
 

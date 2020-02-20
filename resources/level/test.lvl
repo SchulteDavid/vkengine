@@ -8,7 +8,7 @@ comp physics = {
 comp elements = [
 
      {
-	string structure = "sheep_.glb"
+	string structure = "house.glb"
 	string entityType = "Entity"
 	comp transform = {
 

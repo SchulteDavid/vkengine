@@ -68,6 +68,8 @@ class RenderElement : public MemoryTransferer {
 
         Shader * getShader();
 
+        static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
+
     protected:
 
         static glm::mat4 toGLMMatrx(Math::Matrix<4,4,float> mat);

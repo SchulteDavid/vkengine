@@ -347,6 +347,55 @@ void from_json(const json & j, gltf_mesh_t & mesh) {
 
 }
 
+struct gltf_animation_channel_t {
+
+    int sampler;
+    int node;
+    std::string path;
+
+};
+
+void from_json(const json & j, gltf_animation_channel_t & channel) {
+
+    j.at("sampler").get_to(channel.sampler);
+    j.at("target").at("node").get_to(channel.node);
+    j.at("target").at("path").get_to(channel.path);
+
+}
+
+struct gltf_animation_sampler_t {
+
+    int input;
+    int output;
+    std::string interpolation;
+
+};
+
+void from_json(const json & j, gltf_animation_sampler_t & sampler) {
+
+    j.at("input").get_to(sampler.input);
+    j.at("output").get_to(sampler.output);
+    j.at("interpolation").get_to(sampler.interpolation);
+
+}
+
+struct gltf_animation_t {
+
+    std::vector<gltf_animation_channel_t> channels;
+    std::vector<gltf_animation_sampler_t> samplers;
+
+    std::string name;
+
+};
+
+void from_json(const json & j, gltf_animation_t & animation) {
+
+    j.at("channels").get_to(animation.channels);
+    j.at("samplers").get_to(animation.samplers);
+    j.at("name").get_to(animation.name);
+
+}
+
 template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, gltf_buffer_view_t & bufferView, uint8_t * data, int index) {
 
     /*if (index > acc.count)
@@ -496,7 +545,7 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
     std::shared_ptr<Mesh> mmesh(new Mesh(attributes, indices));
 
-    mmesh->setMaterialIndex(0);
+    mmesh->setMaterialIndex(mesh.primitives[0].material);
 
     return mmesh;
 
@@ -545,6 +594,8 @@ struct gltf_file_data_t {
     std::vector<gltf_texture_t> textures;
     std::vector<gltf_mesh_t> meshes;
 
+    std::vector<gltf_animation_t> animations;
+
     uint8_t * binaryBuffer;
 
 };
@@ -552,7 +603,7 @@ struct gltf_file_data_t {
 std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file_data_t * data) {
 
     if (fname.substr(fname.length()-3).compare("glb"))
-        throw dbg::trace_exception("Wrong file ending");
+        throw res::wrong_file_exception("Not a glb file");
 
     FILE * file = fopen(fname.c_str(), "rb");
 
@@ -612,6 +663,15 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     std::vector<gltf_buffer_view_t> bufferViews = jsonData["bufferViews"].get<std::vector<gltf_buffer_view_t>>();
     std::vector<gltf_accessor_t> accessors = jsonData["accessors"].get<std::vector<gltf_accessor_t>>();
     std::vector<gltf_mesh_t> meshes = jsonData["meshes"].get<std::vector<gltf_mesh_t>>();
+
+    std::vector<gltf_animation_t> animations;
+    try  {
+
+        animations = jsonData.at("animations").get<std::vector<gltf_animation_t>>();
+
+    } catch (json::out_of_range & e) {
+
+    }
 
     int sceneID = jsonData["scene"].get<int>();
     uint8_t * binaryBuffer = chunks[1].rawData;
