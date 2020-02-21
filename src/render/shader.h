@@ -16,16 +16,39 @@
 class Shader : public Resource
 {
     public:
+
+        enum BindingType {
+
+            BINDING_NONE,
+            BINDING_UNIFORM_BUFFER,
+            BINDING_TEXTURE_SAMPLER,
+
+        };
+
+        struct Binding {
+
+            BindingType type;
+            uint32_t bindingId;
+            uint32_t elementCount; // The shader will automaticaly adjust this to be
+                                   // the value specified in the resource file.
+
+        };
+
         Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state, unsigned int textureSlots);
         virtual ~Shader();
 
-        std::vector<VkDescriptorSetLayoutBinding> getBindings(VkSampler & sampler);
+        /**
+            Will create the VkDescriptorSetLayoutBindings Bindings
+        **/
+        std::vector<VkDescriptorSetLayoutBinding> getVkBindings(std::vector<Binding> bindings);
+        //std::vector<VkDescriptorSetLayoutBinding> getVkBindings(VkSampler & sampler);
 
-        void setupDescriptorSetLayout(VkSampler & sampler);
-        VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout);
+        VkDescriptorSetLayout setupDescriptorSetLayout(std::vector<Shader::Binding> bindings);
+        //void setupDescriptorSetLayout(VkSampler & sampler);
+        VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout);
 
-        VkDescriptorPool setupDescriptorPool(const VkDevice & device, int scSize);
-        std::vector<VkDescriptorSet> createDescriptorSets(const VkDevice & device, VkDescriptorPool & descPool, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
+        VkDescriptorPool setupDescriptorPool(int scSize);
+        std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
         VkPipeline & getPipeline();
         VkPipelineLayout & getPipelineLayout();
 

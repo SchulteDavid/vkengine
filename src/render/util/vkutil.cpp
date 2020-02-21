@@ -786,7 +786,7 @@ VkDescriptorSetLayout vkutil::createDescriptorSetLayout(std::vector<VkDescriptor
 
 }
 
-VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, std::vector<ShaderInputDescription>& shaders, VertexInputDescriptions & descs, VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent) {
+VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, const std::vector<ShaderInputDescription>& shaders, const VertexInputDescriptions & descs, const VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent) {
 
     /** shaders **/
 

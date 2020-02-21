@@ -20,8 +20,8 @@ class Material : public Resource {
         std::vector<std::shared_ptr<Texture>> getTextures();
 
 
-        void prepareDescriptors();
-        VkPipeline setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, Model * model, VkPipelineLayout & layout);
+        VkDescriptorSetLayout prepareDescriptors(std::vector<Shader::Binding> bindings);
+        VkPipeline setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, const VkDescriptorSetLayout & descLayout, Model * model, VkPipelineLayout & layout);
 
     protected:
 
@@ -30,11 +30,11 @@ class Material : public Resource {
         std::shared_ptr<Shader> shader;
         std::vector<std::shared_ptr<Texture>> textures;
 
-        VkDescriptorPool descPool;
+        /*VkDescriptorPool descPool;
 
         std::vector<VkDescriptorSet> descriptorSets;
         std::vector<VkBuffer> uniformBuffers;
-        std::vector<VmaAllocation> uniformBuffersMemory;
+        std::vector<VmaAllocation> uniformBuffersMemory;*/
 
 };
 
