@@ -26,7 +26,7 @@ std::vector<VkVertexInputBindingDescription> Model::Vertex::getBindingDescriptio
 
 std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(std::vector<InterleaveElement> elements, std::shared_ptr<Mesh> mesh) {
 
-    std::vector<VkVertexInputAttributeDescription> descriptions(elements.size() + 4); /// +4 for instance transform matrix data
+    std::vector<VkVertexInputAttributeDescription> descriptions(elements.size() + 4); // +4 for instance transform matrix data
 
     for (unsigned int i = 0; i < elements.size(); ++i) {
 
@@ -262,7 +262,7 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
 
     this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
-    this->bindingDescription = Vertex::getBindingDescription();
+    this->bindingDescription = createInputBindingDescriptions(sizeof(Vertex));
 
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
     this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
