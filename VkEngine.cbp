@@ -90,12 +90,14 @@
 		<Unit filename="resources/shaders/glsl/cloud_fragment.frag" />
 		<Unit filename="resources/shaders/glsl/pbrMetallic.frag" />
 		<Unit filename="resources/shaders/gltf_pbrMetallic.shader" />
+		<Unit filename="resources/shaders/gltf_pbrMetallicAnim.shader" />
 		<Unit filename="resources/shaders/id.vert" />
 		<Unit filename="resources/shaders/normals.frag" />
 		<Unit filename="resources/shaders/pp.frag" />
 		<Unit filename="resources/shaders/std.shader" />
 		<Unit filename="resources/shaders/terrain.frag" />
 		<Unit filename="resources/shaders/vertex.vert" />
+		<Unit filename="resources/shaders/vertexAnim.vert" />
 		<Unit filename="resources/structure/test.strc" />
 		<Unit filename="src/animation/animation.cpp" />
 		<Unit filename="src/animation/animation.h" />
