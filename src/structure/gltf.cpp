@@ -396,6 +396,20 @@ void from_json(const json & j, gltf_animation_t & animation) {
 
 }
 
+struct gltf_skin_t {
+
+    int inverseBindMatrices;
+    std::vector<int> joints;
+
+};
+
+void from_json(const json & j, gltf_skin_t & skin) {
+
+    j.at("inverseBindMatrices").get_to(skin.inverseBindMatrices);
+    j.at("joints").get_to(skin.joints);
+
+}
+
 template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, gltf_buffer_view_t & bufferView, uint8_t * data, int index) {
 
     /*if (index > acc.count)
@@ -595,6 +609,7 @@ struct gltf_file_data_t {
     std::vector<gltf_mesh_t> meshes;
 
     std::vector<gltf_animation_t> animations;
+    std::vector<gltf_skin_t> skins;
 
     uint8_t * binaryBuffer;
 
@@ -665,9 +680,11 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     std::vector<gltf_mesh_t> meshes = jsonData["meshes"].get<std::vector<gltf_mesh_t>>();
 
     std::vector<gltf_animation_t> animations;
+    std::vector<gltf_skin_t> skins;
     try  {
 
         animations = jsonData.at("animations").get<std::vector<gltf_animation_t>>();
+        skins = jsonData.at("skins").get<std::vector<gltf_skin_t>>();
 
     } catch (json::out_of_range & e) {
 
@@ -722,6 +739,9 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
         data->scenes = scenes;
         data->textures = textures;
         data->binaryBuffer = binaryBuffer;
+
+        data->animations = animations;
+        data->skins = skins;
 
     } else {
         delete[] binaryBuffer;
