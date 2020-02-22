@@ -8,14 +8,30 @@
 #include "render/model.h"
 #include <mathutils/matrix.h>
 
-typedef enum VertexAttributeType : uint32_t {
+typedef enum VertexAttributeType {
 
     ATTRIBUTE_NONE,
-    ATTRIBUTE_FLOAT=1,
-    ATTRIBUTE_VEC2=2,
-    ATTRIBUTE_VEC3=3,
-    ATTRIBUTE_VEC4=4,
-    ATTRIBUTE_INT=5,
+
+    ATTRIBUTE_F32_SCALAR=0x11,
+    ATTRIBUTE_F32_VEC2,
+    ATTRIBUTE_F32_VEC3,
+    ATTRIBUTE_F32_VEC4,
+
+    ATTRIBUTE_I08_SCALAR=0x21,
+    ATTRIBUTE_I08_VEC2,
+    ATTRIBUTE_I08_VEC3,
+    ATTRIBUTE_I08_VEC4,
+
+    ATTRIBUTE_I16_SCALAR=0x31,
+    ATTRIBUTE_I16_VEC2,
+    ATTRIBUTE_I16_VEC3,
+    ATTRIBUTE_I16_VEC4,
+
+    ATTRIBUTE_I32_SCALAR=0x41,
+    ATTRIBUTE_I32_VEC2,
+    ATTRIBUTE_I32_VEC3,
+    ATTRIBUTE_I32_VEC4,
+
 
 } VertexAttributeType ;
 
@@ -29,7 +45,21 @@ class VertexAttribute {
             Math::Vector<2, float> vec2;
             Math::Vector<3, float> vec3;
             Math::Vector<4, float> vec4;
-            int32_t i;
+
+            int8_t i8;
+            Math::Vector<2, int8_t> i8_vec2;
+            Math::Vector<3, int8_t> i8_vec3;
+            Math::Vector<4, int8_t> i8_vec4;
+
+            int8_t i16;
+            Math::Vector<2, int16_t> i16_vec2;
+            Math::Vector<3, int16_t> i16_vec3;
+            Math::Vector<4, int16_t> i16_vec4;
+
+            int32_t i32;
+            Math::Vector<2, int32_t> i32_vec2;
+            Math::Vector<3, int32_t> i32_vec3;
+            Math::Vector<4, int32_t> i32_vec4;
 
             VertexAttributeData() {
             }
@@ -74,6 +104,7 @@ class Mesh {
         std::vector<uint16_t> & getIndices();
 
         const VertexAttribute & getAttribute(std::string name);
+        const VertexAttributeType getAttributeType(std::string name);
 
         unsigned int getVertexCount();
 

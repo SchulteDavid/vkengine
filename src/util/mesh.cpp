@@ -15,23 +15,23 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
 
 
     VertexAttribute positionAttr;
-    positionAttr.type = ATTRIBUTE_VEC3;
+    positionAttr.type = ATTRIBUTE_F32_VEC3;
     positionAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
 
     VertexAttribute normalAttr;
-    normalAttr.type = ATTRIBUTE_VEC3;
+    normalAttr.type = ATTRIBUTE_F32_VEC3;
     normalAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
 
     VertexAttribute uvAttr;
-    uvAttr.type = ATTRIBUTE_VEC2;
+    uvAttr.type = ATTRIBUTE_F32_VEC2;
     uvAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
 
     VertexAttribute tangentAttr;
-    tangentAttr.type = ATTRIBUTE_VEC3;
+    tangentAttr.type = ATTRIBUTE_F32_VEC3;
     tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
 
     VertexAttribute matAttr;
-    matAttr.type = ATTRIBUTE_INT;
+    matAttr.type = ATTRIBUTE_I32_SCALAR;
     matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
 
     for (unsigned int i = 0; i < verts.size(); ++i) {
@@ -53,7 +53,7 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
         tmp[1] = verts[i].uv.y;
         uvAttr.value[i].vec2 = Vector<2, float>(tmp);
 
-        matAttr.value[i].i = verts[i].matIndex;
+        matAttr.value[i].i32 = verts[i].matIndex;
 
     }
 
@@ -71,6 +71,15 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
 
 }
 
+const VertexAttributeType Mesh::getAttributeType(std::string name) {
+
+    if (this->attributes.find(name) == this->attributes.end())
+        throw dbg::trace_exception("No such attribute");
+
+    return attributes[name].type;
+
+}
+
 Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices) {
 
     this->attributes = attributes;
@@ -79,11 +88,11 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
     if (this->attributes.find("MATERIAL_INDEX") == this->attributes.end()) {
 
         VertexAttribute matAttr;
-        matAttr.type = ATTRIBUTE_INT;
+        matAttr.type = ATTRIBUTE_I32_SCALAR;
         matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
 
         for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
-            matAttr.value[i].i = 0;
+            matAttr.value[i].i32 = 0;
         }
 
         this->attributes["MATERIAL_INDEX"] = matAttr;
@@ -96,7 +105,7 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
         MeshHelper::computeTangents(verts, indices);
 
         VertexAttribute tangentAttr;
-        tangentAttr.type = ATTRIBUTE_VEC3;
+        tangentAttr.type = ATTRIBUTE_F32_VEC3;
         tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
 
         for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
@@ -138,7 +147,7 @@ std::vector<Model::Vertex> Mesh::getVerts() {
         if (hasTangents)
             verts[i].tangent = glm::vec3(attributes["TANGENT"].value[i].vec3[0], attributes["TANGENT"].value[i].vec3[1], attributes["TANGENT"].value[i].vec3[2]);
         verts[i].uv = glm::vec2(attributes["TEXCOORD_0"].value[i].vec2[0], attributes["TEXCOORD_0"].value[i].vec2[1]);
-        verts[i].matIndex = attributes["MATERIAL_INDEX"].value[i].i;
+        verts[i].matIndex = attributes["MATERIAL_INDEX"].value[i].i32;
 
     }
 
@@ -219,7 +228,7 @@ void Mesh::setMaterialIndex(int32_t index) {
     if (attributes.find("MATERIAL_INDEX") == attributes.end()) {
 
         VertexAttribute matAttr;
-        matAttr.type = ATTRIBUTE_INT;
+        matAttr.type = ATTRIBUTE_I32_SCALAR;
         matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(attributes["POSITION"].value.size());
         attributes["MATERIAL_INDEX"] = matAttr;
 
@@ -227,7 +236,7 @@ void Mesh::setMaterialIndex(int32_t index) {
 
     for (unsigned int i = 0; i < attributes["MATERIAL_INDEX"].value.size(); ++i) {
 
-        attributes["MATERIAL_INDEX"].value[i].i = index;
+        attributes["MATERIAL_INDEX"].value[i].i32 = index;
 
     }
 
@@ -266,7 +275,7 @@ void insertIntInBuffer(std::vector<VertexAttribute::VertexAttributeData> & fData
 
     for (unsigned int i = 0; i < fData.size(); ++i) {
 
-        *((int32_t *) (data + (i * stride + offset))) = fData[i].i;
+        *((int32_t *) (data + (i * stride + offset))) = fData[i].i32;
 
     }
 
@@ -314,6 +323,19 @@ void insertVec4InBuffer(std::vector<VertexAttribute::VertexAttributeData> & fDat
 
 }
 
+template <unsigned int dim, typename T> void insertVecInBuffer(std::vector<Vector<dim, T>> & fData, std::vector<uint8_t> & buffer, uint32_t offset, uint32_t stride) {
+
+    uint8_t * data = buffer.data();
+
+    for (unsigned int i = 0; i < fData.size(); ++i) {
+
+        for (unsigned int j = 0; j < dim; ++j)
+            *((T *) (data + (i * stride + offset+j*sizeof(T)))) = fData[i][j];
+
+    }
+
+}
+
 std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride) {
 
     std::vector<uint8_t> data(stride * attributes["POSITION"].value.size());
@@ -325,7 +347,7 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
         }
 
         if (attributes.find(e.attributeName) == attributes.end()) {
-            throw dbg::trace_exception("No Such attribute name");
+            throw dbg::trace_exception(std::string("No Such attribute name ").append(e.attributeName));
         }
 
         VertexAttribute attr = attributes[e.attributeName];
@@ -334,25 +356,106 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
 
         switch (attr.type) {
 
-            case ATTRIBUTE_FLOAT:
+            case ATTRIBUTE_F32_SCALAR:
                 insertFloatInBuffer(attr.value, data, e.offset, stride);
                 break;
 
-            case ATTRIBUTE_VEC2:
-                insertVec2InBuffer(attr.value, data, e.offset, stride);
+            case ATTRIBUTE_F32_VEC2:
+                {
+                    std::vector<Vector<2,float>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].vec2;
+                    }
+                    insertVecInBuffer<2, float>(tmpData, data, e.offset, stride);
+                }
                 break;
 
-            case ATTRIBUTE_VEC3:
-                insertVec3InBuffer(attr.value, data, e.offset, stride);
+            case ATTRIBUTE_F32_VEC3:
+                {
+                    std::vector<Vector<3,float>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].vec3;
+                    }
+                    insertVecInBuffer<3, float>(tmpData, data, e.offset, stride);
+                }
                 break;
 
-            case ATTRIBUTE_VEC4:
-                insertVec4InBuffer(attr.value, data, e.offset, stride);
+            case ATTRIBUTE_F32_VEC4:
+                {
+                    std::vector<Vector<4,float>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].vec4;
+                    }
+                    insertVecInBuffer<4, float>(tmpData, data, e.offset, stride);
+                }
                 break;
 
-            case ATTRIBUTE_INT:
+            case ATTRIBUTE_I32_SCALAR:
                 insertIntInBuffer(attr.value, data, e.offset, stride);
                 break;
+
+            case ATTRIBUTE_I32_VEC2:
+                {
+                    std::vector<Vector<2,int32_t>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].i32_vec2;
+                    }
+                    insertVecInBuffer<2, int32_t>(tmpData, data, e.offset, stride);
+                }
+                break;
+
+            case ATTRIBUTE_I32_VEC3:
+                {
+                    std::vector<Vector<3,int32_t>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].i32_vec3;
+                    }
+                    insertVecInBuffer<3, int32_t>(tmpData, data, e.offset, stride);
+                }
+                break;
+
+            case ATTRIBUTE_I32_VEC4:
+                {
+                    std::vector<Vector<4,int32_t>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].i32_vec4;
+                    }
+                    insertVecInBuffer<4, int32_t>(tmpData, data, e.offset, stride);
+                }
+                break;
+
+            case ATTRIBUTE_I16_VEC2:
+                {
+                    std::vector<Vector<2,int16_t>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].i16_vec2;
+                    }
+                    insertVecInBuffer<2, int16_t>(tmpData, data, e.offset, stride);
+                }
+                break;
+
+            case ATTRIBUTE_I16_VEC3:
+                {
+                    std::vector<Vector<3,int16_t>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].i16_vec3;
+                    }
+                    insertVecInBuffer<3, int16_t>(tmpData, data, e.offset, stride);
+                }
+                break;
+
+            case ATTRIBUTE_I16_VEC4:
+                {
+                    std::vector<Vector<4,int16_t>> tmpData(attr.value.size());
+                    for (unsigned int i = 0; i < attr.value.size(); ++i) {
+                        tmpData[i] = attr.value[i].i16_vec4;
+                    }
+                    insertVecInBuffer<4, int16_t>(tmpData, data, e.offset, stride);
+                }
+                break;
+
+            default:
+                throw dbg::trace_exception("Unknown attribute type");
 
         }
 

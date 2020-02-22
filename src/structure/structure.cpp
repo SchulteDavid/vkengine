@@ -175,7 +175,24 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
 
         }
 
-        Model * model = new Model(state, mesh);
+        std::vector<InterleaveElement> vertElements(5);
+
+        vertElements[0].attributeName = "POSITION";
+        vertElements[0].offset = offsetof(Model::Vertex, pos);
+
+        vertElements[1].attributeName = "NORMAL";
+        vertElements[1].offset = offsetof(Model::Vertex, normal);
+
+        vertElements[2].attributeName = "TANGENT";
+        vertElements[2].offset = offsetof(Model::Vertex, tangent);
+
+        vertElements[3].attributeName = "TEXCOORD_0";
+        vertElements[3].offset = offsetof(Model::Vertex, uv);
+
+        vertElements[4].attributeName = "MATERIAL_INDEX";
+        vertElements[4].offset = offsetof(Model::Vertex, matIndex);
+
+        Model * model = new Model(state, mesh, vertElements, sizeof(Model::Vertex));
 
         std::shared_ptr<ResourceUploader<Resource>> modelUploader((ResourceUploader<Resource> *) new ModelUploader(state, model));
         modelRes = this->scheduleSubresource("Model", matName, modelUploader);

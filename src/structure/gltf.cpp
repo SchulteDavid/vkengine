@@ -195,22 +195,36 @@ void from_json(const json & j, gltf_buffer_view_t & view) {
 
 }
 
+enum gltf_data_type_e {
+
+    GLTF_TYPE_SINT8 = 5120,
+    GLTF_TYPE_UINT8 = 5121,
+
+    GLTF_TYPE_SINT16 = 5122,
+    GLTF_TYPE_UINT16 = 5123,
+
+    GLTF_TYPE_UINT32 = 5125,
+
+    GLTF_TYPE_SFLOAT = 5126,
+
+};
+
 size_t gltfGetDataSize(int dataTypeId) {
 
     switch (dataTypeId) {
 
-        case 5120:
-        case 5121:
+        case GLTF_TYPE_SINT8:
+        case GLTF_TYPE_UINT8:
             return sizeof(uint8_t);
 
-        case 5122:
-        case 5123:
+        case GLTF_TYPE_SINT16:
+        case GLTF_TYPE_UINT16:
             return sizeof(uint16_t);
 
-        case 5125:
+        case GLTF_TYPE_UINT32:
             return sizeof(uint32_t);
 
-        case 5126:
+        case GLTF_TYPE_SFLOAT:
             return sizeof(float);
 
         default:
@@ -425,13 +439,23 @@ template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, gltf_buffer_vie
 
 VertexAttributeType gltfDecodeAttributeType(const gltf_accessor_t & acc) {
 
-    if (acc.dataElementCount > 1) {
-        return (VertexAttributeType) acc.dataElementCount;
-    } else if (acc.rawDataType == 5125) {
-        return ATTRIBUTE_INT;
-    }
+    gltf_data_type_e dataType = (gltf_data_type_e) acc.rawDataType;
 
-    return ATTRIBUTE_FLOAT;
+    switch(dataType) {
+
+        case GLTF_TYPE_SFLOAT:
+            return static_cast<VertexAttributeType>(ATTRIBUTE_F32_SCALAR + (acc.dataElementCount-1));
+
+        case GLTF_TYPE_UINT32:
+            return static_cast<VertexAttributeType>(ATTRIBUTE_I32_SCALAR + (acc.dataElementCount-1));
+
+        case GLTF_TYPE_SINT16:
+        case GLTF_TYPE_UINT16:
+            return static_cast<VertexAttributeType>(ATTRIBUTE_I16_SCALAR + (acc.dataElementCount-1));
+
+        default:
+            throw dbg::trace_exception(std::string("Unable to decode gltf VertexAttributeType ").append(std::to_string(dataType)));
+    }
 
 }
 
@@ -449,57 +473,35 @@ void gltfLoadIntBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t
 
     for (unsigned int i = 0; i < acc.count; ++i) {
 
-        value[i].i = gltfGetBufferData<int32_t>(acc, view, buffer, i);
+        value[i].i32 = gltfGetBufferData<int32_t>(acc, view, buffer, i);
 
     }
 
 }
 
-void gltfLoadVec2Buffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+template <unsigned int dim, typename T> std::vector<Math::Vector<dim, T>> gltfLoadVecBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer) {
+
+    std::vector<Math::Vector<dim, T>> value(acc.count);
 
     for (unsigned int i = 0; i < acc.count; ++i) {
 
-        float tmp[2];
+        T tmp[dim];
 
-        tmp[0] = gltfGetBufferData<float>(acc, view, buffer, i*2);
-        tmp[1] = gltfGetBufferData<float>(acc, view, buffer, i*2+1);
+        for (unsigned int j = 0; j < dim; ++j)
+            tmp[j] = gltfGetBufferData<T>(acc, view, buffer, i*dim+j);
 
-        value[i].vec2 = Vector<2, float>(tmp);
+        value[i] = Vector<dim, T>(tmp);
 
     }
+    return value;
 
 }
 
-void gltfLoadVec3Buffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
+template< typename T > std::string int_to_hex( T i ) {
 
-    for (unsigned int i = 0; i < acc.count; ++i) {
-
-        float tmp[3];
-
-        tmp[0] = gltfGetBufferData<float>(acc, view, buffer, i*3);
-        tmp[1] = gltfGetBufferData<float>(acc, view, buffer, i*3+1);
-        tmp[2] = gltfGetBufferData<float>(acc, view, buffer, i*3+2);
-
-        value[i].vec3 = Vector<3, float>(tmp);
-
-    }
-
-}
-
-void gltfLoadVec4Buffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
-
-    for (unsigned int i = 0; i < acc.count; ++i) {
-
-        float tmp[4];
-
-        tmp[0] = gltfGetBufferData<float>(acc, view, buffer, i*4);
-        tmp[1] = gltfGetBufferData<float>(acc, view, buffer, i*4+1);
-        tmp[2] = gltfGetBufferData<float>(acc, view, buffer, i*4+2);
-        tmp[3] = gltfGetBufferData<float>(acc, view, buffer, i*4+3);
-
-        value[i].vec4 = Vector<4, float>(tmp);
-
-    }
+  std::stringstream stream;
+  stream << "0x" << std::hex << i;
+  return stream.str();
 
 }
 
@@ -517,29 +519,101 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
         attr.type = gltfDecodeAttributeType(acc);
         attr.value = std::vector<VertexAttribute::VertexAttributeData>(acc.count);
 
-        logger(std::cout) << "Loading buffer of type " << attr.type << " for " << it.first << std::endl;
+        logger(std::cout) << "Loading buffer of type " << std::hex << attr.type << std::dec << " for " << it.first << std::endl;
 
         switch (attr.type) {
 
-            case ATTRIBUTE_FLOAT:
+            case ATTRIBUTE_F32_SCALAR:
                 gltfLoadFloatBuffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
                 break;
 
-            case ATTRIBUTE_VEC2:
-                gltfLoadVec2Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+            case ATTRIBUTE_F32_VEC2:
+                {
+                    std::vector<Math::Vector<2, float>> data = gltfLoadVecBuffer<2, float>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].vec2 = data[i];
+                    }
+                }
                 break;
 
-            case ATTRIBUTE_VEC3:
-                gltfLoadVec3Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+            case ATTRIBUTE_F32_VEC3:
+                {
+                    std::vector<Math::Vector<3, float>> data = gltfLoadVecBuffer<3, float>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].vec3 = data[i];
+                    }
+                }
                 break;
 
-            case ATTRIBUTE_VEC4:
-                gltfLoadVec4Buffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
+            case ATTRIBUTE_F32_VEC4:
+                {
+                    std::vector<Math::Vector<4, float>> data = gltfLoadVecBuffer<4, float>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].vec4 = data[i];
+                    }
+                }
                 break;
 
-            case ATTRIBUTE_INT:
+            case ATTRIBUTE_I32_SCALAR:
                 gltfLoadIntBuffer(acc, bufferViews[acc.bufferView], buffer, attr.value);
                 break;
+
+            case ATTRIBUTE_I32_VEC2:
+                {
+                    std::vector<Math::Vector<2, int32_t>> data = gltfLoadVecBuffer<2, int32_t>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].i32_vec2 = data[i];
+                    }
+                }
+                break;
+
+            case ATTRIBUTE_I32_VEC3:
+                {
+                    std::vector<Math::Vector<3, int32_t>> data = gltfLoadVecBuffer<3, int32_t>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].i32_vec3 = data[i];
+                    }
+                }
+                break;
+
+            case ATTRIBUTE_I32_VEC4:
+                {
+                    std::vector<Math::Vector<4, int32_t>> data = gltfLoadVecBuffer<4, int32_t>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].i32_vec4 = data[i];
+                    }
+                }
+                break;
+
+            case ATTRIBUTE_I16_VEC2:
+                {
+                    std::vector<Math::Vector<2, int16_t>> data = gltfLoadVecBuffer<2, int16_t>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].i16_vec2 = data[i];
+                    }
+                }
+                break;
+
+            case ATTRIBUTE_I16_VEC3:
+                {
+                    std::vector<Math::Vector<3, int16_t>> data = gltfLoadVecBuffer<3, int16_t>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].i16_vec3 = data[i];
+                    }
+                }
+                break;
+
+            case ATTRIBUTE_I16_VEC4:
+                {
+                    std::vector<Math::Vector<4, int16_t>> data = gltfLoadVecBuffer<4, int16_t>(acc, bufferViews[acc.bufferView], buffer);
+                    for (unsigned int i = 0; i < data.size(); ++i) {
+                        attr.value[i].i16_vec4 = data[i];
+                    }
+                }
+                break;
+
+            default:
+                throw dbg::trace_exception(std::string("Unknown vertex attribute type: ").append(int_to_hex<int>(attr.type)));
 
         }
 
@@ -777,12 +851,31 @@ std::shared_ptr<Mesh> gltfBuildMesh(std::shared_ptr<GLTFNode> node) {
 
 }
 
+struct gltf_anim_vertex {
+
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec3 tangent;
+    glm::vec2 uv;
+    int32_t matIndex;
+
+    glm::vec4 weights;
+    int16_t bones[4];
+
+};
+
 std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::string fname) {
 
     gltf_file_data_t fileData;
     std::vector<std::shared_ptr<GLTFNode>> rootNodes = gltfLoadFile(fname, &fileData);
 
-    LoadingResource shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
+    LoadingResource shaderRes;
+    if (fileData.skins.size()) {
+        shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallicAnim.shader");
+        //shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
+    } else {
+        shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
+    }
 
     std::shared_ptr<Mesh> resultMesh = nullptr;
     for (std::shared_ptr<GLTFNode> node : rootNodes) {
@@ -856,7 +949,46 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
 
     /// create uploaders for model and material
     std::shared_ptr<ResourceUploader<Resource>> materialRes((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, textureRes));
-    std::shared_ptr<ResourceUploader<Resource>> meshRes((ResourceUploader<Resource> *) new ModelUploader(state, new Model(state, resultMesh)));
+
+    std::vector<InterleaveElement> vertElements(fileData.skins.size() ? 7 : 5);
+    size_t  vertSize = sizeof(Model::Vertex);
+
+    vertElements[0].attributeName = "POSITION";
+    vertElements[0].offset = offsetof(gltf_anim_vertex, pos);
+
+    vertElements[1].attributeName = "NORMAL";
+    vertElements[1].offset = offsetof(gltf_anim_vertex, normal);
+
+    vertElements[2].attributeName = "TANGENT";
+    vertElements[2].offset = offsetof(gltf_anim_vertex, tangent);
+
+    vertElements[3].attributeName = "TEXCOORD_0";
+    vertElements[3].offset = offsetof(gltf_anim_vertex, uv);
+
+    vertElements[4].attributeName = "MATERIAL_INDEX";
+    vertElements[4].offset = offsetof(gltf_anim_vertex, matIndex);
+
+    std::cout << "MATERIAL_INDEX_OFFSET " << vertElements[4].offset << std::endl;
+
+    if (fileData.skins.size()) {
+
+        vertSize = sizeof(gltf_anim_vertex);
+
+        vertElements[5].attributeName = "WEIGHTS_0";
+        vertElements[5].offset = offsetof(gltf_anim_vertex, weights);
+
+        std::cout << "Weight offset " << vertElements[5].offset << std::endl;
+
+        vertElements[6].attributeName = "JOINTS_0";
+        vertElements[6].offset = offsetof(gltf_anim_vertex, bones);// + 4 * sizeof(float);
+
+        std::cout << "Bone offset " << vertElements[6].offset << std::endl;
+
+    }
+
+    std::cout << "Vertex Size : " << vertSize << std::endl;
+
+    std::shared_ptr<ResourceUploader<Resource>> meshRes((ResourceUploader<Resource> *) new ModelUploader(state, new Model(state, resultMesh, vertElements, vertSize)));
 
     std::string materialName = fname;
     materialName.append(":").append(fileData.materials[0].name);
