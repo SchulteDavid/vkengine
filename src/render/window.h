@@ -38,6 +38,9 @@ class Window
         void onMouseMotion(double xpos, double ypos);
         void onScroll(double dx, double dy);
 
+        void hideCursor();
+        void unhideCursor();
+
         void setActiveViewport(Viewport * view);
         Viewport * getActiveViewport();
         Camera * getActiveCamera();
