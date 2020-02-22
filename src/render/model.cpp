@@ -24,6 +24,119 @@ std::vector<VkVertexInputBindingDescription> Model::Vertex::getBindingDescriptio
 
 }
 
+std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(std::vector<InterleaveElement> elements, std::shared_ptr<Mesh> mesh) {
+
+    std::vector<VkVertexInputAttributeDescription> descriptions(elements.size() + 4); // +4 for instance transform matrix data
+
+    for (unsigned int i = 0; i < elements.size(); ++i) {
+
+        InterleaveElement elem = elements[i];
+        descriptions[i].binding = 0;
+        descriptions[i].location = i;
+        descriptions[i].offset = elements[i].offset;
+
+        switch (mesh->getAttributeType(elem.attributeName)) {
+
+            case ATTRIBUTE_F32_SCALAR:
+                descriptions[i].format = VK_FORMAT_R32_SFLOAT;
+                break;
+
+            case ATTRIBUTE_F32_VEC2:
+                descriptions[i].format = VK_FORMAT_R32G32_SFLOAT;
+                break;
+
+            case ATTRIBUTE_F32_VEC3:
+                descriptions[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+                break;
+
+            case ATTRIBUTE_F32_VEC4:
+                descriptions[i].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                break;
+
+            case ATTRIBUTE_I16_SCALAR:
+                descriptions[i].format = VK_FORMAT_R16_SINT;
+                break;
+
+            case ATTRIBUTE_I16_VEC2:
+                descriptions[i].format = VK_FORMAT_R16G16_SINT;
+                break;
+
+            case ATTRIBUTE_I16_VEC3:
+                descriptions[i].format = VK_FORMAT_R16G16B16_SINT;
+                break;
+
+            case ATTRIBUTE_I16_VEC4:
+                descriptions[i].format = VK_FORMAT_R16G16B16A16_SINT;
+                break;
+
+            case ATTRIBUTE_I32_SCALAR:
+                descriptions[i].format = VK_FORMAT_R32_SINT;
+                break;
+
+            case ATTRIBUTE_I32_VEC2:
+                descriptions[i].format = VK_FORMAT_R32G32_SINT;
+                break;
+
+            case ATTRIBUTE_I32_VEC3:
+                descriptions[i].format = VK_FORMAT_R32G32B32_SINT;
+                break;
+
+            case ATTRIBUTE_I32_VEC4:
+                descriptions[i].format = VK_FORMAT_R32G32B32A32_SINT;
+                break;
+
+            default:
+                throw dbg::trace_exception("Unknown attribute type");
+
+        }
+
+
+    }
+
+    /// binding instance transform matrix data
+
+    descriptions[elements.size()].binding = 1;
+    descriptions[elements.size()].location = elements.size();
+    descriptions[elements.size()].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    descriptions[elements.size()].offset = 0;
+
+    descriptions[elements.size()+1].binding = 1;
+    descriptions[elements.size()+1].location = elements.size()+1;
+    descriptions[elements.size()+1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    descriptions[elements.size()+1].offset = sizeof(glm::vec4);
+
+    descriptions[elements.size()+2].binding = 1;
+    descriptions[elements.size()+2].location = elements.size()+2;
+    descriptions[elements.size()+2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    descriptions[elements.size()+2].offset = 2*sizeof(glm::vec4);
+
+    descriptions[elements.size()+3].binding = 1;
+    descriptions[elements.size()+3].location = elements.size()+3;
+    descriptions[elements.size()+3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    descriptions[elements.size()+3].offset = 3*sizeof(glm::vec4);
+
+    return descriptions;
+
+}
+
+std::vector<VkVertexInputBindingDescription> createInputBindingDescriptions(size_t stride) {
+
+    VkVertexInputBindingDescription description = {};
+    description.binding = 0;
+    description.stride = stride;
+    description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputBindingDescription instances = {};
+    instances.binding = 1;
+    instances.stride = sizeof(glm::mat4);
+    instances.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    std::vector<VkVertexInputBindingDescription> bindings = {description, instances};
+
+    return bindings;
+
+}
+
 std::vector<VkVertexInputAttributeDescription> Model::Vertex::getAttributeDescriptions() {
 
     std::vector<VkVertexInputAttributeDescription> descriptions(9);
@@ -148,6 +261,9 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
 
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
 
+    this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
+    this->bindingDescription = createInputBindingDescriptions(sizeof(Vertex));
+
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
     this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
 
@@ -156,9 +272,11 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements) {
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize) {
 
-    std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
+    std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, elementSize);
+    this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
+    this->bindingDescription = createInputBindingDescriptions(elementSize);
 
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
     this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
@@ -190,32 +308,8 @@ int Model::getIndexCount() {
 
 Model * Model::loadFromFile(const vkutil::VulkanState & state, std::string fname) {
 
-    /*PlyFile * plyFile = new PlyFile(fname);
-    int indexCount;
-    int * indexData = plyFile->getIndexData(&indexCount);
-
-    int vertexCount;
-    float * vertexData = plyFile->getVertexData(&vertexCount);
-
-    std::vector<Vertex> vertices(vertexCount);
-
-    for (int i = 0; i < vertexCount; ++i) {
-
-        vertices[i].pos = glm::vec3(vertexData[i*11], vertexData[i*11+1], vertexData[i*11+2]);
-        vertices[i].normal = glm::vec3(vertexData[i*11+3], vertexData[i*11+4], vertexData[i*11+5]);
-        vertices[i].uv = glm::vec2(vertexData[i*11+6], vertexData[i*11+7]);
-
-    }
-
-    std::vector<uint16_t> indices(indexCount);
-
-    for (int i = 0; i < indexCount; ++i)
-        indices[i] = indexData[i];*/
-
     std::shared_ptr<Mesh> mesh = Mesh::loadFromFile(fname);
     return new Model(state, mesh);
-
-    //return new Model(state, vertices, indices);
 
 }
 
@@ -240,11 +334,13 @@ Model * ModelUploader::uploadResource() {
 }
 
 std::vector<VkVertexInputBindingDescription> Model::getBindingDescription() {
-    return Vertex::getBindingDescription();
+    //return Vertex::getBindingDescription();
+    return bindingDescription;
 }
 
 std::vector<VkVertexInputAttributeDescription> Model::getAttributeDescriptions() {
-    return Vertex::getAttributeDescriptions();
+    //return Vertex::getAttributeDescriptions();
+    return this->attributeDescriptions;
 }
 
 bool ModelUploader::uploadReady() {

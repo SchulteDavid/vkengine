@@ -32,6 +32,9 @@ class SkeletalRig
     protected:
 
     private:
+
+        std::shared_ptr<Bone> root;
+
 };
 
 #endif // SKELETALRIG_H

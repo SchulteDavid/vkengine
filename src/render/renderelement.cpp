@@ -35,8 +35,8 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     this->createUniformBuffers(scSize);
 
-    this->descPool = this->shader->setupDescriptorPool(state.device, scSize);
-    this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+    this->descPool = this->shader->setupDescriptorPool(scSize);
+    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
 
 }
 
@@ -62,10 +62,24 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     this->createUniformBuffers(scSize);
 
-    pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), model.get(), pipelineLayout);
+    Shader::Binding uniformBufferBinding;
+    uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
+    uniformBufferBinding.elementCount = 1;
+    uniformBufferBinding.bindingId = 0;
 
-    this->descPool = this->shader->setupDescriptorPool(state.device, scSize);
-    this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+    Shader::Binding textureBinding;
+    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+    textureBinding.bindingId = 1;
+
+    std::vector<Shader::Binding> binds(2);
+    binds[0] = uniformBufferBinding;
+    binds[1] = textureBinding;
+
+    descSetLayout = mat->prepareDescriptors(binds);
+    pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
+
+    this->descPool = this->shader->setupDescriptorPool(scSize);
+    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
 
 }
 
@@ -225,11 +239,12 @@ void RenderElement::recreateResources(VkRenderPass & renderPass, int scSize, con
     descs.attributes = Model::Vertex::getAttributeDescriptions();
     descs.binding = Model::Vertex::getBindingDescription();
 
-    pipeline = shader->setupGraphicsPipeline(descs, renderPass, state, swapchain.extent, pipelineLayout);
+    pipeline = shader->setupGraphicsPipeline(descs, renderPass, state, descSetLayout, swapchain.extent, pipelineLayout);
 
-    descPool = shader->setupDescriptorPool(state.device, scSize);
+    descPool = shader->setupDescriptorPool(scSize);
     createUniformBuffers(scSize);
-    this->descriptorSets = shader->createDescriptorSets(state.device, descPool, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+
 }
 
 void RenderElement::destroyUniformBuffers(const vkutil::SwapChain & swapchain) {
@@ -257,22 +272,17 @@ bool RenderElement::reusable() {
 void RenderElement::updateUniformBuffer(UniformBufferObject & obj,  uint32_t imageIndex) {
 
     void * data;
-    //transformBufferMutex.lock();
     vmaMapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex], &data);
     memcpy(data, &obj, sizeof(UniformBufferObject));
     vmaUnmapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex]);
-    //transformBufferMutex.unlock();
 
     if (this->instanceCountUpdated) {
 
-        //this->instanceBuffer->recreate(this->instanceTransforms);
         this->instanceCountUpdated = false;
-        //this->instanceBufferDirty = false;
 
     }
     if (this->instanceBufferDirty) {
 
-        //this->instanceBuffer->fill(instanceTransforms);
         this->instanceBufferDirty = false;
 
     }
@@ -280,7 +290,7 @@ void RenderElement::updateUniformBuffer(UniformBufferObject & obj,  uint32_t ima
 }
 
 bool RenderElement::needsDrawCmdUpdate() {
-    return instanceCountUpdated;// || instanceBufferDirty;
+    return instanceCountUpdated;
 }
 
 Shader * RenderElement::getShader() {
@@ -302,6 +312,8 @@ void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
 
 void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex) {
 
+    vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
+
     model->bindForRender(buffer);
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
@@ -315,4 +327,10 @@ std::vector<VkDescriptorSet> & RenderElement::getDescriptorSets() {
 
 std::vector<VmaAllocation> & RenderElement::getMemories() {
     return this->uniformBuffersMemory;
+}
+
+RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, RenderElement::Transform & initTrans) {
+
+    return new RenderElement(view, strc, initTrans);
+
 }

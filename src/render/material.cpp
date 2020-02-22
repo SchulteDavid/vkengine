@@ -27,20 +27,19 @@ std::vector<std::shared_ptr<Texture>> Material::getTextures() {
     return textures;
 }
 
-void Material::prepareDescriptors() {
+VkDescriptorSetLayout Material::prepareDescriptors(std::vector<Shader::Binding> bindings) {
 
-    VkSampler sampler = textures[0]->getSampler();
-    shader->setupDescriptorSetLayout(sampler);
+    return shader->setupDescriptorSetLayout(bindings);
 
 }
 
-VkPipeline Material::setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, Model * model, VkPipelineLayout & layout) {
+VkPipeline Material::setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, const VkDescriptorSetLayout & descLayout, Model * model, VkPipelineLayout & layout) {
 
     vkutil::VertexInputDescriptions descs;
     descs.binding = model->getBindingDescription();
     descs.attributes = model->getAttributeDescriptions();
 
-    return shader->setupGraphicsPipeline(descs, renderPass, state, swapChainExtent, layout);
+    return shader->setupGraphicsPipeline(descs, renderPass, state, descLayout, swapChainExtent, layout);
 
 }
 
@@ -65,7 +64,7 @@ Material * MaterialUploader::uploadResource() {
     Material * mat = new Material(mShader, mTextures);
 
     //mat->setupPipeline(state, renderPass, swapChainExtent);
-    mat->prepareDescriptors();
+    //mat->prepareDescriptors();
 
     return mat;
 

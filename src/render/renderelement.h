@@ -68,6 +68,8 @@ class RenderElement : public MemoryTransferer {
 
         Shader * getShader();
 
+        static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
+
     protected:
 
         static glm::mat4 toGLMMatrx(Math::Matrix<4,4,float> mat);
@@ -91,6 +93,7 @@ class RenderElement : public MemoryTransferer {
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
 
+        VkDescriptorSetLayout descSetLayout;
         std::vector<VkDescriptorSet> descriptorSets;
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VmaAllocation> uniformBuffersMemory;

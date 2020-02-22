@@ -187,6 +187,14 @@ void Window::addInputHandler(std::shared_ptr<InputHandler> handler) {
 
 }
 
+void Window::hideCursor() {
+    glfwSetInputMode(state.glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+void Window::unhideCursor() {
+    glfwSetInputMode(state.glfwWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+}
+
 void glfw_inputs::onKeyboard(GLFWwindow * w, int key, int scancode, int action, int mods) {
 
     Window * window = (Window *) glfwGetWindowUserPointer(w);
@@ -212,3 +220,4 @@ void glfw_inputs::onScroll(GLFWwindow * w, double dx, double dy) {
     Window * window = (Window *) glfwGetWindowUserPointer(w);
     window->onScroll(dx, dy);
 }
+

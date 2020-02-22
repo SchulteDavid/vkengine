@@ -6,6 +6,7 @@
 #include "resources/resource.h"
 #include "render/material.h"
 #include "render/model.h"
+#include "animation/animation.h"
 
 class Structure : public Resource {
 
@@ -15,6 +16,7 @@ class Structure : public Resource {
 
         std::shared_ptr<Model> getModel();
         std::shared_ptr<Material> getMaterial();
+        std::unordered_map<std::string, std::shared_ptr<Animation>> getAnimations();
 
     protected:
 
@@ -22,6 +24,8 @@ class Structure : public Resource {
 
         std::shared_ptr<Material> material;
         std::shared_ptr<Model> model;
+
+        std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
 
 };
 

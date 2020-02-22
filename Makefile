@@ -110,17 +110,17 @@ lib/lib${PROGNAME}.a: ${LIBRARY_O_FILES} | lib/
 	@$(AR) -rcs $@ $^
 
 ${obj.c} : % :
-	@echo Compiling $@
+	@echo Compiling $<
 	@mkdir -p $(dir $@)
 	@$(CC) -c -o $@ $< $(CFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${obj.cpp} : % :
-	@echo Compiling $@
+	@echo Compiling $<
 	@mkdir -p $(dir $@)
 	@$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 
 ${obj.cc} : % :
-	@echo Compiling $@
+	@echo Compiling $<
 	@mkdir -p $(dir $@)
 	@$(CXX) -c -o $@ $< $(CXXFLAGS) $(addprefix -I, ${INCLUDE_DIRS})
 

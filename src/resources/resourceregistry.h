@@ -62,11 +62,7 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
 
                 try {
                     return l->loadResource(name);
-                } catch (dbg::trace_exception e) {
-                    std::cerr << e.what() << std::endl;
-                } catch (std::runtime_error e) {
-                    std::cerr << e.what() << std::endl;
-                } catch (std::exception e) {
+                } catch (res::wrong_file_exception e) {
                     std::cerr << e.what() << std::endl;
                 }
 

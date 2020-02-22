@@ -115,7 +115,7 @@ VkShaderModule createShaderModule(const std::vector<uint8_t> & code, const VkDev
 
 void copyBuffer(VkBuffer & src, VkBuffer & dst, VkDeviceSize & size, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
 VkDescriptorSetLayout createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> & bindings, const VkDevice & device);
-VkPipeline createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, std::vector<ShaderInputDescription>& shaders, VertexInputDescriptions & descs, VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent);
+VkPipeline createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, const std::vector<ShaderInputDescription> & shaders, const VertexInputDescriptions & descs, const VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent);
 
 bool hasStencilComponent(VkFormat format);
 

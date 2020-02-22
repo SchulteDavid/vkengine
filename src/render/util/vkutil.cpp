@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "vk_trace_exception.h"
+
 #include "util/debug/stacktrace.h"
 #include "util/debug/logger.h"
 
@@ -166,8 +168,8 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
 
     VkInstance instance;
 
-    if (vkCreateInstance(&createInfo, nullptr, &instance)) {
-        throw dbg::trace_exception("Unable to create Instance");
+    if (VkResult res = vkCreateInstance(&createInfo, nullptr, &instance)) {
+        throw vkutil::vk_trace_exception("Unable to create Instance", res);
     }
 
     uint32_t extensionCount = 0;
@@ -341,8 +343,8 @@ VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & 
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0;
 
-    if (vkCreateDevice(pDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create logical device.");
+    if (VkResult r = vkCreateDevice(pDevice, &createInfo, nullptr, &device))
+        throw vkutil::vk_trace_exception("Unable to create logical device.", r);
 
     vkGetDeviceQueue(device, indices.graphicsFamily, 0, gQueue);
     vkGetDeviceQueue(device, indices.graphicsFamily, indices.counts[indices.graphicsFamily] >= 2 ? 1 : 0, lgQueue);
@@ -467,8 +469,8 @@ SwapChain vkutil::createSwapchain(const VkPhysicalDevice & physicalDevice, const
     VkFormat swapChainFormat;
     VkExtent2D swapChainExtent;
 
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-        throw dbg::trace_exception("Unable to create swapchain");
+    if (VkResult r = vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain)) {
+        throw vkutil::vk_trace_exception("Unable to create swapchain", r);
     }
 
     vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
@@ -499,8 +501,8 @@ VkCommandPool vkutil::createGraphicsCommandPool(const VkPhysicalDevice & physica
     createInfo.queueFamilyIndex = indices.graphicsFamily;
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create command pool");
+    if (VkResult r = vkCreateCommandPool(device, &createInfo, nullptr, &commandPool))
+        throw vkutil::vk_trace_exception("Unable to create command pool", r);
 
     return commandPool;
 
@@ -517,8 +519,8 @@ VkCommandPool vkutil::createTransferCommandPool(const VkPhysicalDevice & physica
     createInfo.queueFamilyIndex = indices.transferFamily;
     createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    if (vkCreateCommandPool(device, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create command pool");
+    if (VkResult r = vkCreateCommandPool(device, &createInfo, nullptr, &commandPool))
+        throw vkutil::vk_trace_exception("Unable to create command pool", r);
 
     return commandPool;
 
@@ -545,10 +547,10 @@ void vkutil::createImage(const VmaAllocator & allocator, VkDevice device, int wi
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.requiredFlags = memProps;
 
-    int retVal;
+    VkResult retVal;
 
-    if ((retVal = vmaCreateImage(allocator, &imageInfo, &allocInfo, &image, &memory, nullptr)) != VK_SUCCESS)
-        throw dbg::trace_exception(std::string("Could not create image ").append(std::to_string(retVal)));
+    if (retVal = vmaCreateImage(allocator, &imageInfo, &allocInfo, &image, &memory, nullptr))
+        throw vkutil::vk_trace_exception("Could not create image", retVal);
 
 }
 
@@ -567,8 +569,8 @@ VkImageView vkutil::createImageView(const VkDevice & device, const VkImage & ima
     viewInfo.subresourceRange.layerCount = 1;
 
     VkImageView imageView;
-    if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create image view");
+    if (VkResult r = vkCreateImageView(device, &viewInfo, nullptr, &imageView))
+        throw vkutil::vk_trace_exception("Unable to create image view", r);
 
     return imageView;
 
@@ -715,8 +717,8 @@ VkShaderModule vkutil::createShaderModule(const std::vector<uint8_t> & code, con
     createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule module;
-    if (vkCreateShaderModule(device, &createInfo, nullptr, &module) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create shader module");
+    if (VkResult r = vkCreateShaderModule(device, &createInfo, nullptr, &module))
+        throw vkutil::vk_trace_exception("Unable to create shader module", r);
 
     return module;
 
@@ -744,8 +746,8 @@ std::vector<VkImageView> vkutil::createSwapchainImageViews(const std::vector<VkI
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
-            throw dbg::trace_exception("Could not create image view for swapChain");
+        if (VkResult r = vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]))
+            throw vkutil::vk_trace_exception("Could not create image view for swapChain", r);
 
     }
 
@@ -777,14 +779,14 @@ VkDescriptorSetLayout vkutil::createDescriptorSetLayout(std::vector<VkDescriptor
 
     VkDescriptorSetLayout descriptorSetLayout;
 
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-        throw dbg::trace_exception("could not create descriptor set layout.");
+    if (VkResult r = vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout))
+        throw vkutil::vk_trace_exception("could not create descriptor set layout", r);
 
     return descriptorSetLayout;
 
 }
 
-VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, std::vector<ShaderInputDescription>& shaders, VertexInputDescriptions & descs, VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent) {
+VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, const std::vector<ShaderInputDescription>& shaders, const VertexInputDescriptions & descs, const VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent) {
 
     /** shaders **/
 
@@ -910,8 +912,8 @@ VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRen
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-    if (vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &retLayout) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create pipeline layout");
+    if (VkResult r = vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &retLayout))
+        throw vkutil::vk_trace_exception("Unable to create pipeline layout", r);
 
 
     /** Creating the pipeline **/
@@ -936,8 +938,8 @@ VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRen
 
     VkPipeline graphicsPipeline;
 
-    if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
-        throw dbg::trace_exception("Unable to create pipeline");
+    if (VkResult r = vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline))
+        throw vkutil::vk_trace_exception("Unable to create pipeline", r);
 
     return graphicsPipeline;
 
