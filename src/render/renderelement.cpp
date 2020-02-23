@@ -401,11 +401,9 @@ RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_p
 
     if (strc->hasAnimations()) {
 
-        RenderElementAnim * rElem = new RenderElementAnim(view, strc, initTrans);
         if (!strc->getSkin())
             throw dbg::trace_exception("Trying to create animated renderelement with no skin");
-
-        rElem->setSkin(strc->getSkin());
+        RenderElementAnim * rElem = new RenderElementAnim(view, strc, initTrans);
 
         rElem->constructBuffers(view->getSwapchainSize());
 

@@ -89,7 +89,7 @@ void Level::applyToWorld(std::shared_ptr<World> world, Viewport * view) {
         RenderElement::Transform initTrans;
         initTrans.scale = 0.0;
         initTrans.position = Vector<4,float>();
-        initTrans.qRot = Quaternion<float>();
+        initTrans.qRot = Quaternion<float>(0,0,0,0);
         std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, strc, initTrans));
 
         view->addRenderElement(rElem);

@@ -269,6 +269,8 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & des
     if (VkResult r = vkAllocateDescriptorSets(device, &allocInfo, descSets.data()))
         throw vkutil::vk_trace_exception("Unable to allocate descriptor sets", r);
 
+    std::vector<VkDescriptorBufferInfo> bufferInfos(binds.size());
+
     for (int i = 0; i < scSize; ++i) {
 
         std::vector<VkWriteDescriptorSet> descriptorWrites(binds.size());
@@ -313,11 +315,13 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & des
 
             } else if (!binds[j].uniformBuffers.size())
                 throw dbg::trace_exception("Empty uniform buffer");
+            else if (binds[j].uniformBuffers[i] == VK_NULL_HANDLE)
+                throw dbg::trace_exception("Trying to use NULL-buffer as uniform buffer");
 
-            VkDescriptorBufferInfo bufferInfo = {};
-            bufferInfo.buffer = binds[j].uniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = binds[j].elementSize;
+            bufferInfos[j].buffer = binds[j].uniformBuffers[i];
+            bufferInfos[j].offset = 0;
+            bufferInfos[j].range = binds[j].elementSize;
+
 
             descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[j].dstSet = descSets[i];
@@ -325,7 +329,7 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & des
             descriptorWrites[j].dstArrayElement = 0;
             descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptorWrites[j].descriptorCount = 1;
-            descriptorWrites[j].pBufferInfo = &bufferInfo;
+            descriptorWrites[j].pBufferInfo = &bufferInfos[j];
             descriptorWrites[j].pImageInfo = nullptr;
             descriptorWrites[j].pTexelBufferView = nullptr;
 
