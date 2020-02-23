@@ -24,6 +24,8 @@ class Skin {
 
         void writeTransformDataToBuffer(float * buffer);
 
+        size_t getDataSize();
+
     private:
 
         std::vector<Joint> joints;

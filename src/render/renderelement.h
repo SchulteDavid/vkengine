@@ -46,14 +46,14 @@ class RenderElement : public MemoryTransferer {
 
         glm::mat4 getTransformationMatrix(Transform & instance);
 
-        void render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex);
-        void renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex);
+        virtual void render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex);
+        virtual void renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex);
 
         Instance addInstance(Transform & trans);
         void updateInstance(Instance & instance, Transform & trans);
         void deleteInstance(Instance & instance);
 
-        virtual void createUniformBuffers(int scSize);
+        virtual void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings);
         virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
 
         void recreateResources(VkRenderPass & renderPass, int scSize, const vkutil::SwapChain & swapchain);
@@ -83,6 +83,8 @@ class RenderElement : public MemoryTransferer {
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VmaAllocation> uniformBuffersMemory;
 
+        std::vector<Shader::Binding> binds;
+
     private:
 
         struct InstanceInfo {
@@ -91,6 +93,8 @@ class RenderElement : public MemoryTransferer {
             uint32_t pos;
 
         };
+
+        void constructBuffers(int scSize);
 
         std::shared_ptr<Model> model;
         std::shared_ptr<Shader> shader;
@@ -107,8 +111,6 @@ class RenderElement : public MemoryTransferer {
         uint32_t instanceCount;
 
         std::mutex transformBufferMutex;
-
-        std::vector<Shader::Binding> binds;
 
         bool instanceBufferDirty;
         bool instanceCountUpdated;

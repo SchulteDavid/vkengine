@@ -31,3 +31,7 @@ void Skin::writeTransformDataToBuffer(float * buffer) {
     }
 
 }
+
+size_t Skin::getDataSize() {
+    return 16 * sizeof(float) * joints.size();
+}

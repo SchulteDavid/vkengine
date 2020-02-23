@@ -32,6 +32,9 @@ class Shader : public Resource
             uint32_t elementCount; // The shader will automaticaly adjust this to be
                                    // the value specified in the resource file.
 
+            std::vector<VkBuffer> uniformBuffers;
+            size_t elementSize;
+
         };
 
         Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state, unsigned int textureSlots);
@@ -48,7 +51,8 @@ class Shader : public Resource
         VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout);
 
         VkDescriptorPool setupDescriptorPool(int scSize, std::vector<Binding> & binds);
-        std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
+        //std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
+        std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<Binding> & binds, std::vector<std::shared_ptr<Texture>>& tex, int scSize);
         VkPipeline & getPipeline();
         VkPipelineLayout & getPipelineLayout();
 

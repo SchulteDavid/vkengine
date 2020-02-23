@@ -167,7 +167,7 @@ VkDescriptorPool Shader::setupDescriptorPool(int scSize, std::vector<Binding> & 
 
 }
 
-std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>> & tex, int scSize) {
+/*std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>> & tex, int scSize) {
 
     if (descPool == VK_NULL_HANDLE)
         throw dbg::trace_exception("Cannot create descriptor in NULL-pool!");
@@ -241,6 +241,95 @@ std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & des
         index++;
 
         /// END
+
+        vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+
+    }
+
+    return descSets;
+
+}*/
+
+std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<Binding> & binds, std::vector<std::shared_ptr<Texture>> & tex, int scSize) {
+
+    std::cout << "Creating descriptor sets" << std::endl;
+
+    if (descPool == VK_NULL_HANDLE)
+        throw dbg::trace_exception("Cannot create descriptor in NULL-pool!");
+
+    std::vector<VkDescriptorSet> descSets(scSize);
+    std::vector<VkDescriptorSetLayout> layouts(scSize, descLayout);
+
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descPool;
+    allocInfo.descriptorSetCount = scSize;
+    allocInfo.pSetLayouts = layouts.data();
+
+    if (VkResult r = vkAllocateDescriptorSets(device, &allocInfo, descSets.data()))
+        throw vkutil::vk_trace_exception("Unable to allocate descriptor sets", r);
+
+    for (int i = 0; i < scSize; ++i) {
+
+        std::vector<VkWriteDescriptorSet> descriptorWrites(binds.size());
+        std::vector<VkDescriptorImageInfo> imageInfos(textureSlots);
+
+        for (unsigned int j = 0; j < binds.size(); ++j) {
+
+
+            if (binds[j].type == BINDING_TEXTURE_SAMPLER) {
+
+                for (unsigned int k = 0; k < tex.size(); ++k) {
+
+                    imageInfos[k].imageView = tex[k]->getView();
+                    imageInfos[k].sampler = tex[k]->getSampler();
+                    imageInfos[k].imageLayout = tex[k]->getLayout();
+
+                }
+
+                for (unsigned int k = tex.size(); k < textureSlots; ++k) {
+
+                    imageInfos[k].imageView = tex[0]->getView();
+                    imageInfos[k].sampler = tex[0]->getSampler();
+                    imageInfos[k].imageLayout = tex[0]->getLayout();
+
+                }
+
+                /// FOR
+
+                descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrites[j].dstSet = descSets[i];
+                descriptorWrites[j].dstBinding = binds[j].bindingId;
+                descriptorWrites[j].dstArrayElement = 0;
+                descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptorWrites[j].descriptorCount = textureSlots;
+                descriptorWrites[j].pBufferInfo = nullptr;
+                descriptorWrites[j].pImageInfo = imageInfos.data();
+                descriptorWrites[j].pTexelBufferView = nullptr;
+
+                /// END
+
+                continue;
+
+            } else if (!binds[j].uniformBuffers.size())
+                throw dbg::trace_exception("Empty uniform buffer");
+
+            VkDescriptorBufferInfo bufferInfo = {};
+            bufferInfo.buffer = binds[j].uniformBuffers[i];
+            bufferInfo.offset = 0;
+            bufferInfo.range = binds[j].elementSize;
+
+            descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[j].dstSet = descSets[i];
+            descriptorWrites[j].dstBinding = binds[j].bindingId;
+            descriptorWrites[j].dstArrayElement = 0;
+            descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrites[j].descriptorCount = 1;
+            descriptorWrites[j].pBufferInfo = &bufferInfo;
+            descriptorWrites[j].pImageInfo = nullptr;
+            descriptorWrites[j].pTexelBufferView = nullptr;
+
+        }
 
         vkUpdateDescriptorSets(device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 

@@ -73,9 +73,6 @@ Structure * StructureUploader::uploadResource() {
 
 bool StructureUploader::uploadReady() {
 
-    //std::cout << "model.isUseable " << model->status.isUseable << std::endl;
-    //std::cout << "mat.isUseable " << mat->status.isUseable << std::endl;
-
     return mat->status.isUseable && model->status.isUseable;
 
 }
