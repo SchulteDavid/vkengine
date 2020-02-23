@@ -85,6 +85,9 @@ class RenderElement : public MemoryTransferer {
 
         std::vector<Shader::Binding> binds;
 
+        bool instanceBufferDirty;
+        bool instanceCountUpdated;
+
     private:
 
         struct InstanceInfo {
@@ -111,9 +114,6 @@ class RenderElement : public MemoryTransferer {
         uint32_t instanceCount;
 
         std::mutex transformBufferMutex;
-
-        bool instanceBufferDirty;
-        bool instanceCountUpdated;
 
         RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform & initTransform);
         void markBufferDirty();

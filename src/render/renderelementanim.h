@@ -12,6 +12,8 @@ class RenderElementAnim : public RenderElement {
         void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings) override;
         virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
 
+        virtual void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex);
+
         void setSkin(std::shared_ptr<Skin> skin);
 
     protected:

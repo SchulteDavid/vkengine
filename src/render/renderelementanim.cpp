@@ -102,3 +102,27 @@ void RenderElementAnim::destroyUniformBuffers(const vkutil::SwapChain & swapchai
 void RenderElementAnim::setSkin(std::shared_ptr<Skin> skin) {
     this->skin = skin;
 }
+
+void RenderElementAnim::updateUniformBuffer(UniformBufferObject & obj, uint32_t imageIndex) {
+
+    void * data;
+    vmaMapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex], &data);
+    memcpy(data, &obj, sizeof(UniformBufferObject));
+    vmaUnmapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex]);
+
+    vmaMapMemory(state.vmaAllocator, animationBuffersMemory[imageIndex], &data);
+    this->skin->writeTransformDataToBuffer((float *) data);
+    vmaUnmapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex]);
+
+    if (this->instanceCountUpdated) {
+
+        this->instanceCountUpdated = false;
+
+    }
+    if (this->instanceBufferDirty) {
+
+        this->instanceBufferDirty = false;
+
+    }
+
+}
