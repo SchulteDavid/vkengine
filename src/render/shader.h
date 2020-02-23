@@ -47,7 +47,7 @@ class Shader : public Resource
         //void setupDescriptorSetLayout(VkSampler & sampler);
         VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout);
 
-        VkDescriptorPool setupDescriptorPool(int scSize);
+        VkDescriptorPool setupDescriptorPool(int scSize, std::vector<Binding> & binds);
         std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
         VkPipeline & getPipeline();
         VkPipelineLayout & getPipelineLayout();

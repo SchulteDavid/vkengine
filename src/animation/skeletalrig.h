@@ -8,32 +8,25 @@
 #include <mathutils/vector.h>
 #include <mathutils/matrix.h>
 
-class Bone {
+struct Joint {
 
-    public:
-        Bone();
-
-        Math::Matrix<4, 4, float> getTransformMatrix();
-
-    private:
-        std::vector<std::shared_ptr<Bone>> children;
-
-        Math::Quaternion<float> rotation;
-        Math::Vector<3, float>  offset;
+    Math::Matrix<4,4,float> inverseTransform;
+    Math::Vector<3,float> offset;
+    Math::Quaternion<float> rotation;
 
 };
 
-class SkeletalRig
-{
-    public:
-        SkeletalRig();
-        virtual ~SkeletalRig();
+class Skin {
 
-    protected:
+    public:
+        Skin(std::vector<Joint> joints);
+        virtual ~Skin();
+
+        void writeTransformDataToBuffer(float * buffer);
 
     private:
 
-        std::shared_ptr<Bone> root;
+        std::vector<Joint> joints;
 
 };
 

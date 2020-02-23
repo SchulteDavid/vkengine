@@ -37,6 +37,9 @@ class GLTFNode {
         std::shared_ptr<Mesh> getMesh();
         bool hasMesh();
 
+        void setSkin(std::shared_ptr<Skin> skin);
+        std::shared_ptr<Skin> getSkin();
+
     private:
 
         std::string name;
@@ -46,6 +49,8 @@ class GLTFNode {
         Math::Vector<3, float> scale;
 
         std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<Skin> skin;
+        std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
 
 };
 

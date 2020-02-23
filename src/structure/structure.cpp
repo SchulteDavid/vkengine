@@ -15,6 +15,7 @@ Structure::Structure(std::shared_ptr<Model> model, std::shared_ptr<Material> mat
 
     this->model = model;
     this->material = mat;
+    this->skin = nullptr;
 
 }
 
@@ -30,17 +31,43 @@ std::shared_ptr<Material> Structure::getMaterial() {
     return material;
 }
 
+bool Structure::hasAnimations() {
+    return !animations.empty();
+}
+
+void Structure::addAnimation(std::string name, std::shared_ptr<Animation> anim) {
+    this->animations[name] = anim;
+}
+
+void Structure::setSkin(std::shared_ptr<Skin> skin) {
+    this->skin = skin;
+}
+
+std::shared_ptr<Skin> Structure::getSkin() {
+    return skin;
+}
 
 StructureUploader::StructureUploader(LoadingResource model, LoadingResource mat) {
 
     this->model = model;
     this->mat = mat;
+    this->skin = nullptr;
 
 }
 
 Structure * StructureUploader::uploadResource() {
 
-    return new Structure(std::dynamic_pointer_cast<Model>(model->location), std::dynamic_pointer_cast<Material>(mat->location));
+    Structure * strc = new Structure(std::dynamic_pointer_cast<Model>(model->location), std::dynamic_pointer_cast<Material>(mat->location));
+
+    for (auto it : animations) {
+        strc->addAnimation(it.first, it.second);
+    }
+
+    if (this->skin) {
+        strc->setSkin(this->skin);
+    }
+
+    return strc;
 
 }
 
@@ -51,6 +78,14 @@ bool StructureUploader::uploadReady() {
 
     return mat->status.isUseable && model->status.isUseable;
 
+}
+
+void StructureUploader::addAnimation(std::string name, std::shared_ptr<Animation> anim) {
+    this->animations[name] = anim;
+}
+
+void StructureUploader::setSkin(std::shared_ptr<Skin> skin) {
+    this->skin = skin;
 }
 
 StructureLoader::StructureLoader(const vkutil::VulkanState & state) : state(state) {

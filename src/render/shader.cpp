@@ -52,39 +52,6 @@ void Shader::createModules(const vkutil::VulkanState & state) {
 
 }
 
-/*std::vector<VkDescriptorSetLayoutBinding> Shader::getVkBindings(VkSampler & sampler) {
-
-    /// TODO : make more flexible
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(2);
-
-    VkDescriptorSetLayoutBinding uboLayoutBinding = {};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-
-    bindings[0] = uboLayoutBinding;
-
-    VkDescriptorSetLayoutBinding texLayoutBinding = {};
-    texLayoutBinding.binding = 1;
-    texLayoutBinding.descriptorCount = textureSlots;
-    texLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-    VkSampler arr[textureSlots];
-    for (int i = 0; i < textureSlots; ++i)
-        arr[i] = sampler;
-
-    texLayoutBinding.pImmutableSamplers = 0;
-    texLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    bindings[1] = texLayoutBinding;
-
-    return bindings;
-
-}*/
-
 std::vector<VkDescriptorSetLayoutBinding> Shader::getVkBindings(std::vector<Shader::Binding> bindings) {
 
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings(bindings.size());
@@ -110,7 +77,7 @@ std::vector<VkDescriptorSetLayoutBinding> Shader::getVkBindings(std::vector<Shad
                 break;
 
             default:
-                throw dbg::trace_exception("Wrong binding type specified");
+                throw dbg::trace_exception(std::string("Wrong binding type specified for element ").append(std::to_string(i)).append(" : ").append(std::to_string(bindings[i].type)));
 
         }
 
@@ -158,24 +125,36 @@ VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs
 
 }
 
-VkDescriptorPool Shader::setupDescriptorPool(int scSize) {
+VkDescriptorPool Shader::setupDescriptorPool(int scSize, std::vector<Binding> & binds) {
 
-    VkDescriptorPoolSize poolSize = {};
-    poolSize.type =  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = scSize;
+    std::vector<VkDescriptorPoolSize> sizes(binds.size());
 
-    VkDescriptorPoolSize samplerSize = {};
-    samplerSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerSize.descriptorCount = scSize;
+    for (unsigned int i = 0; i < binds.size(); ++i) {
 
-    std::vector<VkDescriptorPoolSize> sizes(1 + textureSlots);
-    sizes[0] = poolSize;
-    for (int i = 1; i < textureSlots+1; ++i)
-        sizes[i] = samplerSize;
+        Binding b = binds[i];
+        VkDescriptorPoolSize poolSize;
+
+        switch (b.type) {
+
+            case BINDING_UNIFORM_BUFFER:
+                poolSize.descriptorCount = b.elementCount * scSize;
+                poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                break;
+
+            case BINDING_TEXTURE_SAMPLER:
+                poolSize.descriptorCount = textureSlots * scSize;
+                poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                break;
+
+        }
+
+        sizes[i] = poolSize;
+
+    }
 
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = 1 + textureSlots;
+    poolInfo.poolSizeCount = sizes.size();
     poolInfo.pPoolSizes = sizes.data();
     poolInfo.maxSets = scSize;
 

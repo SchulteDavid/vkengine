@@ -7,6 +7,7 @@
 #include "render/material.h"
 #include "render/model.h"
 #include "animation/animation.h"
+#include "animation/skeletalrig.h"
 
 class Structure : public Resource {
 
@@ -18,6 +19,13 @@ class Structure : public Resource {
         std::shared_ptr<Material> getMaterial();
         std::unordered_map<std::string, std::shared_ptr<Animation>> getAnimations();
 
+        void addAnimation(std::string name, std::shared_ptr<Animation> anim);
+
+        bool hasAnimations();
+
+        void setSkin(std::shared_ptr<Skin> skin);
+        std::shared_ptr<Skin> getSkin();
+
     protected:
 
     private:
@@ -26,6 +34,7 @@ class Structure : public Resource {
         std::shared_ptr<Model> model;
 
         std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
+        std::shared_ptr<Skin> skin;
 
 };
 
@@ -38,10 +47,16 @@ class StructureUploader : public ResourceUploader<Structure> {
         Structure * uploadResource();
         bool uploadReady();
 
+        void addAnimation(std::string name, std::shared_ptr<Animation> anim);
+        void setSkin(std::shared_ptr<Skin> skin);
+
     private:
 
         LoadingResource mat;
         LoadingResource model;
+
+        std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
+        std::shared_ptr<Skin> skin;
 
 };
 

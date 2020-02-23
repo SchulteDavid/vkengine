@@ -10,6 +10,7 @@
 
 #include "util/debug/trace_exception.h"
 #include "util/image/png.h"
+#include "animation/skeletalrig.h"
 
 
 using json = nlohmann::json;
@@ -76,6 +77,7 @@ struct gltf_node_t {
     Math::Vector<3, float> scale;
 
     std::vector<int> children;
+    int skin;
 
 };
 
@@ -113,6 +115,12 @@ void from_json(const json & j, gltf_node_t & node) {
         j.at("children").get_to(node.children);
     } catch (std::exception e) {
 
+    }
+
+    try {
+        j.at("skin").get_to(node.skin);
+    } catch (std::exception e) {
+        node.skin = -1;
     }
 
 }
@@ -497,6 +505,24 @@ template <unsigned int dim, typename T> std::vector<Math::Vector<dim, T>> gltfLo
 
 }
 
+template <unsigned int dim, typename T> std::vector<Math::Matrix<dim,dim,T>> gltfLoadMatrixBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer) {
+
+    std::vector<Math::Matrix<dim,dim, T>> value(acc.count);
+
+    for (unsigned int i = 0; i < acc.count; ++i) {
+
+        T tmp[dim];
+
+        for (unsigned int j = 0; j < dim; ++j)
+            tmp[j] = gltfGetBufferData<T>(acc, view, buffer, i*dim+j);
+
+        value[i] = Matrix<dim,dim, T>(tmp);
+
+    }
+    return value;
+
+}
+
 template< typename T > std::string int_to_hex( T i ) {
 
   std::stringstream stream;
@@ -639,6 +665,25 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
 }
 
+std::shared_ptr<Skin> gltfLoadSkin(gltf_skin_t & skin, std::vector<gltf_accessor_t> & accessors, std::vector<gltf_buffer_view_t> & bufferViews, uint8_t * buffer, std::vector<gltf_node_t> & nodes) {
+
+    std::vector<Joint> joints(skin.joints.size());
+
+    gltf_accessor_t acc = accessors[skin.inverseBindMatrices];
+    std::vector<Matrix<4,4,float>> transforms = gltfLoadMatrixBuffer<4,float>(acc, bufferViews[acc.bufferView], buffer);
+
+    for (unsigned int i = 0; i < skin.joints.size(); ++i) {
+
+        joints[i].inverseTransform = transforms[i];
+        joints[i].offset = nodes[skin.joints[i]].translation;
+        joints[i].rotation = nodes[skin.joints[i]].rotation;
+
+    }
+
+    return std::shared_ptr<Skin>(new Skin(joints));
+
+}
+
 std::vector<uint8_t> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & bufferView, uint32_t * width, uint32_t * height) {
 
     uint32_t chanelCount;
@@ -773,6 +818,12 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
         meshData[i] = gltfLoadMesh(meshes[i], accessors, bufferViews, binaryBuffer);
     }
 
+    /// Loading skins
+    std::vector<std::shared_ptr<Skin>> skinData(skins.size());
+    for (unsigned int i = 0; i < skins.size(); ++i) {
+        skinData[i] = gltfLoadSkin(skins[i], accessors, bufferViews, binaryBuffer, nodes);
+    }
+
     /// Loading nodes
     std::vector<std::shared_ptr<GLTFNode>> nodeData(nodes.size());
     for (unsigned int i = 0; i < nodes.size(); ++i) {
@@ -785,6 +836,10 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
 
         if (nodes[i].mesh >= 0) {
             node->setMesh(meshData[nodes[i].mesh]);
+        }
+
+        if (nodes[i].skin >= 0) {
+            node->setSkin(skinData[nodes[i].skin]);
         }
 
         nodeData[i] = node;
@@ -851,6 +906,26 @@ std::shared_ptr<Mesh> gltfBuildMesh(std::shared_ptr<GLTFNode> node) {
 
 }
 
+std::shared_ptr<Skin> gltfBuildSkin(std::shared_ptr<GLTFNode> node) {
+
+    if (!node) return nullptr;
+
+    if (!node->hasChildren()) {
+        return node->getSkin();
+    }
+
+    for (std::shared_ptr<GLTFNode> n : node->getChildren()) {
+
+        std::shared_ptr<Skin> ptr = gltfBuildSkin(n);
+        if (ptr)
+            return ptr;
+
+    }
+
+    return nullptr;
+
+}
+
 struct gltf_anim_vertex {
 
     glm::vec3 pos;
@@ -872,12 +947,12 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
     LoadingResource shaderRes;
     if (fileData.skins.size()) {
         shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallicAnim.shader");
-        //shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
     } else {
         shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
     }
 
     std::shared_ptr<Mesh> resultMesh = nullptr;
+    std::shared_ptr<Skin> resultSkin = nullptr;
     for (std::shared_ptr<GLTFNode> node : rootNodes) {
 
         std::cout << "Node " << node << std::endl;
@@ -885,6 +960,8 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
         std::shared_ptr<Mesh> tmpMesh = gltfBuildMesh(node);
 
         resultMesh = Mesh::merge(resultMesh, tmpMesh);
+
+        resultSkin = gltfBuildSkin(node);
 
     }
 
@@ -997,7 +1074,17 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
 
     delete[] fileData.binaryBuffer;
 
-    return std::shared_ptr<StructureUploader>(new StructureUploader(modelRes, materialLRes));
+    std::shared_ptr<StructureUploader> strcRes = std::shared_ptr<StructureUploader>(new StructureUploader(modelRes, materialLRes));
+
+    for (unsigned int i = 0; i < fileData.animations.size(); ++i) {
+
+        strcRes->addAnimation(fileData.animations[i].name, nullptr);
+
+    }
+
+    strcRes->setSkin(resultSkin);
+
+    return strcRes;
 
 }
 
@@ -1080,4 +1167,12 @@ Matrix<4,4,float> GLTFNode::getTransform() {
 
     return tMat * smat;
 
+}
+
+std::shared_ptr<Skin> GLTFNode::getSkin() {
+    return skin;
+}
+
+void GLTFNode::setSkin(std::shared_ptr<Skin> skin) {
+    this->skin = skin;
 }

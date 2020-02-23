@@ -40,6 +40,8 @@ class RenderElement : public MemoryTransferer {
         };
         RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTrasnsform);
         RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
+        RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTrasnsform, std::vector<Shader::Binding> binds);
+        RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform, std::vector<Shader::Binding> binds);
         virtual ~RenderElement();
 
         glm::mat4 getTransformationMatrix(Transform & instance);
@@ -51,12 +53,12 @@ class RenderElement : public MemoryTransferer {
         void updateInstance(Instance & instance, Transform & trans);
         void deleteInstance(Instance & instance);
 
-        void createUniformBuffers(int scSize);
-        void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
+        virtual void createUniformBuffers(int scSize);
+        virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
 
         void recreateResources(VkRenderPass & renderPass, int scSize, const vkutil::SwapChain & swapchain);
 
-        void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex);
+        virtual void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex);
 
         std::vector<VkDescriptorSet> & getDescriptorSets();
         std::vector<VmaAllocation> & getMemories();
@@ -74,9 +76,14 @@ class RenderElement : public MemoryTransferer {
 
         static glm::mat4 toGLMMatrx(Math::Matrix<4,4,float> mat);
 
-    private:
-
         const vkutil::VulkanState & state;
+
+        VkDescriptorSetLayout descSetLayout;
+        std::vector<VkDescriptorSet> descriptorSets;
+        std::vector<VkBuffer> uniformBuffers;
+        std::vector<VmaAllocation> uniformBuffersMemory;
+
+    private:
 
         struct InstanceInfo {
 
@@ -93,11 +100,6 @@ class RenderElement : public MemoryTransferer {
         VkPipeline pipeline;
         VkPipelineLayout pipelineLayout;
 
-        VkDescriptorSetLayout descSetLayout;
-        std::vector<VkDescriptorSet> descriptorSets;
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VmaAllocation> uniformBuffersMemory;
-
         DynamicBuffer<glm::mat4> * instanceBuffer;
         std::vector<glm::mat4> instanceTransforms;
         std::unordered_map<uint32_t, InstanceInfo> instances;
@@ -105,6 +107,8 @@ class RenderElement : public MemoryTransferer {
         uint32_t instanceCount;
 
         std::mutex transformBufferMutex;
+
+        std::vector<Shader::Binding> binds;
 
         bool instanceBufferDirty;
         bool instanceCountUpdated;

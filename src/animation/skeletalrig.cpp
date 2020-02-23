@@ -1,21 +1,33 @@
 #include "skeletalrig.h"
 #include "util/debug/trace_exception.h"
 
+#include "string.h"
+
 using namespace Math;
 using namespace dbg;
 
-Matrix<4, 4, float> Bone::getTransformMatrix() {
+Math::Matrix<4,4,float> getTransformFromJoint(Joint & joint) {
 
-    return rotation.toModelMatrix(offset);
+    /// This should take less than a few hundred ns.
+    return joint.inverseTransform * joint.rotation.toModelMatrix(joint.offset);
 
 }
 
-SkeletalRig::SkeletalRig()
-{
-    //ctor
+Skin::Skin(std::vector<Joint> joints) {
+    this->joints = joints;
 }
 
-SkeletalRig::~SkeletalRig()
-{
-    //dtor
+Skin::~Skin() {
+
+}
+
+void Skin::writeTransformDataToBuffer(float * buffer) {
+
+    for (unsigned int i = 0; i < joints.size(); ++i) {
+
+        Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
+        memcpy(buffer + 16 * i, mat.asArray(), 16 * sizeof(float));
+
+    }
+
 }

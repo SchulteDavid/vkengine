@@ -124,6 +124,8 @@
 		<Unit filename="src/render/model.h" />
 		<Unit filename="src/render/renderelement.cpp" />
 		<Unit filename="src/render/renderelement.h" />
+		<Unit filename="src/render/renderelementanim.cpp" />
+		<Unit filename="src/render/renderelementanim.h" />
 		<Unit filename="src/render/shader.cpp" />
 		<Unit filename="src/render/shader.h" />
 		<Unit filename="src/render/storagebuffer.cpp" />

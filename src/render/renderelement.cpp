@@ -11,6 +11,8 @@
 #include <string.h>
 #include "viewport.h"
 
+#include "renderelementanim.h"
+
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform & initTransform) : state(view->getState()), MemoryTransferer(*view) {
 
     //throw std::runtime_error("Created RenderElement with old constructor");
@@ -35,8 +37,22 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     this->createUniformBuffers(scSize);
 
-    this->descPool = this->shader->setupDescriptorPool(scSize);
+    Shader::Binding uniformBufferBinding;
+    uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
+    uniformBufferBinding.elementCount = 1;
+    uniformBufferBinding.bindingId = 0;
+
+    Shader::Binding textureBinding;
+    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+    textureBinding.bindingId = 1;
+
+    std::vector<Shader::Binding> binds(2);
+    binds[0] = uniformBufferBinding;
+    binds[1] = textureBinding;
+
+    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
     this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+    this->binds = binds;
 
 }
 
@@ -78,12 +94,52 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
     descSetLayout = mat->prepareDescriptors(binds);
     pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
 
-    this->descPool = this->shader->setupDescriptorPool(scSize);
+    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
     this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+    this->binds = binds;
 
 }
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc->getModel(), strc->getMaterial(), view->getSwapchainSize(), initTransform) {
+
+
+
+}
+
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTransform, std::vector<Shader::Binding> binds) : state(view->getState()), MemoryTransferer(*view) {
+
+    this->model = model;
+    this->shader = mat->getShader();
+    this->texture = mat->getTextures();
+
+    instanceTransforms = std::vector<glm::mat4>(1);
+    instances = std::unordered_map<uint32_t, InstanceInfo>(1);
+    transforms = std::vector<Transform>(1);
+
+    std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
+
+    transforms[0] = initTransform;
+
+    instanceTransforms[0] = getTransformationMatrix(transforms[0]);
+
+    instanceCount = 1;
+
+    this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    this->createUniformBuffers(scSize);
+
+    descSetLayout = mat->prepareDescriptors(binds);
+    pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
+
+    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
+    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
+
+    this->binds = binds;
+
+}
+
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform, std::vector<Shader::Binding> binds) :
+    RenderElement(view, strc->getModel(), strc->getMaterial(), view->getSwapchainSize(), initTransform, binds) {
 
 
 
@@ -241,7 +297,7 @@ void RenderElement::recreateResources(VkRenderPass & renderPass, int scSize, con
 
     pipeline = shader->setupGraphicsPipeline(descs, renderPass, state, descSetLayout, swapchain.extent, pipelineLayout);
 
-    descPool = shader->setupDescriptorPool(scSize);
+    descPool = shader->setupDescriptorPool(scSize, binds);
     createUniformBuffers(scSize);
     this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, uniformBuffers, sizeof(UniformBufferObject), texture, scSize);
 
@@ -330,6 +386,16 @@ std::vector<VmaAllocation> & RenderElement::getMemories() {
 }
 
 RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, RenderElement::Transform & initTrans) {
+
+    if (strc->hasAnimations()) {
+
+        RenderElementAnim * rElem = new RenderElementAnim(view, strc, initTrans);
+        if (!strc->getSkin())
+            throw dbg::trace_exception("Trying to create animated renderelement with no skin");
+        rElem->setSkin(strc->getSkin());
+
+        return rElem;
+    }
 
     return new RenderElement(view, strc, initTrans);
 
