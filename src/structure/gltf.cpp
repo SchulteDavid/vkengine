@@ -509,14 +509,13 @@ template <unsigned int dim, typename T> std::vector<Math::Matrix<dim,dim,T>> glt
 
     std::vector<Math::Matrix<dim,dim, T>> value(acc.count);
 
+    T * data = (T*) (buffer + view.byteOffset);
+    alignas(16) T mData[dim*dim];
+
     for (unsigned int i = 0; i < acc.count; ++i) {
 
-        T tmp[dim];
-
-        for (unsigned int j = 0; j < dim; ++j)
-            tmp[j] = gltfGetBufferData<T>(acc, view, buffer, i*dim+j);
-
-        value[i] = Matrix<dim,dim, T>(tmp);
+        memcpy(mData, data + (dim * dim) * i, sizeof(T) * dim * dim);
+        value[i] = Matrix<dim,dim,T>(mData);
 
     }
     return value;
@@ -672,11 +671,15 @@ std::shared_ptr<Skin> gltfLoadSkin(gltf_skin_t & skin, std::vector<gltf_accessor
     gltf_accessor_t acc = accessors[skin.inverseBindMatrices];
     std::vector<Matrix<4,4,float>> transforms = gltfLoadMatrixBuffer<4,float>(acc, bufferViews[acc.bufferView], buffer);
 
+    float offset[3] = {0,0,0};
+
     for (unsigned int i = 0; i < skin.joints.size(); ++i) {
 
         joints[i].inverseTransform = transforms[i];
         joints[i].offset = nodes[skin.joints[i]].translation;
         joints[i].rotation = nodes[skin.joints[i]].rotation;
+        //joints[i].offset = Vector<3,float>(offset);
+        //joints[i].rotation = Quaternion<float>(1,0,0,0);
 
     }
 

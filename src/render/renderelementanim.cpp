@@ -112,7 +112,7 @@ void RenderElementAnim::updateUniformBuffer(UniformBufferObject & obj, uint32_t 
 
     vmaMapMemory(state.vmaAllocator, animationBuffersMemory[imageIndex], &data);
     this->skin->writeTransformDataToBuffer((float *) data);
-    vmaUnmapMemory(state.vmaAllocator, uniformBuffersMemory[imageIndex]);
+    vmaUnmapMemory(state.vmaAllocator, animationBuffersMemory[imageIndex]);
 
     if (this->instanceCountUpdated) {
 

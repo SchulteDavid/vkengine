@@ -31,7 +31,12 @@ layout (location = 2) out vec2 uvPos;
 layout (location = 4) out mat3 toTangentMat;
 layout (location = 3) flat out int matIndex;
 
+//layout (location = 8) out mat4 skinMat;
+
 //uniform mat4 boneData.bones[boneData.boneCount];
+
+//vec4 boneWeights = vec4(0.6456, 0.17386, 0.13727, 0.04326);
+//ivec4 boneIds = ivec4(1, 0, 4, 8);
 
 void main() {
 
@@ -39,7 +44,7 @@ void main() {
                     + boneWeights.y * boneData.bones[boneIds.y]
                     + boneWeights.z * boneData.bones[boneIds.z]
                     + boneWeights.w * boneData.bones[boneIds.w];
-    mat4 transform = tMat;
+    mat4 transform = tMat * transpose(skinMat);
     position = transform * vec4(inPosition, 1.0);
     gl_Position = ubo.proj * ubo.view * position;
     normal = vec4(normalize((transform * vec4(inNormal, 0)).xyz), 0.0);
