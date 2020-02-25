@@ -76,6 +76,10 @@ struct gltf_node_t {
     Math::Quaternion<float> rotation;
     Math::Vector<3, float> scale;
 
+    Math::Vector<3,float> globalTranslation;
+    Math::Quaternion<float> globalRotation;
+    Math::Vector<3, float> globalScale;
+
     std::vector<int> children;
     int skin;
 
@@ -530,6 +534,21 @@ template< typename T > std::string int_to_hex( T i ) {
 
 }
 
+void gltfUpdateChildGlobalTransform(gltf_node_t & node, std::vector<gltf_node_t> & nodes, Vector<3,float> translation, Vector<3,float> scale, Quaternion<float> rotation) {
+
+    node.globalRotation = rotation * node.rotation;
+    float tmp[3] = {scale[0] * node.scale[0], scale[1] * node.scale[1], scale[2] * node.scale[2]};
+    node.globalScale = Vector<3,float>(tmp);
+    node.globalTranslation = translation + node.translation;
+
+    for (int cIndex : node.children) {
+
+        gltfUpdateChildGlobalTransform(nodes[cIndex], nodes, node.globalTranslation, node.globalScale, node.globalRotation);
+
+    }
+
+}
+
 std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor_t> & accessors, std::vector<gltf_buffer_view_t> & bufferViews, uint8_t * buffer) {
 
     gltf_mesh_primitive_t prim = mesh.primitives[0];
@@ -676,8 +695,8 @@ std::shared_ptr<Skin> gltfLoadSkin(gltf_skin_t & skin, std::vector<gltf_accessor
     for (unsigned int i = 0; i < skin.joints.size(); ++i) {
 
         joints[i].inverseTransform = transforms[i];
-        joints[i].offset = nodes[skin.joints[i]].translation;
-        joints[i].rotation = nodes[skin.joints[i]].rotation;
+        joints[i].offset = nodes[skin.joints[i]].globalTranslation;
+        joints[i].rotation = nodes[skin.joints[i]].globalRotation;
         //joints[i].offset = Vector<3,float>(offset);
         //joints[i].rotation = Quaternion<float>(1,0,0,0);
 
@@ -814,6 +833,16 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
 
     int sceneID = jsonData["scene"].get<int>();
     uint8_t * binaryBuffer = chunks[1].rawData;
+
+    float tmp[3] = {0,0,0};
+    Vector<3, float> initTranslation(tmp);
+    tmp[0] = tmp[1] = tmp[2] = 1;
+    Vector<3, float> initScale(tmp);
+    Quaternion<float> initRotation(1,0,0,0);
+
+    for (unsigned int i = 0; i < scenes[sceneID].nodes.size(); ++i) {
+        gltfUpdateChildGlobalTransform(nodes[scenes[sceneID].nodes[i]], nodes, initTranslation, initScale, initRotation);
+    }
 
     /// Loading meshes into internal format (could be moved up???)
     std::vector<std::shared_ptr<Mesh>> meshData(meshes.size());
