@@ -939,7 +939,9 @@ void Viewport::destroySwapChain() {
 
 void Viewport::recreateSwapChain() {
 
-    vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), state.device, window->getSurface(), window->getGlfwWindow());
+    state.graphicsQueueMutex.lock();
+
+    vkutil::SwapChain tmpChain = vkutil::createSwapchain(state.physicalDevice, state.device, state.surface, state.glfwWindow);
     this->swapchain.chain = tmpChain.chain;
     this->swapchain.extent = tmpChain.extent;
     this->swapchain.format = tmpChain.format;
@@ -975,6 +977,8 @@ void Viewport::recreateSwapChain() {
 
     this->setupCommandBuffers();
     this->recordCommandBuffers();
+
+    state.graphicsQueueMutex.unlock();
 
 }
 

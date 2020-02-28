@@ -629,7 +629,7 @@ void vkutil::transitionImageLayout(const VkImage & image, VkFormat format, VkIma
         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else {
-        throw std::invalid_argument("unsupported layout transition!");
+        throw dbg::trace_exception("unsupported layout transition!");
     }
 
     vkCmdPipelineBarrier(
