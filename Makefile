@@ -14,7 +14,7 @@ Y_FILES := $(shell find src/ -name "*.y")
 FRAG_SHADER_FILES:=$(shell find resources/ -name "*.frag")
 VERT_SHADER_FILES:=$(shell find resources/ -name "*.vert")
 
-INCLUDE_DIRS := src/ include/ include/bullet/ $(addsuffix /,$(shell find srclibs/ -name "include"))
+INCLUDE_DIRS := src/ include/ include/bullet/ SDK/x86_64/include/ $(addsuffix /,$(shell find srclibs/ -name "include"))
 LIBRARY_DIRS := lib/linux_amd64/ $(addsuffix /,$(shell find srclibs/ -name "lib"))
 
 # Toolchain-setup
