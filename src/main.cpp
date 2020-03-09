@@ -31,6 +31,8 @@
 
 #include <exception>
 
+#include "util/mesh/marchingcubes.h"
+
 static bool run = true;
 static bool wait;
 
@@ -98,6 +100,8 @@ int main(int argc, char ** argv) {
     }
 
     //gltfLoadFile("sheep_.glb");
+
+    testOctree();
 
     Entity::registerDefaultEntityTypes();
 

@@ -40,10 +40,17 @@ layout (location = 3) flat out int matIndex;
 
 void main() {
 
-    mat4 skinMat = boneWeights.x * boneData.bones[boneIds.x]
+    mat4 skinMat = boneWeights.x * boneData.bones[boneIds.x];
                     + boneWeights.y * boneData.bones[boneIds.y]
                     + boneWeights.z * boneData.bones[boneIds.z]
                     + boneWeights.w * boneData.bones[boneIds.w];
+
+    mat4 yupMat = mat4(
+                       1,0,0,0,
+                       0,0,1,0,
+                       0,-1,0,0,
+                       0,0,0,1
+                       );
     mat4 transform = tMat * transpose(skinMat);
     position = transform * vec4(inPosition, 1.0);
     gl_Position = ubo.proj * ubo.view * position;

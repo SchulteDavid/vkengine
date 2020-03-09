@@ -164,6 +164,8 @@
 		<Unit filename="src/util/image/png.h" />
 		<Unit filename="src/util/mesh.cpp" />
 		<Unit filename="src/util/mesh.h" />
+		<Unit filename="src/util/mesh/marchingcubes.cpp" />
+		<Unit filename="src/util/mesh/marchingcubes.h" />
 		<Unit filename="src/util/meshhelper.cpp" />
 		<Unit filename="src/util/meshhelper.h" />
 		<Unit filename="src/util/simplexnoise.cpp" />
