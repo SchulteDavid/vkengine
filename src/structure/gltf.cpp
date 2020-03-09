@@ -536,7 +536,9 @@ template< typename T > std::string int_to_hex( T i ) {
 
 void gltfUpdateChildGlobalTransform(gltf_node_t & node, std::vector<gltf_node_t> & nodes, Vector<3,float> translation, Vector<3,float> scale, Quaternion<float> rotation) {
 
-    node.globalRotation = rotation * node.rotation;
+    ///TODO: check rotation order.
+    node.globalRotation = node.rotation * rotation;
+    std::cout << "node rotation " << node.rotation << " rotation " << rotation << " -> " << node.globalRotation << std::endl;
     float tmp[3] = {scale[0] * node.scale[0], scale[1] * node.scale[1], scale[2] * node.scale[2]};
     node.globalScale = Vector<3,float>(tmp);
     node.globalTranslation = translation + node.translation;
@@ -697,6 +699,7 @@ std::shared_ptr<Skin> gltfLoadSkin(gltf_skin_t & skin, std::vector<gltf_accessor
         joints[i].inverseTransform = transforms[i];
         joints[i].offset = nodes[skin.joints[i]].globalTranslation;
         joints[i].rotation = nodes[skin.joints[i]].globalRotation;
+        std::cout << "rotation of joint " << i << ": " << joints[i].rotation << std::endl;
         //joints[i].offset = Vector<3,float>(offset);
         //joints[i].rotation = Quaternion<float>(1,0,0,0);
 
@@ -838,7 +841,7 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     Vector<3, float> initTranslation(tmp);
     tmp[0] = tmp[1] = tmp[2] = 1;
     Vector<3, float> initScale(tmp);
-    Quaternion<float> initRotation(1,0,0,0);
+    Quaternion<float> initRotation(0.7071068,-0.7071068,0,0);
 
     for (unsigned int i = 0; i < scenes[sceneID].nodes.size(); ++i) {
         gltfUpdateChildGlobalTransform(nodes[scenes[sceneID].nodes[i]], nodes, initTranslation, initScale, initRotation);

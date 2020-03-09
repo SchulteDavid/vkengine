@@ -31,6 +31,10 @@ Skin::~Skin() {
 
 void Skin::writeTransformDataToBuffer(float * buffer) {
 
+    //float axis[3] = {0,0,1};
+
+    //joints[2].rotation = joints[2].rotation * Quaternion<float>::fromAxisAngle(Vector<3, float>(axis), 0.0016);
+
     for (unsigned int i = 0; i < joints.size(); ++i) {
 
         Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
