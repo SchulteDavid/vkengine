@@ -87,6 +87,14 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
 
 #define BM_SIZE ( 1 << 24 )
 
+#include "util/simplexnoise.h"
+
+double noiseFunc(double x, double y, double z) {
+
+    return - z - 8 * SimplexNoise1234::noise(x*0.05,y*0.05,z*0.05) - 1.2 * SimplexNoise1234::noise(x * 0.1 + 123.253, y * 0.1, z * 0.1) - 0.12 * SimplexNoise1234::noise(x * 0.7,y * 0.8, z * 0.5);
+
+}
+
 int main(int argc, char ** argv) {
 
     unsigned int width = 1280;
@@ -101,7 +109,9 @@ int main(int argc, char ** argv) {
 
     //gltfLoadFile("sheep_.glb");
 
-    testOctree();
+    std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 64);
+
+    mesh->saveAsPLY("mesh.ply");
 
     Entity::registerDefaultEntityTypes();
 
@@ -122,6 +132,7 @@ int main(int argc, char ** argv) {
 
     //LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
     //LoadingResource cres = resourceManager->loadResourceBg("Structure", "sheep_.glb");
+    LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
     LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
 
@@ -157,6 +168,18 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Level> lvl = resourceManager->get<Level>("Level", "resources/level/test.lvl");
     //std::cout << "Level " << lvl << std::endl;
     lvl->applyToWorld(world, view);
+
+    std::shared_ptr<Model> model(new Model(view->getState(), mesh));
+    vkutil::VulkanState & state = view->getState();
+    model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+    RenderElement::Transform trans;
+    trans.position = Math::Vector<3, float>({0,0,1});
+    trans.qRot = Math::Quaternion<float>(1,0,0,0);
+    trans.scale = 1.0;
+    std::shared_ptr<Material> material = std::dynamic_pointer_cast<Material>(matRes->location);
+    std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, model, material, trans));
+
+    view->addRenderElement(rElem);
 
     std::thread rotateThread(rotateFunc, world, view);
 

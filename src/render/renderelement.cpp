@@ -92,7 +92,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     instanceCount = 1;
 
-    descSetLayout = mat->prepareDescriptors(binds);
+    descSetLayout = mat->prepareDescriptors(this->binds);
     pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
 
     /*this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -110,9 +110,9 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, T
 
 }
 
-RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTransform, std::vector<Shader::Binding> bnds) : state(view->getState()), MemoryTransferer(*view) {
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTransform, std::vector<Shader::Binding> binds) : state(view->getState()), MemoryTransferer(*view) {
 
-    this->binds = bnds;
+    this->binds = binds;
 
     this->model = model;
     this->shader = mat->getShader();
@@ -130,7 +130,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     instanceCount = 1;
 
-    descSetLayout = mat->prepareDescriptors(binds);
+    descSetLayout = mat->prepareDescriptors(this->binds);
     pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
 
     //constructBuffers(scSize);
@@ -415,5 +415,13 @@ RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_p
         rElem->constructBuffers(view->getSwapchainSize());
         return rElem;
     }
+
+}
+
+RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform & initTransform) {
+
+    RenderElement * rElem = new RenderElement(view, model, material, view->getSwapchainSize(), initTransform);
+    rElem->constructBuffers(view->getSwapchainSize());
+    return rElem;
 
 }

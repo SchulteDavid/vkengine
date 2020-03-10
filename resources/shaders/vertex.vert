@@ -48,7 +48,7 @@ void main() {
 
 	);
 
-	normal = vec4(inTangent, 1);
+	//normal = vec4(inTangent, 1);
 	matIndex = inMat;
 
 }
