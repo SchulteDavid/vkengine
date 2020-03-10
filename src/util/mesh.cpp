@@ -101,22 +101,7 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
 
     if (this->attributes.find("TANGENT") == this->attributes.end()) {
 
-        std::vector<Model::Vertex> verts = getVerts();
-        MeshHelper::computeTangents(verts, indices);
-
-        VertexAttribute tangentAttr;
-        tangentAttr.type = ATTRIBUTE_F32_VEC3;
-        tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
-
-        for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
-
-            float tmp[3] = {verts[i].tangent.x, verts[i].tangent.y, verts[i].tangent.z};
-
-            tangentAttr.value[i].vec3 = Vector<3, float>(tmp);
-
-        }
-
-        this->attributes["TANGENT"] = tangentAttr;
+        computeTangents();
 
     }
 
@@ -125,6 +110,26 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
 Mesh::~Mesh() {
 
 
+
+}
+
+void Mesh::computeTangents() {
+
+    std::vector<Model::Vertex> verts = getVerts();
+    MeshHelper::computeTangents(verts, indices);
+
+    VertexAttribute tangentAttr;
+    tangentAttr.type = ATTRIBUTE_F32_VEC3;
+    tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
+
+    for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+
+        float tmp[3] = {verts[i].tangent.x, verts[i].tangent.y, verts[i].tangent.z};
+
+        tangentAttr.value[i].vec3 = Vector<3, float>(tmp);
+    }
+
+    this->attributes["TANGENT"] = tangentAttr;
 
 }
 
@@ -462,6 +467,50 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
     }
 
     return data;
+
+}
+
+void Mesh::setAttribute(std::string name, VertexAttribute value) {
+    this->attributes[name] = value;
+}
+
+void Mesh::saveAsPLY(std::string fname) {
+
+    FILE * f = fopen(fname.c_str(), "w");
+
+    fprintf(f, "ply\nformat ascii 1.0\n");
+
+    fprintf(f, "element vertex %d\n", attributes["POSITION"].value.size());
+    fprintf(f, "property float x\n");
+    fprintf(f, "property float y\n");
+    fprintf(f, "property float z\n");
+
+    fprintf(f, "property float nx\n");
+    fprintf(f, "property float ny\n");
+    fprintf(f, "property float nz\n");
+
+    fprintf(f, "property float s\n");
+    fprintf(f, "property float t\n");
+
+    fprintf(f, "element face %d\n", indices.size()/3);
+    fprintf(f, "property list uchar uint vertex_indices\nend_header\n");
+
+    for (unsigned int i = 0; i < attributes["POSITION"].value.size(); ++i) {
+
+        fprintf(f, "%f %f %f %f %f %f %f %f\n", attributes["POSITION"].value[i].vec3[0], attributes["POSITION"].value[i].vec3[1], attributes["POSITION"].value[i].vec3[2],
+                attributes["NORMAL"].value[i].vec3[0], attributes["NORMAL"].value[i].vec3[1], attributes["NORMAL"].value[i].vec3[2],
+                attributes["TEXCOORD_0"].value[i].vec2[0], attributes["TEXCOORD_0"].value[i].vec2[1]);
+
+    }
+
+    for (unsigned int i = 0; i < indices.size() / 3; ++i) {
+
+        fprintf(f, "3 %d %d %d\n", indices[i*3], indices[i*3+1], indices[i*3+2]);
+
+    }
+
+
+    fclose(f);
 
 }
 

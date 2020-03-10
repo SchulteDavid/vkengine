@@ -106,11 +106,17 @@ class Mesh {
         const VertexAttribute & getAttribute(std::string name);
         const VertexAttributeType getAttributeType(std::string name);
 
+        void setAttribute(std::string name, VertexAttribute value);
+
+        void computeTangents();
+
         unsigned int getVertexCount();
 
         std::vector<uint8_t> getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride);
 
         void setMaterialIndex(int32_t index);
+
+        void saveAsPLY(std::string fname);
 
         static std::shared_ptr<Mesh> loadFromFile(std::string fname);
         static std::shared_ptr<Mesh> withTransform(std::shared_ptr<Mesh> mesh, Math::Matrix<4,4,float> m);

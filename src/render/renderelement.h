@@ -71,6 +71,7 @@ class RenderElement : public MemoryTransferer {
         Shader * getShader();
 
         static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
+        static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform & initTransform);
 
     protected:
 
