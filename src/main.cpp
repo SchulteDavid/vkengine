@@ -31,7 +31,7 @@
 
 #include <exception>
 
-#include "util/mesh/marchingcubes.h"
+//#include "util/mesh/marchingcubes.h"
 
 static bool run = true;
 static bool wait;
@@ -109,9 +109,9 @@ int main(int argc, char ** argv) {
 
     //gltfLoadFile("sheep_.glb");
 
-    std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 64);
+    //std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 64);
 
-    mesh->saveAsPLY("mesh.ply");
+    //mesh->saveAsPLY("mesh.ply");
 
     Entity::registerDefaultEntityTypes();
 
@@ -169,7 +169,7 @@ int main(int argc, char ** argv) {
     //std::cout << "Level " << lvl << std::endl;
     lvl->applyToWorld(world, view);
 
-    std::shared_ptr<Model> model(new Model(view->getState(), mesh));
+    /*std::shared_ptr<Model> model(new Model(view->getState(), mesh));
     vkutil::VulkanState & state = view->getState();
     model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
     RenderElement::Transform trans;
@@ -179,7 +179,7 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Material> material = std::dynamic_pointer_cast<Material>(matRes->location);
     std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, model, material, trans));
 
-    view->addRenderElement(rElem);
+    view->addRenderElement(rElem);*/
 
     std::thread rotateThread(rotateFunc, world, view);
 

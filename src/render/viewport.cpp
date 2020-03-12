@@ -192,11 +192,25 @@ void Viewport::drawFrame(bool updateElements) {
     uint32_t imageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
+    if (!this->destroyableSwapchains.empty()) {
+
+        SwapchainInfo i = destroyableSwapchains.front();
+
+        //vkDestroySwapchainKHR(state.device, i.chain, nullptr);
+
+        //destroyableSwapchains.pop();
+
+    }
+
     switch(result) {
 
     case VK_SUBOPTIMAL_KHR:
     case VK_ERROR_OUT_OF_DATE_KHR:
         framebufferResized = false;
+        vkQueueWaitIdle(state.graphicsQueue);
+        std::cout << "destroying swapchain" << std::endl;
+        destroySwapChain();
+        std::cout << "Swap chains destroyed" << std::endl;
         recreateSwapChain();
         return;
 
@@ -910,16 +924,24 @@ void Viewport::destroySwapChain() {
 
     destroyPPObjects();
 
+    std::cout << "PP Objects destroyed" << std::endl;
+
     for (auto framebuffer : swapchain.framebuffers) {
         vkDestroyFramebuffer(state.device, framebuffer, nullptr);
     }
 
-    vkDestroyImageView(state.device, depthImageView, nullptr);
-    vmaDestroyImage(state.vmaAllocator, depthImage, depthImageMemory);
+    std::cout << "Destroyed framebuffers" << std::endl;
 
     vkFreeCommandBuffers(state.device, state.graphicsCommandPool, commandBuffers.size(), commandBuffers.data());
 
     vkDestroyRenderPass(state.device, renderPass, nullptr);
+
+    std::cout << "Destroyed renderpass" << std::endl;
+
+    vkDestroyImageView(state.device, depthImageView, nullptr);
+    vmaDestroyImage(state.vmaAllocator, depthImage, depthImageMemory);
+
+    std::cout << "Destroyed depth image" << std::endl;
 
     for (const VkImageView & v : swapchain.imageViews) {
         vkDestroyImageView(state.device, v, nullptr);
@@ -929,11 +951,15 @@ void Viewport::destroySwapChain() {
         vkDestroyImage(state.device, i, nullptr);
     }
 
-    vkDestroySwapchainKHR(state.device, swapchain.chain, nullptr);
+    std::cout << "Destroyed images" << std::endl;
+
+    destroyableSwapchains.push(swapchain);
 
     for (unsigned int i = 0; i < renderElements.size(); ++i) {
         this->renderElements[i]->destroyUniformBuffers(swapchain);
     }
+
+    std::cout << "Destroyed uniform buffers" << std::endl;
 
 }
 
@@ -947,7 +973,6 @@ void Viewport::recreateSwapChain() {
     this->swapchain.format = tmpChain.format;
     this->swapchain.images = tmpChain.images;
     this->swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, state.device);
-    //VulkanHelper::getSwapChainComponents(swapChain.chain, swapChain.extent, swapChain.images, swapChain.imageViews, swapChain.format);
 
     this->setupRenderPass();
 
@@ -962,10 +987,9 @@ void Viewport::recreateSwapChain() {
     logger(std::cout) << "Creating PP objects" << std::endl;
     createPPObjects();
 
-    vkutil::transitionImageLayout(gBufferImage, swapchain.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
-    //Texture::transitionImageLayout(gBufferImage, swapchain.format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
     this->setupFramebuffers();
+
+    logger(std::cout) << "Done creating Framebuffers" << std::endl;
 
     for (unsigned int i = 0; i < renderElements.size(); ++i) {
         renderElements[i]->recreateResources(renderPass, swapchain.imageViews.size(), swapchain);

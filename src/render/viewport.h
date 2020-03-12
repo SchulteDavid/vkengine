@@ -130,6 +130,8 @@ class Viewport : public MemoryTransferHandler
         std::vector<std::shared_ptr<RenderElement>> renderElements;
         std::unordered_map<Shader *, std::vector<std::shared_ptr<RenderElement>>> renderElementsByShader;
 
+        std::queue<SwapchainInfo> destroyableSwapchains;
+
 };
 
 #endif // VIEWPORT_H
