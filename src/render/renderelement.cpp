@@ -304,8 +304,8 @@ void RenderElement::createUniformBuffers(int swapChainSize, std::vector<Shader::
 void RenderElement::recreateResources(VkRenderPass & renderPass, int scSize, const vkutil::SwapChain & swapchain) {
 
     vkutil::VertexInputDescriptions descs;
-    descs.attributes = Model::Vertex::getAttributeDescriptions();
-    descs.binding = Model::Vertex::getBindingDescription();
+    descs.attributes = this->model->getAttributeDescriptions();
+    descs.binding = this->model->getBindingDescription();
 
     pipeline = shader->setupGraphicsPipeline(descs, renderPass, state, descSetLayout, swapchain.extent, pipelineLayout);
 
