@@ -17,6 +17,17 @@ void printIndexVector(std::vector<uint16_t> & indices) {
 
 void MeshHelper::computeTangents(std::vector<Model::Vertex> & verts, std::vector<uint16_t> & indices) {
 
+    std::vector<uint32_t> tmp(indices.size());
+
+    for (unsigned int i = 0; i < indices.size(); ++i)
+        tmp[i] = indices[i];
+
+    computeTangents(verts, tmp);
+
+}
+
+void MeshHelper::computeTangents(std::vector<Model::Vertex> & verts, std::vector<uint32_t> & indices) {
+
     std::vector<bool> hasValue(verts.size());
 
     for (unsigned int i = 0; i < verts.size(); ++i) {

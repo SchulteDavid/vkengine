@@ -232,7 +232,7 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
     MeshHelper::computeTangents(verts, indices);
 
     this->vBuffer = (VertexBuffer<uint8_t> *) new VertexBuffer<Vertex>(state, verts);
-    this->iBuffer = new IndexBuffer<uint16_t>(state, indices);
+    this->iBuffer = (IndexBuffer<uint8_t> *) new IndexBuffer<uint16_t>(state, indices);
 
     this->vCount = verts.size();
     this->iCount = indices.size();
@@ -259,30 +259,39 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
     elements[4].offset = offsetof(Vertex, matIndex);
 
 
+    uint32_t indexSizeBytes;
+    uint32_t indexCount;
+
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
+    std::vector<uint8_t> indexData = mesh->getCompactIndices(&indexSizeBytes, &indexCount);
 
     this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
     this->bindingDescription = createInputBindingDescriptions(sizeof(Vertex));
 
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
-    this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
+    this->iBuffer = new IndexBuffer<uint8_t>(state, indexData, indexSizeBytes);
 
     this->vCount = mesh->getVertexCount();
-    this->iCount = mesh->getIndices().size();
+    this->iCount = indexCount;
 
 }
 
 Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize) {
 
+    uint32_t indexSizeBytes;
+    uint32_t indexCount;
+
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, elementSize);
+    std::vector<uint8_t> indexData = mesh->getCompactIndices(&indexSizeBytes, &indexCount);
+
     this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
     this->bindingDescription = createInputBindingDescriptions(elementSize);
 
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
-    this->iBuffer = new IndexBuffer<uint16_t>(state, mesh->getIndices());
+    this->iBuffer = new IndexBuffer<uint8_t>(state, indexData, indexSizeBytes);
 
     this->vCount = mesh->getVertexCount();
-    this->iCount = mesh->getIndices().size();
+    this->iCount = indexCount;
 
 }
 

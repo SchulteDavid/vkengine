@@ -96,12 +96,16 @@ class Mesh {
 
     public:
 
+        Mesh(std::vector<Model::Vertex> verts, std::vector<uint32_t> indices);
+        Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint32_t> indices);
         Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices);
         Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices);
         virtual ~Mesh();
 
         std::vector<Model::Vertex> getVerts();
-        std::vector<uint16_t> & getIndices();
+        std::vector<uint32_t> & getIndices();
+
+        std::vector<uint8_t> getCompactIndices(uint32_t * indexSizeBytes, uint32_t * indexCount);
 
         const VertexAttribute & getAttribute(std::string name);
         const VertexAttributeType getAttributeType(std::string name);
@@ -128,7 +132,7 @@ class Mesh {
     private:
 
         std::vector<Model::Vertex> verts;
-        std::vector<uint16_t> indices;
+        std::vector<uint32_t> indices;
 
         std::unordered_map<std::string, VertexAttribute> attributes;
 

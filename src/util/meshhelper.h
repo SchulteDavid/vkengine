@@ -16,6 +16,7 @@ class MeshHelper
         };
 
 
+        static void computeTangents(std::vector<Model::Vertex> & verts, std::vector<uint32_t> & indices);
         static void computeTangents(std::vector<Model::Vertex> & verts, std::vector<uint16_t> & indices);
         static ModelInfo createHexagonPlane(int amount, float radius);
         static ModelInfo createHexagonFromCenter(Math::Vector<3, float> center, Math::Vector<3, float> normal, float radius);

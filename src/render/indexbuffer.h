@@ -11,10 +11,16 @@
 template <typename T = uint16_t> class IndexBuffer : public StorageBuffer {
 
     public:
-        IndexBuffer(const vkutil::VulkanState & state, const std::vector<T> & indices) :
-         StorageBuffer(state, sizeof(T) * indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
 
-            bufferSize = sizeof(indices[0]) * indices.size();
+        IndexBuffer(const vkutil::VulkanState & state, const std::vector<T> & indices) : IndexBuffer(state, indices, sizeof(T)) {
+
+        }
+
+        IndexBuffer(const vkutil::VulkanState & state, const std::vector<T> & indices, uint32_t indexSizeBytes) :
+         StorageBuffer(state, indexSizeBytes * indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+
+            bufferSize = indexSizeBytes * indices.size();
+            this->indexSizeBytes = indexSizeBytes;
 
             VkBufferCreateInfo stBufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
             stBufferCreateInfo.size = bufferSize;
@@ -47,7 +53,7 @@ template <typename T = uint16_t> class IndexBuffer : public StorageBuffer {
 
         void bindForRender(VkCommandBuffer & cmdBuffer) {
 
-            vkCmdBindIndexBuffer(cmdBuffer, buffer, 0, (VkIndexType) (sizeof(T) / 4));
+            vkCmdBindIndexBuffer(cmdBuffer, buffer, 0, (VkIndexType) (indexSizeBytes / 4));
 
         }
 
@@ -61,6 +67,8 @@ template <typename T = uint16_t> class IndexBuffer : public StorageBuffer {
     protected:
 
     private:
+
+        uint32_t indexSizeBytes;
 
 };
 

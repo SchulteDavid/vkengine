@@ -342,6 +342,7 @@ VkDevice vkutil::createLogicalDevice(VkPhysicalDevice & pDevice, VkSurfaceKHR & 
     createInfo.enabledExtensionCount = deviceExtensions.size();
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0;
+    createInfo.flags = 0;
 
     if (VkResult r = vkCreateDevice(pDevice, &createInfo, nullptr, &device))
         throw vkutil::vk_trace_exception("Unable to create logical device.", r);

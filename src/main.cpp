@@ -91,7 +91,7 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
 
 double noiseFunc(double x, double y, double z) {
 
-    return - z - 8 * SimplexNoise1234::noise(x*0.05,y*0.05,z*0.05) - 1.2 * SimplexNoise1234::noise(x * 0.1 + 123.253, y * 0.1, z * 0.1) - 0.12 * SimplexNoise1234::noise(x * 0.7,y * 0.8, z * 0.5);
+    return - z - 6.4 * SimplexNoise1234::noise(x*0.05,y*0.05,z*0.05) - 1.2 * SimplexNoise1234::noise(x * 0.1 + 123.253, y * 0.1, z * 0.1) - 0.12 * SimplexNoise1234::noise(x * 0.7,y * 0.8, z * 0.5);
 
 }
 
@@ -109,7 +109,7 @@ int main(int argc, char ** argv) {
 
     //gltfLoadFile("sheep_.glb");
 
-    std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 64);
+    std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 128);
 
     mesh->saveAsPLY("mesh.ply");
 
@@ -121,6 +121,8 @@ int main(int argc, char ** argv) {
 
     Viewport * view = new Viewport(window, cam);
     window->setActiveViewport(view);
+
+    std::cout << "Viewport OK" << std::endl;
 
     //return 0;
 

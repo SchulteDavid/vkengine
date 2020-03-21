@@ -11,7 +11,10 @@ using namespace Math;
 Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
 
     this->verts = verts;
-    this->indices = indices;
+    this->indices = std::vector<uint32_t>(indices.size());
+    for (unsigned int i = 0; i < indices.size(); ++i) {
+        this->indices[i] = indices[i];
+    }
 
 
     VertexAttribute positionAttr;
@@ -81,6 +84,99 @@ const VertexAttributeType Mesh::getAttributeType(std::string name) {
 }
 
 Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices) {
+
+    this->attributes = attributes;
+    this->indices = std::vector<uint32_t>(indices.size());
+    for (unsigned int i = 0; i < indices.size(); ++i) {
+        this->indices[i] = indices[i];
+    }
+
+    if (this->attributes.find("MATERIAL_INDEX") == this->attributes.end()) {
+
+        VertexAttribute matAttr;
+        matAttr.type = ATTRIBUTE_I32_SCALAR;
+        matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(this->attributes["POSITION"].value.size());
+
+        for (unsigned int i = 0; i < this->attributes["POSITION"].value.size(); ++i) {
+            matAttr.value[i].i32 = 0;
+        }
+
+        this->attributes["MATERIAL_INDEX"] = matAttr;
+
+    }
+
+    if (this->attributes.find("TANGENT") == this->attributes.end()) {
+
+        computeTangents();
+
+    }
+
+}
+
+Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint32_t> indices) {
+
+    this->verts = verts;
+    this->indices = indices;
+
+
+    VertexAttribute positionAttr;
+    positionAttr.type = ATTRIBUTE_F32_VEC3;
+    positionAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute normalAttr;
+    normalAttr.type = ATTRIBUTE_F32_VEC3;
+    normalAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute uvAttr;
+    uvAttr.type = ATTRIBUTE_F32_VEC2;
+    uvAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute tangentAttr;
+    tangentAttr.type = ATTRIBUTE_F32_VEC3;
+    tangentAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    VertexAttribute matAttr;
+    matAttr.type = ATTRIBUTE_I32_SCALAR;
+    matAttr.value = std::vector<VertexAttribute::VertexAttributeData>(verts.size());
+
+    for (unsigned int i = 0; i < verts.size(); ++i) {
+
+        float tmp[3] = {verts[i].pos.x, verts[i].pos.y, verts[i].pos.z};
+        positionAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        tmp[0] = verts[i].normal.x;
+        tmp[1] = verts[i].normal.y;
+        tmp[2] = verts[i].normal.z;
+        normalAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        tmp[0] = verts[i].tangent.x;
+        tmp[1] = verts[i].tangent.y;
+        tmp[2] = verts[i].tangent.z;
+        tangentAttr.value[i].vec3 = Vector<3, float>(tmp);
+
+        tmp[0] = verts[i].uv.x;
+        tmp[1] = verts[i].uv.y;
+        uvAttr.value[i].vec2 = Vector<2, float>(tmp);
+
+        matAttr.value[i].i32 = verts[i].matIndex;
+
+    }
+
+    this->attributes["POSITION"] = positionAttr;
+    this->attributes["NORMAL"] = normalAttr;
+    this->attributes["TEXCOORD_0"] = uvAttr;
+    this->attributes["TANGENT"] = tangentAttr;
+    this->attributes["MATERIAL_INDEX"] = matAttr;
+
+    for (auto it : attributes) {
+
+        logger(std::cout) << it.first << " -> " << it.second.type << std::endl;
+
+    }
+
+}
+
+Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint32_t> indices) {
 
     this->attributes = attributes;
     this->indices = indices;
@@ -163,7 +259,7 @@ std::vector<Model::Vertex> Mesh::getVerts() {
 
 }
 
-std::vector<uint16_t> & Mesh::getIndices() {
+std::vector<uint32_t> & Mesh::getIndices() {
     return indices;
 }
 
@@ -338,6 +434,44 @@ template <unsigned int dim, typename T> void insertVecInBuffer(std::vector<Vecto
             *((T *) (data + (i * stride + offset+j*sizeof(T)))) = fData[i][j];
 
     }
+
+}
+
+std::vector<uint8_t> Mesh::getCompactIndices(uint32_t * indexSizeBytes, uint32_t * indexCount) {
+
+    uint64_t vertexCount = this->attributes["POSITION"].value.size();
+
+    if (vertexCount <= std::numeric_limits<uint16_t>::max()) {
+
+        *indexSizeBytes = sizeof(uint16_t);
+        *indexCount = indices.size();
+
+        std::vector<uint8_t> indexData((sizeof(uint16_t) / sizeof(uint8_t)) * indices.size());
+        uint16_t * data = (uint16_t *) indexData.data();
+
+        for (unsigned int i = 0; i < indices.size(); ++i) {
+
+            data[i] = indices[i];
+
+        }
+
+        return indexData;
+
+    }
+
+    *indexSizeBytes = sizeof(uint32_t);
+    *indexCount = indices.size();
+
+    std::vector<uint8_t> indexData((sizeof(uint32_t) / sizeof(uint8_t)) * indices.size());
+    uint32_t * data = (uint32_t *) indexData.data();
+
+    for (unsigned int i = 0; i < indices.size(); ++i) {
+
+        data[i] = indices[i];
+
+    }
+
+    return indexData;
 
 }
 

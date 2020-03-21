@@ -1,6 +1,6 @@
 #Configure flags etc.
 CFLAGS :=
-CXXFLAGS := -std=c++17
+CXXFLAGS := -std=c++17 -fopenmp
 PROGNAME :=VkEngine
 
 SRC_LIBS := config

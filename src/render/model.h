@@ -50,7 +50,7 @@ class Model : public Resource {
     private:
 
         VertexBuffer<uint8_t> * vBuffer;
-        IndexBuffer<uint16_t> * iBuffer;
+        IndexBuffer<uint8_t> * iBuffer;
 
         int vCount;
         int iCount;

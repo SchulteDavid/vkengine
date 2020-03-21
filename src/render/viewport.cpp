@@ -3,7 +3,7 @@
 #include <iostream>
 #include <chrono>
 
-#define MAX_FRAMES_IN_FLIGHT 3
+#define MAX_FRAMES_IN_FLIGHT 4
 
 #include "util/debug/trace_exception.h"
 #include "util/debug/logger.h"
@@ -33,6 +33,8 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
     this->camera = camera;
     this->lightIndex = 0;
     //camera->move(0,0,1);
+
+    this->frameIndex = 0;
 
     logger(std::cout) << "Creating swapchain" << std::endl;
 
@@ -67,12 +69,12 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 
     createTransferCommandBuffer();
 
+    createSyncObjects();
+
     //ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "resources/models/quad.ply"));
     ppBufferModel = std::shared_ptr<Model>(new Model(state, viewModelData, viewModelIndices));
 
     ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
-
-    createSyncObjects();
 
     recordCommandBuffers();
 
@@ -102,8 +104,10 @@ void Viewport::createSyncObjects() {
             throw dbg::trace_exception("Unable to create semaphores");
         }
 
-        if (vkCreateFence(state.device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+        std::cout << "Creating fence for frame " << i << std::endl;
+        if (vkCreateFence(state.device, &fenceInfo, nullptr, &this->inFlightFences[i]) != VK_SUCCESS)
             throw dbg::trace_exception("Unable to create fence");
+        //vkResetFences(state.device, 1, &inFlightFences[i]);
 
     }
 
