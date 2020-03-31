@@ -109,9 +109,10 @@ int main(int argc, char ** argv) {
 
     //gltfLoadFile("sheep_.glb");
 
-    std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 128);
+    std::future<std::shared_ptr<Mesh>> futureMesh = generateBackground(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 128);
+    //std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 128);
 
-    mesh->saveAsPLY("mesh.ply");
+    //mesh->saveAsPLY("mesh.ply");
 
     Entity::registerDefaultEntityTypes();
 
@@ -170,6 +171,9 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Level> lvl = resourceManager->get<Level>("Level", "resources/level/test.lvl");
     //std::cout << "Level " << lvl << std::endl;
     lvl->applyToWorld(world, view);
+
+    futureMesh.wait();
+    std::shared_ptr<Mesh> mesh = futureMesh.get();
 
     std::shared_ptr<Model> model(new Model(view->getState(), mesh));
     vkutil::VulkanState & state = view->getState();

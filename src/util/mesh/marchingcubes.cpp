@@ -584,9 +584,9 @@ int polygonizeCell(GridCell grid, double isoValue, std::vector<Triangle> & trian
 
         }
 
-        triangleMutex.lock();
+        //triangleMutex.lock();
         triangles.push_back(t);
-        triangleMutex.unlock();
+        //triangleMutex.unlock();
         ntriang++;
 
     }
@@ -723,8 +723,10 @@ std::shared_ptr<Mesh> buildMeshFromFunction(std::function<double(double, double,
     std::vector<Triangle> tris;
     std::mutex triangleMutex;
 
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp paralell for schedule(dynamic)
     for (unsigned int x = 0; x < divCount; ++x) {
+
+        std::vector<Triangle> localTris;
 
         for (unsigned int y = 0; y < divCount; ++y) {
 
@@ -749,20 +751,42 @@ std::shared_ptr<Mesh> buildMeshFromFunction(std::function<double(double, double,
 
                 }
 
-                polygonizeCell(cell, isoValue, tris, f, triangleMutex);
+                polygonizeCell(cell, isoValue, localTris, f, triangleMutex);
 
             }
 
         }
 
+        triangleMutex.lock();
+        tris.insert(tris.end(), localTris.begin(), localTris.end());
+        triangleMutex.unlock();
+
     }
 
     std::shared_ptr<Mesh> mesh = mergeTrianglesToMesh(tris);
-
-    //computeNormalsFromFunction(f, mesh);
     mesh->computeTangents();
 
     return mesh;
+
+}
+
+void backgroundGeneration(std::function<double(double, double, double)> f, Vector<3, float> center, Vector<3, float> extend, double isoValue, int divCount, std::promise<std::shared_ptr<Mesh>> promise) {
+
+    std::shared_ptr<Mesh> mesh = buildMeshFromFunction(f, center, extend, isoValue, divCount);
+    promise.set_value(mesh);
+
+}
+
+std::future<std::shared_ptr<Mesh>> generateBackground(std::function<double(double, double, double)> f, Vector<3, float> center, Vector<3, float> extend, double isoValue, int divCount) {
+
+    std::promise<std::shared_ptr<Mesh>> promise;
+
+    std::future<std::shared_ptr<Mesh>> fut = promise.get_future();
+
+    std::thread thread(backgroundGeneration, f, center, extend, isoValue, divCount, std::move(promise));
+    thread.detach();
+
+    return fut;
 
 }
 
