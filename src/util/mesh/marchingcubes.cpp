@@ -723,7 +723,7 @@ std::shared_ptr<Mesh> buildMeshFromFunction(std::function<double(double, double,
     std::vector<Triangle> tris;
     std::mutex triangleMutex;
 
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for
     for (unsigned int x = 0; x < divCount; ++x) {
 
         for (unsigned int y = 0; y < divCount; ++y) {
