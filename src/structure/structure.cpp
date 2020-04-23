@@ -16,6 +16,7 @@ Structure::Structure(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> mat) 
     this->mesh = mesh;
     this->material = mat;
     this->skin = nullptr;
+    this->model = nullptr;
 
 }
 
@@ -25,6 +26,9 @@ Structure::~Structure() {
 
 std::shared_ptr<Model> Structure::getModel(const vkutil::VulkanState & state) {
 
+    if (this->model)
+        return model;
+
     unsigned int stride;
     const std::vector<InputDescription> & elements = material->getShader()->getInputs();
 
@@ -32,7 +36,9 @@ std::shared_ptr<Model> Structure::getModel(const vkutil::VulkanState & state) {
 
     mesh->saveAsPLY("structure.ply");
 
-    return std::shared_ptr<Model>(new Model(state, mesh, iData, stride));
+    this->model = std::shared_ptr<Model>(new Model(state, mesh, iData, stride));
+
+    return model;
 }
 
 std::shared_ptr<Mesh> Structure::getMesh() {
@@ -79,6 +85,8 @@ std::shared_ptr<Structure> StructureUploader::uploadResource() {
     if (this->skin) {
         strc->setSkin(this->skin);
     }
+
+    //std::shared_ptr<Model> model = strc->getModel();
 
     return std::shared_ptr<Structure>(strc);
 

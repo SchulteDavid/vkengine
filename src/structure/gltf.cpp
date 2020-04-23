@@ -345,7 +345,11 @@ struct gltf_mesh_primitive_t {
 
 void from_json(const json & j, gltf_mesh_primitive_t & prim) {
 
-    j.at("material").get_to(prim.material);
+    try {
+        j.at("material").get_to(prim.material);
+    } catch (std::exception e) {
+        prim.material = 0;
+    }
     j.at("indices").get_to(prim.indices);
 
     j.at("attributes").at("POSITION").get_to(prim.position);
@@ -816,7 +820,7 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
 
     } catch (json::type_error & e) {
 
-        throw dbg::trace_exception("Missing material information from gltf file");
+        //throw dbg::trace_exception("Missing material information from gltf file");
 
     }
     std::vector<gltf_buffer_view_t> bufferViews = jsonData["bufferViews"].get<std::vector<gltf_buffer_view_t>>();
@@ -977,10 +981,17 @@ struct gltf_anim_vertex {
 std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::string fname) {
 
     gltf_file_data_t fileData;
+
     std::vector<std::shared_ptr<GLTFNode>> rootNodes = gltfLoadFile(fname, &fileData);
 
+    std::cout << "GLTF-Data is loaded" << std::endl;
+
     LoadingResource shaderRes;
-    if (fileData.skins.size()) {
+    if (fileData.materials.size() == 0) {
+
+        shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_lowPoly.shader");
+
+    } else if (fileData.skins.size()) {
         shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallicAnim.shader");
     } else {
         shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
@@ -1103,7 +1114,8 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
     std::shared_ptr<ResourceUploader<Resource>> meshRes((ResourceUploader<Resource> *) new ModelUploader(state, new Model(state, resultMesh, vertElements, vertSize)));
 
     std::string materialName = fname;
-    materialName.append(":").append(fileData.materials[0].name);
+    if (fileData.materials.size())
+        materialName.append(":").append(fileData.materials[0].name);
     LoadingResource materialLRes = this->scheduleSubresource("Material", materialName, materialRes);
     LoadingResource modelRes = this->scheduleSubresource("Model", fname, meshRes);
 

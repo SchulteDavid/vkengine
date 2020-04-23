@@ -16,19 +16,22 @@
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform & initTransform) : state(view->getState()), MemoryTransferer(*view) {
 
     //throw std::runtime_error("Created RenderElement with old constructor");
+
+    std::vector<Shader::Binding> binds;
+
     Shader::Binding uniformBufferBinding;
     uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
     uniformBufferBinding.elementCount = 1;
     uniformBufferBinding.bindingId = 0;
     uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
+    binds.push_back(uniformBufferBinding);
 
-    Shader::Binding textureBinding;
-    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
-    textureBinding.bindingId = 1;
-
-    std::vector<Shader::Binding> binds(2);
-    binds[0] = uniformBufferBinding;
-    binds[1] = textureBinding;
+    if (texture.size()) {
+        Shader::Binding textureBinding;
+        textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+        textureBinding.bindingId = 1;
+        binds.push_back(textureBinding);
+    }
 
     this->binds = binds;
 
@@ -60,19 +63,22 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTransform) : state(view->getState()), MemoryTransferer(*view) {
 
+    std::vector<Shader::Binding> binds;
+
     Shader::Binding uniformBufferBinding;
     uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
     uniformBufferBinding.elementCount = 1;
     uniformBufferBinding.bindingId = 0;
     uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
+    binds.push_back(uniformBufferBinding);
 
-    Shader::Binding textureBinding;
-    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
-    textureBinding.bindingId = 1;
+    if (mat->getTextures().size()) {
+        Shader::Binding textureBinding;
+        textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+        textureBinding.bindingId = 1;
+        binds.push_back(textureBinding);
+    }
 
-    std::vector<Shader::Binding> binds(2);
-    binds[0] = uniformBufferBinding;
-    binds[1] = textureBinding;
 
     this->binds = binds;
 
@@ -158,6 +164,8 @@ RenderElement::~RenderElement() {
 }
 
 void RenderElement::constructBuffers(int scSize) {
+
+    //std::cout << "Material " << this->material << std::endl;
 
     this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     this->createUniformBuffers(scSize, this->binds);

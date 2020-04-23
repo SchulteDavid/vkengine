@@ -33,6 +33,7 @@ class Structure : public Resource {
 
         std::shared_ptr<Material> material;
         std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<Model> model;
 
         std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
         std::shared_ptr<Skin> skin;
