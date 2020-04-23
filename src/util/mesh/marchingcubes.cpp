@@ -584,9 +584,9 @@ int polygonizeCell(GridCell grid, double isoValue, std::vector<Triangle> & trian
 
         }
 
-        //triangleMutex.lock();
+        triangleMutex.lock();
         triangles.push_back(t);
-        //triangleMutex.unlock();
+        triangleMutex.unlock();
         ntriang++;
 
     }

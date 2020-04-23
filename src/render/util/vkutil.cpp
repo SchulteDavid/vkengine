@@ -28,7 +28,7 @@ GLFWwindow * vkutil::createWindow(unsigned int width, unsigned int height, void 
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(width, height, "Window", nullptr, nullptr);
+    window = glfwCreateWindow(width, height, "RT-Window", nullptr, nullptr);
     glfwSetWindowUserPointer(window, userData);
 
     return window;
