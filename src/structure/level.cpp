@@ -135,7 +135,7 @@ class LevelUploader : public ResourceUploader<Level> {
             this->placements = pl;
         }
 
-        Level * uploadResource() {
+        std::shared_ptr<Level> uploadResource() {
 
             Level * lvl = new Level();
             for (LoadingPlacement p : placements) {
@@ -147,7 +147,7 @@ class LevelUploader : public ResourceUploader<Level> {
 
             }
 
-            return lvl;
+            return std::shared_ptr<Level>(lvl);
 
         }
 

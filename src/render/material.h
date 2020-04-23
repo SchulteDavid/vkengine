@@ -43,7 +43,7 @@ class MaterialUploader : public ResourceUploader<Material> {
     public:
 
         MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, std::vector<LoadingResource> textures);
-        Material * uploadResource();
+        std::shared_ptr<Material> uploadResource();
         bool uploadReady();
 
     private:

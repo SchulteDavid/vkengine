@@ -11,9 +11,9 @@
 #include "util/mesh.h"
 #include "util/meshhelper.h"
 
-Structure::Structure(std::shared_ptr<Model> model, std::shared_ptr<Material> mat) {
+Structure::Structure(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> mat) {
 
-    this->model = model;
+    this->mesh = mesh;
     this->material = mat;
     this->skin = nullptr;
 
@@ -23,8 +23,20 @@ Structure::~Structure() {
 
 }
 
-std::shared_ptr<Model> Structure::getModel() {
-    return model;
+std::shared_ptr<Model> Structure::getModel(const vkutil::VulkanState & state) {
+
+    unsigned int stride;
+    const std::vector<InputDescription> & elements = material->getShader()->getInputs();
+
+    std::vector<InterleaveElement> iData = mesh->compactStorage(elements, &stride);
+
+    mesh->saveAsPLY("structure.ply");
+
+    return std::shared_ptr<Model>(new Model(state, mesh, iData, stride));
+}
+
+std::shared_ptr<Mesh> Structure::getMesh() {
+    return mesh;
 }
 
 std::shared_ptr<Material> Structure::getMaterial() {
@@ -47,17 +59,18 @@ std::shared_ptr<Skin> Structure::getSkin() {
     return skin;
 }
 
-StructureUploader::StructureUploader(LoadingResource model, LoadingResource mat) {
+StructureUploader::StructureUploader(LoadingResource meshRes, LoadingResource mat, std::shared_ptr<Mesh> mesh) {
 
-    this->model = model;
+    this->meshRes = meshRes;
+    this->mesh = mesh;
     this->mat = mat;
     this->skin = nullptr;
 
 }
 
-Structure * StructureUploader::uploadResource() {
+std::shared_ptr<Structure> StructureUploader::uploadResource() {
 
-    Structure * strc = new Structure(std::dynamic_pointer_cast<Model>(model->location), std::dynamic_pointer_cast<Material>(mat->location));
+    Structure * strc = new Structure(mesh, std::dynamic_pointer_cast<Material>(mat->location));
 
     for (auto it : animations) {
         strc->addAnimation(it.first, it.second);
@@ -67,13 +80,13 @@ Structure * StructureUploader::uploadResource() {
         strc->setSkin(this->skin);
     }
 
-    return strc;
+    return std::shared_ptr<Structure>(strc);
 
 }
 
 bool StructureUploader::uploadReady() {
 
-    return mat->status.isUseable && model->status.isUseable;
+    return mat->status.isUseable;
 
 }
 
@@ -224,12 +237,12 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
         vertElements[4].attributeName = "MATERIAL_INDEX";
         vertElements[4].offset = offsetof(Model::Vertex, matIndex);
 
-        Model * model = new Model(state, mesh, vertElements, sizeof(Model::Vertex));
+        //Model * model = new Model(state, mesh, vertElements, sizeof(Model::Vertex));
 
-        std::shared_ptr<ResourceUploader<Resource>> modelUploader((ResourceUploader<Resource> *) new ModelUploader(state, model));
-        modelRes = this->scheduleSubresource("Model", matName, modelUploader);
+        std::shared_ptr<ResourceUploader<Resource>> modelUploader((ResourceUploader<Resource> *) new MeshUploader(mesh));
+        modelRes = this->scheduleSubresource("Mesh", matName, modelUploader);
 
-        StructureUploader * uploader = new StructureUploader(modelRes, materialRes);
+        StructureUploader * uploader = new StructureUploader(modelRes, materialRes, mesh);
         std::cout << "Uploader : " << uploader << std::endl;
         return std::shared_ptr<ResourceUploader<Structure>>(uploader);
 

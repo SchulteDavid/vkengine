@@ -2,6 +2,7 @@
 #define RESOURCEUPLOADER_H
 
 #include <type_traits>
+#include <memory>
 
 #include "resource.h"
 
@@ -17,7 +18,7 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
 
         }
 
-        virtual T * uploadResource() = 0;
+        virtual std::shared_ptr<T> uploadResource() = 0;
         virtual bool uploadReady() = 0;
 
     protected:

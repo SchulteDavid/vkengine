@@ -69,8 +69,8 @@ template <typename T> class TextureUploader : public ResourceUploader<Texture> {
             return true;
         }
 
-        Texture * uploadResource() {
-            return new Texture(state, data, width, height, depth);
+        std::shared_ptr<Texture> uploadResource() {
+            return std::shared_ptr<Texture>(new Texture(state, data, width, height, depth));
         }
 
     private:

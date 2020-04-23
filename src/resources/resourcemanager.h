@@ -39,7 +39,7 @@ class ResourceManager {
         }
 
         bool isLoaded(std::string regName, std::string name);
-        std::shared_ptr<Resource> registerResource(std::string regName, std::string name, Resource * res);
+        std::shared_ptr<Resource> registerResource(std::string regName, std::string name, std::shared_ptr<Resource> res);
 
         void startLoadingThreads(unsigned int threadCount);
         void joinLoadingThreads();

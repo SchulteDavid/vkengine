@@ -92,6 +92,8 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     instanceCount = 1;
 
+    model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+
     descSetLayout = mat->prepareDescriptors(this->binds);
     pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
 
@@ -104,7 +106,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
 }
 
-RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc->getModel(), strc->getMaterial(), view->getSwapchainSize(), initTransform) {
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc->getModel(view->getState()), strc->getMaterial(), view->getSwapchainSize(), initTransform) {
 
 
 
@@ -130,6 +132,8 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
     instanceCount = 1;
 
+    model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+
     descSetLayout = mat->prepareDescriptors(this->binds);
     pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
 
@@ -138,7 +142,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 }
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform, std::vector<Shader::Binding> binds) :
-    RenderElement(view, strc->getModel(), strc->getMaterial(), view->getSwapchainSize(), initTransform, binds) {
+    RenderElement(view, strc->getModel(view->getState()), strc->getMaterial(), view->getSwapchainSize(), initTransform, binds) {
 
 
 

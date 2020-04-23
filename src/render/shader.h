@@ -12,6 +12,7 @@
 #include "resources/resource.h"
 #include "resources/resourceloader.h"
 #include "resources/resourceuploader.h"
+#include "util/mesh.h"
 
 class Shader : public Resource
 {
@@ -60,6 +61,9 @@ class Shader : public Resource
 
         void createModules(const vkutil::VulkanState & state);
 
+        const std::vector<InputDescription> & getInputs();
+        void setInputs(std::vector<InputDescription> inputs);
+
     protected:
 
         Shader(std::string vertShader, std::string fragShader, const VkDevice & device);
@@ -81,15 +85,18 @@ class Shader : public Resource
         std::vector<uint8_t> vertShaderCode;
         std::vector<uint8_t> fragShaderCode;
 
+        std::vector<InputDescription> inputs;
 };
 
 class ShaderUploader : public ResourceUploader<Shader> {
 
     public:
 
+        /// TODO: complete migration to shared_ptr
+
         ShaderUploader(const vkutil::VulkanState & state, Shader * shader);
 
-        Shader * uploadResource();
+        std::shared_ptr<Shader> uploadResource();
         bool uploadReady();
 
     private:

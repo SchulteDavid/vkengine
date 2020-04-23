@@ -351,6 +351,14 @@ VkPipelineLayout & Shader::getPipelineLayout() {
     return this->pipelineLayout;
 }
 
+const std::vector<InputDescription> & Shader::getInputs() {
+    return this->inputs;
+}
+
+void Shader::setInputs(std::vector<InputDescription> inputs) {
+    this->inputs = inputs;
+}
+
 ShaderLoader::ShaderLoader(const vkutil::VulkanState & state) : state(state) {
 
 }
@@ -373,6 +381,52 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
 
     Shader * shader = new Shader(vertCode, fragCode, state, textureCount);
 
+    if (tmpRoot->hasChild("inputs")) {
+
+         std::shared_ptr<Node<std::shared_ptr<NodeCompound>>> elements = tmpRoot->getNode<std::shared_ptr<NodeCompound>>("inputs");
+
+         uint32_t elemCount = elements->getElementCount();
+         std::vector<InputDescription> inputs(elemCount);
+
+         for (unsigned int i = 0; i < elemCount; ++i) {
+
+            std::shared_ptr<NodeCompound> input = elements->getElement(i);
+
+            std::string attributeName = input->getNode<char>("attributeName")->getValueString();
+            int32_t location = input->getNode<int32_t>("location")->getElement(0);
+
+            inputs[i].attributeName = attributeName;
+            inputs[i].location = location;
+
+         }
+
+         shader->setInputs(inputs);
+
+
+    } else {
+
+        std::vector<InputDescription> vertElements(5);
+        size_t  vertSize = sizeof(Model::Vertex);
+
+        vertElements[0].attributeName = "POSITION";
+        vertElements[0].location = 0;
+
+        vertElements[1].attributeName = "NORMAL";
+        vertElements[1].location = 12;
+
+        vertElements[2].attributeName = "TANGENT";
+        vertElements[2].location = 24;
+
+        vertElements[3].attributeName = "TEXCOORD_0";
+        vertElements[3].location = 36;
+
+        vertElements[4].attributeName = "MATERIAL_INDEX";
+        vertElements[4].location = 44;
+
+        shader->setInputs(vertElements);
+
+    }
+
     return std::shared_ptr<ShaderUploader>(new ShaderUploader(state, shader));
 
 }
@@ -383,10 +437,10 @@ ShaderUploader::ShaderUploader(const vkutil::VulkanState & state, Shader * shade
 
 }
 
-Shader * ShaderUploader::uploadResource() {
+std::shared_ptr<Shader> ShaderUploader::uploadResource() {
 
     this->shader->createModules(state);
-    return shader;
+    return std::shared_ptr<Shader>(shader);
 
 }
 

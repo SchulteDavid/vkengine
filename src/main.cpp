@@ -71,6 +71,7 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
     resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
     resourceManager->addRegistry("Structure", (ResourceRegistry<Resource>*) new ResourceRegistry<Structure>());
     resourceManager->addRegistry("Level", (ResourceRegistry<Resource> *) new ResourceRegistry<Level>());
+    resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
 
     resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
     resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
@@ -91,7 +92,7 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
 
 double noiseFunc(double x, double y, double z) {
 
-    return - z - 6.4 * SimplexNoise1234::noise(x*0.05,y*0.05,z*0.05) - 1.2 * SimplexNoise1234::noise(x * 0.1 + 123.253, y * 0.1, z * 0.1) - 0.12 * SimplexNoise1234::noise(x * 0.7,y * 0.8, z * 0.5);
+    return - z - 12.4 * SimplexNoise1234::noise(x*0.05,y*0.05,z*0.05) - 1.2 * SimplexNoise1234::noise(x * 0.1 + 123.253, y * 0.1, z * 0.1) - 0.12 * SimplexNoise1234::noise(x * 0.7,y * 0.8, z * 0.5);
 
 }
 
@@ -172,10 +173,10 @@ int main(int argc, char ** argv) {
     //std::cout << "Level " << lvl << std::endl;
     lvl->applyToWorld(world, view);
 
-    futureMesh.wait();
-    std::shared_ptr<Mesh> mesh = futureMesh.get();
+    //futureMesh.wait();
+    //std::shared_ptr<Mesh> mesh = futureMesh.get();
 
-    std::shared_ptr<Model> model(new Model(view->getState(), mesh));
+    /*std::shared_ptr<Model> model(new Model(view->getState(), mesh));
     vkutil::VulkanState & state = view->getState();
     model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
     RenderElement::Transform trans;
@@ -185,7 +186,7 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Material> material = std::dynamic_pointer_cast<Material>(matRes->location);
     std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, model, material, trans));
 
-    view->addRenderElement(rElem);
+    view->addRenderElement(rElem);*/
 
     std::thread rotateThread(rotateFunc, world, view);
 

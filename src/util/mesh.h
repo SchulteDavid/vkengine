@@ -8,6 +8,9 @@
 #include "render/model.h"
 #include <mathutils/matrix.h>
 
+#include "resources/resource.h"
+#include "resources/resourceuploader.h"
+
 typedef enum VertexAttributeType {
 
     ATTRIBUTE_NONE,
@@ -92,7 +95,14 @@ struct InterleaveElement {
 
 };
 
-class Mesh {
+struct InputDescription {
+
+    std::string attributeName;
+    uint32_t location;
+
+};
+
+class Mesh : public Resource {
 
     public:
 
@@ -127,6 +137,8 @@ class Mesh {
 
         static std::shared_ptr<Mesh> merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh> m2);
 
+        std::vector<InterleaveElement> compactStorage(const std::vector<InputDescription> & iData, unsigned int * stride);
+
     protected:
 
     private:
@@ -135,6 +147,20 @@ class Mesh {
         std::vector<uint32_t> indices;
 
         std::unordered_map<std::string, VertexAttribute> attributes;
+
+};
+
+class MeshUploader : public ResourceUploader<Mesh> {
+
+    public:
+        MeshUploader(std::shared_ptr<Mesh> mesh);
+
+        std::shared_ptr<Mesh> uploadResource();
+        bool uploadReady();
+
+    private:
+
+        std::shared_ptr<Mesh> mesh;
 
 };
 

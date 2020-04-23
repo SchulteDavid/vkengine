@@ -12,10 +12,11 @@
 class Structure : public Resource {
 
     public:
-        Structure(std::shared_ptr<Model> model, std::shared_ptr<Material> material);
+        Structure(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material);
         virtual ~Structure();
 
-        std::shared_ptr<Model> getModel();
+        std::shared_ptr<Model> getModel(const vkutil::VulkanState & state);
+        std::shared_ptr<Mesh> getMesh();
         std::shared_ptr<Material> getMaterial();
         std::unordered_map<std::string, std::shared_ptr<Animation>> getAnimations();
 
@@ -31,7 +32,7 @@ class Structure : public Resource {
     private:
 
         std::shared_ptr<Material> material;
-        std::shared_ptr<Model> model;
+        std::shared_ptr<Mesh> mesh;
 
         std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
         std::shared_ptr<Skin> skin;
@@ -42,9 +43,9 @@ class StructureUploader : public ResourceUploader<Structure> {
 
     public:
 
-        StructureUploader(LoadingResource model, LoadingResource mat);
+        StructureUploader(LoadingResource meshRes, LoadingResource mat, std::shared_ptr<Mesh> mesh);
 
-        Structure * uploadResource();
+        std::shared_ptr<Structure> uploadResource();
         bool uploadReady();
 
         void addAnimation(std::string name, std::shared_ptr<Animation> anim);
@@ -53,7 +54,8 @@ class StructureUploader : public ResourceUploader<Structure> {
     private:
 
         LoadingResource mat;
-        LoadingResource model;
+        LoadingResource meshRes;
+        std::shared_ptr<Mesh> mesh;
 
         std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
         std::shared_ptr<Skin> skin;

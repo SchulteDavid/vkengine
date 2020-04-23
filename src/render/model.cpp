@@ -335,10 +335,10 @@ ModelUploader::ModelUploader(const vkutil::VulkanState & state, Model * model) :
 
 }
 
-Model * ModelUploader::uploadResource() {
+std::shared_ptr<Model> ModelUploader::uploadResource() {
 
     model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
-    return model;
+    return std::shared_ptr<Model>(model);
 
 }
 

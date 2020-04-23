@@ -34,13 +34,20 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
         }
 
         /// Register a resource to a name
-        std::shared_ptr<T> registerObject(std::string name, T * obj) {
+        /*std::shared_ptr<T> registerObject(std::string name, T * obj) {
 
             std::shared_ptr<T> ptr(obj);
 
             this->objects[name] = ptr;
 
             return ptr;
+
+        }*/
+
+        std::shared_ptr<T> registerObject(std::string name, std::shared_ptr<T> obj) {
+
+            this->objects[name] = obj;
+            return obj;
 
         }
 

@@ -50,7 +50,7 @@ MaterialUploader::MaterialUploader(const vkutil::VulkanState & state, const VkRe
 
 }
 
-Material * MaterialUploader::uploadResource() {
+std::shared_ptr<Material> MaterialUploader::uploadResource() {
 
     std::shared_ptr<Shader> mShader = std::dynamic_pointer_cast<Shader>(shader->location);
     std::vector<std::shared_ptr<Texture>> mTextures(textures.size());
@@ -66,7 +66,7 @@ Material * MaterialUploader::uploadResource() {
     //mat->setupPipeline(state, renderPass, swapChainExtent);
     //mat->prepareDescriptors();
 
-    return mat;
+    return std::shared_ptr<Material>(mat);
 
 }
 

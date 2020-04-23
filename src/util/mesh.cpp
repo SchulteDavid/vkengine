@@ -475,7 +475,79 @@ std::vector<uint8_t> Mesh::getCompactIndices(uint32_t * indexSizeBytes, uint32_t
 
 }
 
+size_t getAttributeSize(VertexAttributeType type) {
+
+    uint32_t multiplicity = type & 0xf;
+
+    size_t elementSize = 0;
+
+    switch (type >> 4) {
+
+        case 1:
+            elementSize = sizeof(float);
+            break;
+
+        case 2:
+            elementSize = sizeof(uint8_t);
+            break;
+
+        case 3:
+            elementSize = sizeof(uint16_t);
+            break;
+
+        case 4:
+            elementSize = sizeof(int32_t);
+            break;
+
+        default:
+            elementSize = 0;
+            break;
+
+    }
+
+
+    return elementSize * multiplicity;
+
+}
+
+std::vector<InterleaveElement> Mesh::compactStorage(const std::vector<InputDescription> & iData, unsigned int * stride) {
+
+    std::vector<InterleaveElement> elements(iData.size());
+
+    *stride = 0;
+
+    for (unsigned int i = 0; i < iData.size(); ++i) {
+        elements[i].offset = 0;
+    }
+
+    for (const InputDescription & id : iData) {
+
+        std::string name = id.attributeName;
+        VertexAttributeType type = this->attributes[name].type;
+
+        size_t s = getAttributeSize(type);
+
+        *stride += s;
+
+        for (unsigned int i = id.location+1; i < iData.size(); ++i) {
+
+            elements[i].offset += s;
+
+        }
+
+        elements[id.location].attributeName = name;
+
+    }
+
+    std::cout << "Final stride: " << *stride << std::endl;
+
+    return elements;
+
+}
+
 std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride) {
+
+    std::cout << this << std::endl;
 
     std::vector<uint8_t> data(stride * attributes["POSITION"].value.size());
 
@@ -753,4 +825,16 @@ std::shared_ptr<Mesh> Mesh::merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh
 
     return std::shared_ptr<Mesh>(new Mesh(attributes, indices));
 
+}
+
+MeshUploader::MeshUploader(std::shared_ptr<Mesh> m) {
+    this->mesh = m;
+}
+
+bool MeshUploader::uploadReady() {
+    return true;
+}
+
+std::shared_ptr<Mesh> MeshUploader::uploadResource() {
+    return mesh;
 }

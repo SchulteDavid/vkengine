@@ -53,7 +53,7 @@ ResourceLoader<Resource> * ResourceManager::getLoader(std::string name, int inde
 
 }
 
-std::shared_ptr<Resource> ResourceManager::registerResource(std::string regName, std::string name, Resource * res) {
+std::shared_ptr<Resource> ResourceManager::registerResource(std::string regName, std::string name, std::shared_ptr<Resource> res) {
     return this->registries[regName]->registerObject(name, res);
 }
 
@@ -193,7 +193,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
         logger(std::cout) << "Uploading " << fres->name << std::endl;
 
-        Resource * tmpResource = fres->uploader->uploadResource();
+        std::shared_ptr<Resource> tmpResource = fres->uploader->uploadResource();
         fres->location = resourceManager->registerResource(fres->regName, fres->name, tmpResource);
 
         fres->status.isUploaded = true;

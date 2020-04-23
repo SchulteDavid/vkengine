@@ -1109,7 +1109,7 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
 
     delete[] fileData.binaryBuffer;
 
-    std::shared_ptr<StructureUploader> strcRes = std::shared_ptr<StructureUploader>(new StructureUploader(modelRes, materialLRes));
+    std::shared_ptr<StructureUploader> strcRes = std::shared_ptr<StructureUploader>(new StructureUploader(modelRes, materialLRes, resultMesh));
 
     for (unsigned int i = 0; i < fileData.animations.size(); ++i) {
 
