@@ -89,6 +89,7 @@
 		<Unit filename="resources/shaders/glsl/bump_fragment.frag" />
 		<Unit filename="resources/shaders/glsl/cloud_fragment.frag" />
 		<Unit filename="resources/shaders/glsl/low_poly_fragment.frag" />
+		<Unit filename="resources/shaders/glsl/low_poly_vertex.vert" />
 		<Unit filename="resources/shaders/glsl/pbrMetallic.frag" />
 		<Unit filename="resources/shaders/gltf_lowPoly.shader" />
 		<Unit filename="resources/shaders/gltf_pbrMetallic.shader" />

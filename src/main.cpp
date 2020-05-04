@@ -67,21 +67,20 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view) {
 
 void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
 
+    resourceManager->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
     resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
     resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
     resourceManager->addRegistry("Structure", (ResourceRegistry<Resource>*) new ResourceRegistry<Structure>());
     resourceManager->addRegistry("Level", (ResourceRegistry<Resource> *) new ResourceRegistry<Level>());
     resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
 
-    resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
+    //resourceManager->addLoader("Model", (ResourceLoader<Resource> *) new ModelLoader(view->getState()));
     resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
     resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
     resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
     resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
     resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new GLTFLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-
     resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
-
     resourceManager->addLoader("Level", (ResourceLoader<Resource> *) new LevelLoader());
 
 }
@@ -108,12 +107,7 @@ int main(int argc, char ** argv) {
 
     }
 
-    //gltfLoadFile("sheep_.glb");
-
     std::future<std::shared_ptr<Mesh>> futureMesh = generateBackground(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 128);
-    //std::shared_ptr<Mesh> mesh = buildMeshFromFunction(noiseFunc, Math::Vector<3, float>({0,0,0}), Math::Vector<3, float>({64,64,64}), 0.5, 128);
-
-    //mesh->saveAsPLY("mesh.ply");
 
     Entity::registerDefaultEntityTypes();
 
@@ -126,31 +120,18 @@ int main(int argc, char ** argv) {
 
     std::cout << "Viewport OK" << std::endl;
 
-    //return 0;
-
     ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
     createResourceLoaders(resourceManager, view);
 
     resourceManager->startLoadingThreads(1);
 
-    //LoadingResource tres = resourceManager->loadResourceBg("Structure", "sign.glb");
-    //LoadingResource cres = resourceManager->loadResourceBg("Structure", "sheep_.glb");
-    LoadingResource matRes = resourceManager->loadResourceBg("Material", "resources/materials/test.mat");
     LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
 
     std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
     window->addInputHandler(playerCtl);
 
-    /*while (!llvl->status.isUseable) {
-        //view->drawFrame(false);
-        glfwPollEvents();
-    }*/
-    /*std::cout << "Start wait for tres" << std::endl;
-    tres->fut.wait();
-    std::cout << "Start wait for cres" << std::endl;
-    cres->fut.wait();*/
     std::cout << "Start wait for llvl" << std::endl;
     llvl->fut.wait();
 
@@ -167,28 +148,14 @@ int main(int argc, char ** argv) {
     view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
 
     std::shared_ptr<World> world(new World());
-    //world->addEntity(ent);
 
     std::shared_ptr<Level> lvl = resourceManager->get<Level>("Level", "resources/level/test.lvl");
-    //std::cout << "Level " << lvl << std::endl;
     lvl->applyToWorld(world, view);
 
-    //futureMesh.wait();
-    //std::shared_ptr<Mesh> mesh = futureMesh.get();
-
-    /*std::shared_ptr<Model> model(new Model(view->getState(), mesh));
-    vkutil::VulkanState & state = view->getState();
-    model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
-    RenderElement::Transform trans;
-    trans.position = Math::Vector<3, float>({0,0,1});
-    trans.qRot = Math::Quaternion<float>(1,0,0,0);
-    trans.scale = 1.0;
-    std::shared_ptr<Material> material = std::dynamic_pointer_cast<Material>(matRes->location);
-    std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, model, material, trans));
-
-    view->addRenderElement(rElem);*/
-
     std::thread rotateThread(rotateFunc, world, view);
+
+    std::shared_ptr<Mesh> m = resourceManager->get<Mesh>("Mesh", "tree.glb");
+    m->saveAsPLY("sheep.ply");
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 

@@ -1073,55 +1073,18 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
     /// create uploaders for model and material
     std::shared_ptr<ResourceUploader<Resource>> materialRes((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, textureRes));
 
-    std::vector<InterleaveElement> vertElements(fileData.skins.size() ? 7 : 5);
-    size_t  vertSize = sizeof(Model::Vertex);
-
-    vertElements[0].attributeName = "POSITION";
-    vertElements[0].offset = offsetof(gltf_anim_vertex, pos);
-
-    vertElements[1].attributeName = "NORMAL";
-    vertElements[1].offset = offsetof(gltf_anim_vertex, normal);
-
-    vertElements[2].attributeName = "TANGENT";
-    vertElements[2].offset = offsetof(gltf_anim_vertex, tangent);
-
-    vertElements[3].attributeName = "TEXCOORD_0";
-    vertElements[3].offset = offsetof(gltf_anim_vertex, uv);
-
-    vertElements[4].attributeName = "MATERIAL_INDEX";
-    vertElements[4].offset = offsetof(gltf_anim_vertex, matIndex);
-
-    std::cout << "MATERIAL_INDEX_OFFSET " << vertElements[4].offset << std::endl;
-
-    if (fileData.skins.size()) {
-
-        vertSize = sizeof(gltf_anim_vertex);
-
-        vertElements[5].attributeName = "WEIGHTS_0";
-        vertElements[5].offset = offsetof(gltf_anim_vertex, weights);
-
-        std::cout << "Weight offset " << vertElements[5].offset << std::endl;
-
-        vertElements[6].attributeName = "JOINTS_0";
-        vertElements[6].offset = offsetof(gltf_anim_vertex, bones);// + 4 * sizeof(float);
-
-        std::cout << "Bone offset " << vertElements[6].offset << std::endl;
-
-    }
-
-    std::cout << "Vertex Size : " << vertSize << std::endl;
-
-    std::shared_ptr<ResourceUploader<Resource>> meshRes((ResourceUploader<Resource> *) new ModelUploader(state, new Model(state, resultMesh, vertElements, vertSize)));
-
     std::string materialName = fname;
     if (fileData.materials.size())
         materialName.append(":").append(fileData.materials[0].name);
     LoadingResource materialLRes = this->scheduleSubresource("Material", materialName, materialRes);
-    LoadingResource modelRes = this->scheduleSubresource("Model", fname, meshRes);
+    //LoadingResource modelRes = this->scheduleSubresource("Model", fname, meshRes);
+    std::string meshName = fname;
+    std::shared_ptr<ResourceUploader<Resource>> meshUploader((ResourceUploader<Resource> *) new MeshUploader(resultMesh));
+    LoadingResource meshRes = this->scheduleSubresource("Mesh", meshName, meshUploader);
 
     delete[] fileData.binaryBuffer;
 
-    std::shared_ptr<StructureUploader> strcRes = std::shared_ptr<StructureUploader>(new StructureUploader(modelRes, materialLRes, resultMesh));
+    std::shared_ptr<StructureUploader> strcRes = std::shared_ptr<StructureUploader>(new StructureUploader(nullptr, materialLRes, resultMesh));
 
     for (unsigned int i = 0; i < fileData.animations.size(); ++i) {
 

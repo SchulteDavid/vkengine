@@ -10,13 +10,13 @@
 
 ResourceManager::ResourceManager(unsigned int regTypes) {
 
-    if (regTypes & RESOURCE_MODEL) {
+    /*if (regTypes & RESOURCE_MODEL) {
         this->addRegistry("Model", (ResourceRegistry<Resource> *) new ResourceRegistry<Model>());
     }
 
     if (regTypes & RESOURCE_SHADER) {
         this->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
-    }
+    }*/
 
 }
 

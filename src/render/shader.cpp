@@ -379,7 +379,7 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
 
     unsigned int textureCount = tmpRoot->getNode<int32_t>("textureCount")->getElement(0);
 
-    Shader * shader = new Shader(vertCode, fragCode, state, textureCount);
+    std::shared_ptr<Shader> shader(new Shader(vertCode, fragCode, state, textureCount));
 
     if (tmpRoot->hasChild("inputs")) {
 
@@ -431,7 +431,7 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
 
 }
 
-ShaderUploader::ShaderUploader(const vkutil::VulkanState & state, Shader * shader) : state(state) {
+ShaderUploader::ShaderUploader(const vkutil::VulkanState & state, std::shared_ptr<Shader> shader) : state(state) {
 
     this->shader = shader;
 
@@ -440,7 +440,7 @@ ShaderUploader::ShaderUploader(const vkutil::VulkanState & state, Shader * shade
 std::shared_ptr<Shader> ShaderUploader::uploadResource() {
 
     this->shader->createModules(state);
-    return std::shared_ptr<Shader>(shader);
+    return shader;
 
 }
 

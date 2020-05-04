@@ -92,9 +92,7 @@ class ShaderUploader : public ResourceUploader<Shader> {
 
     public:
 
-        /// TODO: complete migration to shared_ptr
-
-        ShaderUploader(const vkutil::VulkanState & state, Shader * shader);
+        ShaderUploader(const vkutil::VulkanState & state, std::shared_ptr<Shader> shader);
 
         std::shared_ptr<Shader> uploadResource();
         bool uploadReady();
@@ -102,7 +100,7 @@ class ShaderUploader : public ResourceUploader<Shader> {
     private:
 
         const vkutil::VulkanState & state;
-        Shader * shader;
+        std::shared_ptr<Shader> shader;
 
 };
 

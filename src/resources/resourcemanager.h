@@ -35,7 +35,12 @@ class ResourceManager {
         }
 
         template<typename T> std::shared_ptr<T> get(std::string regName, std::string name) {
-            return ((ResourceRegistry<T> *) this->registries[regName])->get(name);
+            std::shared_ptr<Resource> r = this->registries[regName]->get(name);
+            std::shared_ptr<T> val = std::dynamic_pointer_cast<T>(r);
+            if (!val) {
+                throw dbg::trace_exception(std::string("Wrong resource type detected in registry ").append(regName).append(" : ").append(name));
+            }
+            return val;
         }
 
         bool isLoaded(std::string regName, std::string name);

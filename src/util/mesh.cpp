@@ -539,8 +539,6 @@ std::vector<InterleaveElement> Mesh::compactStorage(const std::vector<InputDescr
 
     }
 
-    std::cout << "Final stride: " << *stride << std::endl;
-
     return elements;
 
 }
@@ -749,9 +747,10 @@ std::shared_ptr<Mesh> Mesh::loadFromFile(std::string fname) {
 
 }
 
+/**
+Merges 2 meshes into 1. The resulting mesh has the attributes BOTH inputs have in common.
+**/
 std::shared_ptr<Mesh> Mesh::merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh> m2) {
-
-    /// TODO: update to attribute meshes
 
     if (!m1) return m2;
     if (!m2) return m1;
@@ -804,16 +803,6 @@ std::shared_ptr<Mesh> Mesh::merge(std::shared_ptr<Mesh> m1, std::shared_ptr<Mesh
 
     //std::vector<Model::Vertex> verts;
     std::vector<uint16_t> indices;
-
-    /*for (Model::Vertex v : m1->verts) {
-        verts.push_back(v);
-    }
-
-    uint16_t m1Count = verts.size();
-
-    for (Model::Vertex v : m2->verts) {
-        verts.push_back(v);
-    }*/
 
     for (uint16_t i : m1->indices) {
         indices.push_back(i);
