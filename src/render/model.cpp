@@ -322,7 +322,7 @@ Model * Model::loadFromFile(const vkutil::VulkanState & state, std::string fname
 
 }
 
-void Model::uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const VkQueue & q) {
+void Model::uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const vkutil::Queue & q) {
 
     this->vBuffer->upload(device, commandPool, q);
     this->iBuffer->upload(device, commandPool, q);

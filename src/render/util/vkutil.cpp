@@ -581,7 +581,7 @@ bool vkutil::hasStencilComponent(VkFormat format) {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void vkutil::transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q) {
+void vkutil::transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const vkutil::Queue & q) {
 
     VkCommandBuffer commandBuffer = beginSingleCommand(commandPool, device);
 
@@ -670,11 +670,11 @@ VkCommandBuffer vkutil::beginSingleCommand(const VkCommandPool & commandPool, co
 
 }
 
-void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VulkanState & state) {
+void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, VulkanState & state) {
     endSingleCommand(commandBuffer, state.graphicsCommandPool, state.device, state.graphicsQueue);
 }
 
-void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q) {
+void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const vkutil::Queue & q) {
 
     vkEndCommandBuffer(commandBuffer);
 
@@ -683,8 +683,10 @@ void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPo
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(q, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(q);
+    q.lock();
+    vkQueueSubmit(q.q, 1, &submitInfo, VK_NULL_HANDLE);
+    q.unlock();
+    vkQueueWaitIdle(q.q);
 
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 
@@ -756,7 +758,23 @@ std::vector<VkImageView> vkutil::createSwapchainImageViews(const std::vector<VkI
 
 }
 
-void vkutil::copyBuffer(VkBuffer & src, VkBuffer & dst, VkDeviceSize & size, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q) {
+void Queue::lock() const {
+    //std::cerr << "Locking queue: " << (void *) q << std::endl;
+    //print_stacktrace(stderr);
+    m->lock();
+}
+
+void Queue::unlock() const {
+    //std::cerr << "Unlocking queue: " << (void *) q << std::endl;
+    //print_stacktrace(stderr);
+    m->unlock();
+}
+
+void Queue::setMutex(std::mutex & mutex) {
+    m = &mutex;
+}
+
+void vkutil::copyBuffer(VkBuffer & src, VkBuffer & dst, VkDeviceSize & size, const VkCommandPool & commandPool, const VkDevice & device, const vkutil::Queue & q) {
 
     VkCommandBuffer commandBuffer = beginSingleCommand(commandPool, device);
 

@@ -133,7 +133,7 @@ ${parser.y} : % :
 	@$(YACC) -v -d $^ -o $@
 
 ${srclibs} : % :
-	cd srclibs/$(word 2,$(subst /, ,$@))/ && make Library
+	cd srclibs/$(word 2,$(subst /, ,$@))/ && $(MAKE) Library
 
 ${shaders.spirv} : % :
 	@echo Compiling shader $@

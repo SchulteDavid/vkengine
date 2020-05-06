@@ -57,22 +57,54 @@ struct ShaderInputDescription {
     char * entryName;
 };
 
+class Queue {
+
+    public:
+        Queue(std::mutex & m) : m(&m) {
+
+        }
+
+        VkQueue q;
+
+        void lock() const;
+        void unlock() const;
+
+        void setMutex(std::mutex & m);
+
+
+    private:
+        std::mutex * m;
+
+};
+
 struct VulkanState {
+
+    VulkanState() :
+    presentQueue(presentQueueMutex),
+    graphicsQueue(graphicsQueueMutex),
+    loadingGraphicsQueue(loadingGraphicsQueueMutex),
+    transferQueue(graphicsQueueMutex)
+    {
+
+    }
 
     GLFWwindow * glfwWindow;
     VkInstance instance;
     VkSurfaceKHR surface;
     VkPhysicalDevice physicalDevice;
-    VkQueue presentQueue;
-    VkQueue graphicsQueue;
-    VkQueue loadingGraphicsQueue;
-    VkQueue transferQueue;
+    Queue presentQueue;
+    Queue graphicsQueue;
+    Queue loadingGraphicsQueue;
+    Queue transferQueue;
     VkDevice device;
     VmaAllocator vmaAllocator;
     VkCommandPool graphicsCommandPool;
     VkCommandPool transferCommandPool;
 
     std::mutex graphicsQueueMutex;
+    std::mutex transferQueueMutex;
+    std::mutex loadingGraphicsQueueMutex;
+    std::mutex presentQueueMutex;
 
 };
 
@@ -103,17 +135,17 @@ VkCommandPool createTransferCommandPool(const VkPhysicalDevice & physicalDevice,
 
 void createImage(const VmaAllocator & allocator, VkDevice device, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory);
 VkImageView createImageView(const VkDevice & device, const VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);
-void transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
+void transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const Queue & q);
 
 VkCommandBuffer beginSingleCommand(const VulkanState & state);
-void endSingleCommand(VkCommandBuffer & commandBuffer,const VulkanState & state);
+void endSingleCommand(VkCommandBuffer & commandBuffer, VulkanState & state);
 
 VkCommandBuffer beginSingleCommand(const VkCommandPool & commandPool, const VkDevice & device);
-void endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
+void endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPool & commandPool, const VkDevice & device, const vkutil::Queue & q);
 
 VkShaderModule createShaderModule(const std::vector<uint8_t> & code, const VkDevice & device);
 
-void copyBuffer(VkBuffer & src, VkBuffer & dst, VkDeviceSize & size, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
+void copyBuffer(VkBuffer & src, VkBuffer & dst, VkDeviceSize & size, const VkCommandPool & commandPool, const VkDevice & device, const Queue & q);
 VkDescriptorSetLayout createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> & bindings, const VkDevice & device);
 VkPipeline createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, const std::vector<ShaderInputDescription> & shaders, const VertexInputDescriptions & descs, const VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent);
 

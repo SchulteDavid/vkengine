@@ -57,7 +57,7 @@ template <typename T = uint16_t> class IndexBuffer : public StorageBuffer {
 
         }
 
-        void upload(const VkDevice & device, const VkCommandPool & commandPool, const VkQueue & q) {
+        void upload(const VkDevice & device, const VkCommandPool & commandPool, const vkutil::Queue & q) {
 
             vkutil::copyBuffer(stagingBuffer, buffer, bufferSize, commandPool, device, q);
             vmaDestroyBuffer(state.vmaAllocator, stagingBuffer, stagingBufferMemory);

@@ -159,6 +159,10 @@ void Viewport::prepareRenderElements() {
 
 void Viewport::manageMemoryTransfer() {
 
+    if (this->framebufferResized) {
+        return;
+    }
+
     if (this->hasPendingTransfer()) {
 
         //std::cout << "Waiting for transfer fences" << std::endl;
@@ -175,9 +179,9 @@ void Viewport::manageMemoryTransfer() {
         transferSubmit.signalSemaphoreCount = 0;
         transferSubmit.waitSemaphoreCount = 0;
 
-        state.graphicsQueueMutex.lock();
-        vkQueueSubmit(state.transferQueue, 1, &transferSubmit, transferFence);
-        state.graphicsQueueMutex.unlock();
+        state.graphicsQueue.lock();
+        vkQueueSubmit(state.transferQueue.q, 1, &transferSubmit, transferFence);
+        state.graphicsQueue.unlock();
 
     }
 
@@ -210,12 +214,14 @@ void Viewport::drawFrame(bool updateElements) {
 
     case VK_SUBOPTIMAL_KHR:
     case VK_ERROR_OUT_OF_DATE_KHR:
-        framebufferResized = false;
-        vkQueueWaitIdle(state.graphicsQueue);
+        //state.graphicsQueue.lock();
+        //vkQueueWaitIdle(state.graphicsQueue.q);
+        //state.graphicsQueue.unlock();
         std::cout << "destroying swapchain" << std::endl;
         destroySwapChain();
         std::cout << "Swap chains destroyed" << std::endl;
         recreateSwapChain();
+        framebufferResized = false;
         return;
 
     case VK_SUCCESS:
@@ -244,10 +250,10 @@ void Viewport::drawFrame(bool updateElements) {
 
     vkResetFences(state.device, 1, &inFlightFences[frameIndex]);
 
-    state.graphicsQueueMutex.lock();
-    if (vkQueueSubmit(state.graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
+    state.graphicsQueue.lock();
+    if (vkQueueSubmit(state.graphicsQueue.q, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
         throw dbg::trace_exception("Unable to submit command buffer");
-    state.graphicsQueueMutex.unlock();
+    state.graphicsQueue.unlock();
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -259,7 +265,9 @@ void Viewport::drawFrame(bool updateElements) {
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr;
 
-    vkQueuePresentKHR(state.presentQueue, &presentInfo);
+    state.presentQueue.lock();
+    vkQueuePresentKHR(state.presentQueue.q, &presentInfo);
+    state.presentQueue.unlock();
 
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
@@ -926,6 +934,10 @@ void Viewport::setupFramebuffers() {
 
 void Viewport::destroySwapChain() {
 
+    state.graphicsQueue.lock();
+    vkQueueWaitIdle(state.graphicsQueue.q);
+    state.graphicsQueue.unlock();
+
     destroyPPObjects();
 
     std::cout << "PP Objects destroyed" << std::endl;
@@ -969,7 +981,9 @@ void Viewport::destroySwapChain() {
 
 void Viewport::recreateSwapChain() {
 
-    state.graphicsQueueMutex.lock();
+    std::cout << "Recreating swapchain" << std::endl;
+
+    //state.graphicsQueueMutex.lock();
 
     vkutil::SwapChain tmpChain = vkutil::createSwapchain(state.physicalDevice, state.device, state.surface, state.glfwWindow);
     this->swapchain.chain = tmpChain.chain;
@@ -1006,7 +1020,7 @@ void Viewport::recreateSwapChain() {
     this->setupCommandBuffers();
     this->recordCommandBuffers();
 
-    state.graphicsQueueMutex.unlock();
+    //state.graphicsQueueMutex.unlock();
 
 }
 

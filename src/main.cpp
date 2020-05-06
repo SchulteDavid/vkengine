@@ -154,6 +154,8 @@ int main(int argc, char ** argv) {
 
     std::thread rotateThread(rotateFunc, world, view);
 
+    std::cerr << "Rotate Thread: " << &rotateThread << std::endl;
+
     std::shared_ptr<Mesh> m = resourceManager->get<Mesh>("Mesh", "tree.glb");
     m->saveAsPLY("sheep.ply");
 

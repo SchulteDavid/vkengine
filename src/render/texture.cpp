@@ -50,9 +50,7 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, i
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     logger(std::cout) << "Generating mipmaps" << std::endl;
-    state.graphicsQueueMutex.lock();
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
-    state.graphicsQueueMutex.unlock();
     logger(std::cout) << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -99,16 +97,14 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data,
 
     vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
-    state.graphicsQueueMutex.lock();
     this->transitionLayout(state, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    state.graphicsQueueMutex.unlock();
     copyBufferToImage(state, stagingBuffer, image, width, height, depth);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     logger(std::cout) << "Generating mipmaps" << std::endl;
-    state.graphicsQueueMutex.lock();
+    //state.graphicsQueueMutex.lock();
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
-    state.graphicsQueueMutex.unlock();
+    //state.graphicsQueueMutex.unlock();
     logger(std::cout) << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -134,7 +130,7 @@ Texture::~Texture() {
 
 }
 
-void Texture::generateMipmaps(int width, int height, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q) {
+void Texture::generateMipmaps(int width, int height, const VkCommandPool & commandPool, const VkDevice & device, const vkutil::Queue & q) {
 
     VkCommandBuffer cmdBuffer = vkutil::beginSingleCommand(commandPool, device);
 
@@ -207,7 +203,7 @@ VkSampler & Texture::getSampler() {
     return sampler;
 }
 
-void Texture::copyBufferToImage(const VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth) {
+void Texture::copyBufferToImage(VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth) {
 
     VkCommandBuffer commandBuffer = vkutil::beginSingleCommand(state.transferCommandPool, state.device);
 

@@ -66,7 +66,21 @@ Window::Window(unsigned int width, unsigned int height) {
         return isDeviceSuitable(d, state.surface);
     });
 
-    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &state.graphicsQueue, &state.presentQueue, &state.transferQueue, &state.loadingGraphicsQueue, deviceExtensions);
+    VkQueue graphicsQueue;
+    VkQueue presentQueue;
+    VkQueue transferQueue;
+    VkQueue loadingGraphicsQueue;
+
+    state.device = vkutil::createLogicalDevice(state.physicalDevice, state.surface, &graphicsQueue, &presentQueue, &transferQueue, &loadingGraphicsQueue, deviceExtensions);
+
+    state.graphicsQueue.q = graphicsQueue;
+    state.presentQueue.q = presentQueue;
+    state.loadingGraphicsQueue.q = loadingGraphicsQueue;
+    state.transferQueue.q = transferQueue;
+
+    /*if (state.graphicsQueue.q == state.transferQueue.q) {
+        state.transferQueue.setMutex(state.graphicsQueueMutex);
+    }*/
 
     state.vmaAllocator = vkutil::createAllocator(state.device, state.physicalDevice);
 
@@ -95,11 +109,11 @@ VkSurfaceKHR & Window::getSurface() {
     return state.surface;
 }
 
-VkQueue & Window::getGraphicsQueue() {
+vkutil::Queue & Window::getGraphicsQueue() {
     return state.graphicsQueue;
 }
 
-VkQueue & Window::getPresentQueue() {
+vkutil::Queue & Window::getPresentQueue() {
     return state.presentQueue;
 }
 

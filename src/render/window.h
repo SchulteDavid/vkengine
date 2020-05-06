@@ -22,8 +22,8 @@ class Window
         VkPhysicalDevice & getPhysicalDevice();
         VkInstance & getInstance();
         VkSurfaceKHR & getSurface();
-        VkQueue & getGraphicsQueue();
-        VkQueue & getPresentQueue();
+        vkutil::Queue & getGraphicsQueue();
+        vkutil::Queue & getPresentQueue();
         VkDevice & getDevice();
         VmaAllocator & getAllocator();
         VkCommandPool & getCommandPool();

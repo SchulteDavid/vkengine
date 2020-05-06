@@ -28,7 +28,7 @@ class Texture : public Resource
         static Texture * createTexture(vkutil::VulkanState & state, std::string fname);
 
         static void createImage(vkutil::VulkanState & state, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory);
-        static void copyBufferToImage(const vkutil::VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth);
+        static void copyBufferToImage(vkutil::VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth);
         static VkImageView createImageView(const vkutil::VulkanState & state, VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);
         static VkSampler createSampler(const vkutil::VulkanState & state, int mipLevels);
         static void transitionImageLayout(vkutil::VulkanState & state, VkImage & image, VkFormat format, VkImageLayout layout, VkImageLayout newLayout, int mipLevels);
@@ -49,7 +49,7 @@ class Texture : public Resource
         const VkDevice & device;
         const VmaAllocator & allocator;
 
-        void generateMipmaps(int width, int height, const VkCommandPool & commandPool, const VkDevice & device, const VkQueue & q);
+        void generateMipmaps(int width, int height, const VkCommandPool & commandPool, const VkDevice & device, const vkutil::Queue & q);
 
 };
 
