@@ -9,6 +9,7 @@ layout (input_attachment_index = 2, binding = 2) uniform subpassInput inputAlbed
 
 layout (binding = 3) uniform LightData {
 
+    int activeCount;
     vec4 position[32];
     vec4 color[32];
 
@@ -141,7 +142,7 @@ vec4 getGColor(float shadow) {
     // reflectance equation
     vec3 Lo = vec3(0.0);
     Lo = computeLO(WorldPos, 0, V, N, roughness, F0, albedo, metallic) * shadow;
-    for(int i = 1; i < 32; ++i)
+    for(int i = 1; i < inLights.activeCount; ++i)
     {
         Lo += computeLO(WorldPos, i, V, N, roughness, F0, albedo, metallic);
     }
@@ -188,40 +189,8 @@ void main() {
     vec3 p = subpassLoad(inputPosition).xyz;
     vec3 c = inCamera.position - p;
 
-    /*for (int i = 0; i < 32; ++i) {
-
-        vec3 r = reflect(-c , n);
-        vec3 l = inLights.position[i].xyz - p;
-
-        if (inLights.color[i].w >= 1.0) {
-
-            light += clamp(dot(normalize(inLights.position[i].xyz), n), 0, 1) * inLights.color[i].xyz;
-
-        } else {
-
-            //light += clamp(dot(normalize(l), n), 0, 1) * inLights.color[i].xyz / pow(length(l), inLights.position[i].w);
-
-        }
-
-    }*/
-
-    //light = vec3(0.1);
-
-    //light += 0;//clamp(dot(normalize(inLights.position[0].xyz), n), 0, 1) * inLights.color[0].xyz;
-
-    //ppResult = vec4(inCamera.position, 1);
-
     ppResult = getGColor(1.0);
     if (subpassLoad(inputPosition).a <= 0.0)
         ppResult = vec4(skyColor, 1.0);
-
-    //ppResult = vec4(subpassLoad(inputPosition).a);
-    //ppResult = pow(ppResult / (ppResult + vec4(1.0, 1.0, 1.0, 0.0)))
-
-    //ppResult = vec4(light, 1) * subpassLoad(inputAlbedo);
-    //ppResult = subpassLoad(inputAlbedo);
-    //ppResult = subpassLoad(inputNormal);
-    //ppResult = vec4(inCamera.position, 1);
-    //ppResult = getGColor(1);
 
 }

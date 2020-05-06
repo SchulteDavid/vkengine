@@ -19,6 +19,7 @@ class Viewport : public MemoryTransferHandler
 
         struct LightData {
 
+            int32_t activeCount;
             alignas(16) glm::vec4 position[32];
             alignas(16) glm::vec4 color[32];
 

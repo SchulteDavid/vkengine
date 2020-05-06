@@ -1119,5 +1119,6 @@ void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
     this->lights.color[lightIndex] = color;
 
     this->lightIndex++;
+    this->lights.activeCount = lightIndex;
 
 }
