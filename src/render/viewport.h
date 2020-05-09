@@ -125,6 +125,7 @@ class Viewport : public MemoryTransferHandler
 
         std::shared_ptr<Model> ppBufferModel;
 
+        uint32_t lightDataModified;
         LightData lights;
         unsigned int lightIndex;
 

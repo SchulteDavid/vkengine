@@ -126,6 +126,7 @@ int main(int argc, char ** argv) {
 
     resourceManager->startLoadingThreads(1);
 
+    LoadingResource treeStruct = resourceManager->loadResourceBg("Structure", "tree.glb");
     LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
 
 
@@ -158,6 +159,25 @@ int main(int argc, char ** argv) {
 
     std::shared_ptr<Mesh> m = resourceManager->get<Mesh>("Mesh", "tree.glb");
     m->saveAsPLY("sheep.ply");
+
+    int rElemCount = 0;
+    RenderElement::Transform initTrans;
+    initTrans.position = Math::Vector<3, float>({0, 1, 0});
+    initTrans.scale = 1.0;
+    initTrans.qRot = Math::Quaternion<float>(1,0,0,0);
+    std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, resourceManager->get<Structure>("Structure","tree.glb"), initTrans));
+    //rElem->createUniformBuffers();
+
+    view->addRenderElement(rElem);
+
+    while (rElemCount < 1024) {
+        RenderElement::Transform initTrans;
+        initTrans.position = Math::Vector<3, float>({0, 1, 0});
+        initTrans.scale = 1.0;
+        initTrans.qRot = Math::Quaternion<float>(1,0,0,0);
+        rElem->addInstance(initTrans);
+        rElemCount++;
+    }
 
     while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 

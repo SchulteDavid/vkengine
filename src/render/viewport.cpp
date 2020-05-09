@@ -3,7 +3,7 @@
 #include <iostream>
 #include <chrono>
 
-#define MAX_FRAMES_IN_FLIGHT 4
+#define MAX_FRAMES_IN_FLIGHT 3
 
 #include "util/debug/trace_exception.h"
 #include "util/debug/logger.h"
@@ -77,6 +77,8 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
     ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
 
     recordCommandBuffers();
+
+    this->lightDataModified = false;
 
 }
 
@@ -286,23 +288,18 @@ Camera * Viewport::getCamera() {
 
 void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
-    //static auto startTime = std::chrono::high_resolution_clock::now();
-    //auto currentTime = std::chrono::high_resolution_clock::now();
-
-    //float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    //auto startTime = std::chrono::high_resolution_clock::now();
 
     UniformBufferObject ubo;
 
-    ubo.view = this->camera->getView();//glm::lookAt(glm::vec3(0.0, -4.0f, 2.0f), glm::vec3(0,0,0), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = this->camera->getProjection();//glm::perspective(glm::radians(45.0f), swapChain.extent.width / (float) swapChain.extent.height, 0.1f, 1000.0f);
+    ubo.view = this->camera->getView();
+    ubo.proj = this->camera->getProjection();
 
     for (unsigned int i = 0; i < renderElements.size(); ++i) {
 
         renderElements[i]->updateUniformBuffer(ubo, imageIndex);
 
     }
-
-    //std::cout << "Copying light data" << std::endl;
 
     void * data;
     vmaMapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex], &data);
@@ -313,6 +310,12 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
     CameraData * camData = (CameraData *) data;
     camData->position = camera->position;
     vmaUnmapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex]);
+
+    //auto currentTime = std::chrono::high_resolution_clock::now();
+
+    //double time = std::chrono::duration<double, std::chrono::milliseconds::period>(currentTime - startTime).count();
+
+    //std::cout << "Uniform buffer update: " << time << "ms" << std::endl;
 
 }
 
@@ -1120,5 +1123,7 @@ void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
     this->lightIndex++;
     this->lights.activeCount = lightIndex;
+
+    //this->lightDataModified = 0xf;
 
 }
