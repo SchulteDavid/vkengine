@@ -165,14 +165,14 @@ int main(int argc, char ** argv) {
     initTrans.position = Math::Vector<3, float>({0, 1, 0});
     initTrans.scale = 1.0;
     initTrans.qRot = Math::Quaternion<float>(1,0,0,0);
-    std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, resourceManager->get<Structure>("Structure","tree.glb"), initTrans));
+    std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, resourceManager->get<Structure>("Structure", "tree.glb"), initTrans));
     //rElem->createUniformBuffers();
 
     view->addRenderElement(rElem);
 
-    while (rElemCount < 1024) {
+    while (rElemCount < 2) {
         RenderElement::Transform initTrans;
-        initTrans.position = Math::Vector<3, float>({0, 1, 0});
+        initTrans.position = Math::Vector<3, float>({rElemCount * 3, 1, 0});
         initTrans.scale = 1.0;
         initTrans.qRot = Math::Quaternion<float>(1,0,0,0);
         rElem->addInstance(initTrans);

@@ -103,7 +103,7 @@ void Shader::bindForRender(VkCommandBuffer & cmdBuffer, VkDescriptorSet & descri
 
 }
 
-VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout) {
+VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & layout) {
 
     std::vector<vkutil::ShaderInputDescription> inputShaders(modules.size());
 
@@ -117,10 +117,11 @@ VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs
 
     }
 
-    VkPipeline graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descLayout, pipelineLayout, swapChainExtent);
+    VkPipeline graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descLayout, layout, swapChainExtent);
 
     this->graphicsPipeline = graphicsPipeline;
 
+    this->pipelineLayout = layout;
     return graphicsPipeline;
 
 }

@@ -181,9 +181,9 @@ void Viewport::manageMemoryTransfer() {
         transferSubmit.signalSemaphoreCount = 0;
         transferSubmit.waitSemaphoreCount = 0;
 
-        state.graphicsQueue.lock();
+        state.transferQueue.lock();
         vkQueueSubmit(state.transferQueue.q, 1, &transferSubmit, transferFence);
-        state.graphicsQueue.unlock();
+        state.transferQueue.unlock();
 
     }
 
@@ -206,19 +206,12 @@ void Viewport::drawFrame(bool updateElements) {
 
         SwapchainInfo i = destroyableSwapchains.front();
 
-        //vkDestroySwapchainKHR(state.device, i.chain, nullptr);
-
-        //destroyableSwapchains.pop();
-
     }
 
     switch(result) {
 
     case VK_SUBOPTIMAL_KHR:
     case VK_ERROR_OUT_OF_DATE_KHR:
-        //state.graphicsQueue.lock();
-        //vkQueueWaitIdle(state.graphicsQueue.q);
-        //state.graphicsQueue.unlock();
         std::cout << "destroying swapchain" << std::endl;
         destroySwapChain();
         std::cout << "Swap chains destroyed" << std::endl;
@@ -286,11 +279,17 @@ Camera * Viewport::getCamera() {
     return camera;
 }
 
+bool Viewport::isLightDataModified(uint32_t imageIndex) {
+    return this->lightDataModified & (0x1 << imageIndex);
+}
+
+void Viewport::markLightDataCorrect(uint32_t imageIndex) {
+    this->lightDataModified &= 0xffffffff ^ (0x1 << imageIndex);
+}
+
 void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
     //auto startTime = std::chrono::high_resolution_clock::now();
-
-    UniformBufferObject ubo;
 
     ubo.view = this->camera->getView();
     ubo.proj = this->camera->getProjection();
@@ -302,9 +301,12 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
     }
 
     void * data;
-    vmaMapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex], &data);
-    memcpy(data, &lights, sizeof(LightData));
-    vmaUnmapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex]);
+    if (isLightDataModified(imageIndex)) {
+        vmaMapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex], &data);
+        memcpy(data, &lights, sizeof(LightData));
+        vmaUnmapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex]);
+        markLightDataCorrect(imageIndex);
+    }
 
     vmaMapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex], &data);
     CameraData * camData = (CameraData *) data;
@@ -312,9 +314,7 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
     vmaUnmapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex]);
 
     //auto currentTime = std::chrono::high_resolution_clock::now();
-
     //double time = std::chrono::duration<double, std::chrono::milliseconds::period>(currentTime - startTime).count();
-
     //std::cout << "Uniform buffer update: " << time << "ms" << std::endl;
 
 }
@@ -1086,6 +1086,7 @@ void Viewport::recordCommandBuffers() {
         for (auto it : renderElementsByShader) {
 
             vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
+            vkCmdPushConstants(commandBuffers[i], it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
 
             for (std::shared_ptr<RenderElement> relem : it.second) {
 
@@ -1124,6 +1125,6 @@ void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
     this->lightIndex++;
     this->lights.activeCount = lightIndex;
 
-    //this->lightDataModified = 0xf;
+    this->lightDataModified = 0xffffffff;
 
 }

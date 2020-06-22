@@ -129,10 +129,15 @@ class Viewport : public MemoryTransferHandler
         LightData lights;
         unsigned int lightIndex;
 
+        UniformBufferObject ubo;
+
         std::vector<std::shared_ptr<RenderElement>> renderElements;
         std::unordered_map<Shader *, std::vector<std::shared_ptr<RenderElement>>> renderElementsByShader;
 
         std::queue<SwapchainInfo> destroyableSwapchains;
+
+        bool isLightDataModified(uint32_t imageIndex);
+        void markLightDataCorrect(uint32_t imageIndex);
 
 };
 

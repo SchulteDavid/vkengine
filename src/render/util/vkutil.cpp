@@ -924,16 +924,20 @@ VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRen
 
     /* Uniform layout */
 
+    VkPushConstantRange uboRange = {};
+    uboRange.offset = 0;
+    uboRange.size = sizeof(float) * 32;
+    uboRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; ///Get from Shader object
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &uboRange;
 
     if (VkResult r = vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &retLayout))
         throw vkutil::vk_trace_exception("Unable to create pipeline layout", r);
-
 
     /** Creating the pipeline **/
 
