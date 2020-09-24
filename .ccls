@@ -1,0 +1,9 @@
+g++
+-std=c++14
+-stdlib=stdlibc++
+-I./include/
+-I./include/bullet/
+-I./srclibs/mathutils/include/
+-I./srclibs/config/include/
+-I./src/
+

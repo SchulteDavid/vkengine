@@ -3,7 +3,7 @@
 #include "model.h"
 
 #include <configloading.h>
-
+#include "render/renderelement.h"
 #include <iostream>
 
 Material::Material(std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> textures) {
@@ -25,6 +25,28 @@ std::shared_ptr<Shader> Material::getShader() {
 
 std::vector<std::shared_ptr<Texture>> Material::getTextures() {
     return textures;
+}
+
+std::vector<Shader::Binding> Material::getDefaultBindings() {
+  std::vector<Shader::Binding> binds;
+
+  Shader::Binding uniformBufferBinding;
+  uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
+  uniformBufferBinding.elementCount = 1;
+  uniformBufferBinding.bindingId = 0;
+  uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
+  binds.push_back(uniformBufferBinding);
+  
+  std::cout << "Material has " << textures.size() << " textures" << std::endl;
+  
+  if (this->textures.size()) {
+    Shader::Binding textureBinding;
+    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+    textureBinding.bindingId = 1;
+    binds.push_back(textureBinding);
+  }
+
+  return binds;
 }
 
 VkDescriptorSetLayout Material::prepareDescriptors(std::vector<Shader::Binding> bindings) {

@@ -1,6 +1,6 @@
 #include "renderelementanim.h"
 
-RenderElementAnim::RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc, initTransform, getShaderBindings()) {
+RenderElementAnim::RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc, initTransform, getShaderBindings(strc->getMaterial())) {
 
     this->skin = strc->getSkin();
 
@@ -10,28 +10,17 @@ RenderElementAnim::~RenderElementAnim() {
     //dtor
 }
 
-std::vector<Shader::Binding> RenderElementAnim::getShaderBindings() {
-
-    Shader::Binding uniformBufferBinding;
-    uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
-    uniformBufferBinding.elementCount = 1;
-    uniformBufferBinding.bindingId = 0;
-    uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
-
-    Shader::Binding textureBinding;
-    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
-    textureBinding.bindingId = 1;
+std::vector<Shader::Binding> RenderElementAnim::getShaderBindings(std::shared_ptr<Material> material) {
+  
+  std::vector<Shader::Binding> binds = material->getDefaultBindings();
 
     Shader::Binding boneDataBinding;
     boneDataBinding.type = Shader::BINDING_UNIFORM_BUFFER;
     boneDataBinding.elementCount = 1;
-    boneDataBinding.bindingId = 2;
+    boneDataBinding.bindingId = binds.size();
     boneDataBinding.elementSize = 16 * sizeof(float);
 
-    std::vector<Shader::Binding> binds(3);
-    binds[0] = uniformBufferBinding;
-    binds[1] = textureBinding;
-    binds[2] = boneDataBinding;
+    binds.push_back(boneDataBinding);
 
     return binds;
 
@@ -81,8 +70,8 @@ void RenderElementAnim::createUniformBuffers(int swapChainSize, std::vector<Shad
     }
 
     bindings[0].uniformBuffers = uniformBuffers;
-    //std::cout << "Setting animation Buffer" << std::endl;
-    bindings[2].uniformBuffers = animationBuffers;
+    std::cout << "Setting animation Buffer" << std::endl;
+    bindings[bindings.size()-1].uniformBuffers = animationBuffers;
 
 }
 

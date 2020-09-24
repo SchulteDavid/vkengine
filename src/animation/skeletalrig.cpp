@@ -8,9 +8,10 @@ using namespace dbg;
 
 Math::Matrix<4,4,float> getTransformFromJoint(Joint & joint) {
 
-    /// This should take less than a few hundred ns.
-    return joint.rotation.toModelMatrix(joint.offset) * joint.inverseTransform;
-    //return joint.inverseTransform;
+  /// This should take less than a few hundred ns.
+  return joint.rotation.toModelMatrix(joint.offset) * joint.inverseTransform;
+  //return joint.inverseTransform;
+  //return joint.rotation.toModelMatrix(joint.offset);
 
 }
 
@@ -38,7 +39,8 @@ void Skin::writeTransformDataToBuffer(float * buffer) {
     for (unsigned int i = 0; i < joints.size(); ++i) {
 
         Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
-        //std::cout << mat << std::endl;
+	std::cout << i << std::endl;
+        std::cout << mat << std::endl;
         const float * arr = mat.asArray();
 
         //std::cout << "arr[0] = " << arr[0] << " arr[4] = " << arr[4] << std::endl;

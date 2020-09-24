@@ -12,64 +12,66 @@
 
 class Material : public Resource {
 
-    public:
-        Material(std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> textures);
-        virtual ~Material();
+public:
+  Material(std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> textures);
+  virtual ~Material();
 
-        std::shared_ptr<Shader> getShader();
-        std::vector<std::shared_ptr<Texture>> getTextures();
+  std::shared_ptr<Shader> getShader();
+  std::vector<std::shared_ptr<Texture>> getTextures();
+
+  std::vector<Shader::Binding> getDefaultBindings();
 
 
-        VkDescriptorSetLayout prepareDescriptors(std::vector<Shader::Binding> bindings);
-        VkPipeline setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, const VkDescriptorSetLayout & descLayout, Model * model, VkPipelineLayout & layout);
+  VkDescriptorSetLayout prepareDescriptors(std::vector<Shader::Binding> bindings);
+  VkPipeline setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, const VkDescriptorSetLayout & descLayout, Model * model, VkPipelineLayout & layout);
 
-    protected:
+protected:
 
-    private:
+private:
 
-        std::shared_ptr<Shader> shader;
-        std::vector<std::shared_ptr<Texture>> textures;
+  std::shared_ptr<Shader> shader;
+  std::vector<std::shared_ptr<Texture>> textures;
 
-        /*VkDescriptorPool descPool;
+  /*VkDescriptorPool descPool;
 
-        std::vector<VkDescriptorSet> descriptorSets;
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VmaAllocation> uniformBuffersMemory;*/
+    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VmaAllocation> uniformBuffersMemory;*/
 
 };
 
 class MaterialUploader : public ResourceUploader<Material> {
 
-    public:
+public:
 
-        MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, std::vector<LoadingResource> textures);
-        std::shared_ptr<Material> uploadResource();
-        bool uploadReady();
+  MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, std::vector<LoadingResource> textures);
+  std::shared_ptr<Material> uploadResource();
+  bool uploadReady();
 
-    private:
+private:
 
-        const vkutil::VulkanState & state;
-        const VkRenderPass & renderPass;
-        const VkExtent2D & swapChainExtent;
-        LoadingResource shader;
-        std::vector<LoadingResource> textures;
+  const vkutil::VulkanState & state;
+  const VkRenderPass & renderPass;
+  const VkExtent2D & swapChainExtent;
+  LoadingResource shader;
+  std::vector<LoadingResource> textures;
 
 };
 
 class MaterialLoader : public ResourceLoader<Material> {
 
-    public:
+public:
 
-        MaterialLoader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
-        std::shared_ptr<ResourceUploader<Material>> loadResource(std::string fname);
-        ResourceUploader<Material> * buildResource(std::shared_ptr<config::NodeCompound> root);
+  MaterialLoader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
+  std::shared_ptr<ResourceUploader<Material>> loadResource(std::string fname);
+  ResourceUploader<Material> * buildResource(std::shared_ptr<config::NodeCompound> root);
 
 
-    private:
+private:
 
-        const vkutil::VulkanState & state;
-        const VkRenderPass & renderPass;
-        const VkExtent2D & swapChainExtent;
+  const vkutil::VulkanState & state;
+  const VkRenderPass & renderPass;
+  const VkExtent2D & swapChainExtent;
 
 
 };

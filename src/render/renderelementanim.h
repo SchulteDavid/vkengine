@@ -5,26 +5,26 @@
 #include "animation/skeletalrig.h"
 
 class RenderElementAnim : public RenderElement {
-    public:
-        RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
-        virtual ~RenderElementAnim();
+public:
+  RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform);
+  virtual ~RenderElementAnim();
 
-        void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings) override;
-        virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
+  void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings) override;
+  virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
 
-        virtual void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex);
+  virtual void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex);
 
-        void setSkin(std::shared_ptr<Skin> skin);
+  void setSkin(std::shared_ptr<Skin> skin);
 
-    protected:
+protected:
 
-    private:
+private:
 
-        std::vector<VkBuffer> animationBuffers;
-        std::vector<VmaAllocation> animationBuffersMemory;
+  std::vector<VkBuffer> animationBuffers;
+  std::vector<VmaAllocation> animationBuffersMemory;
 
-        std::vector<Shader::Binding> getShaderBindings();
-        std::shared_ptr<Skin> skin;
+  std::vector<Shader::Binding> getShaderBindings(std::shared_ptr<Material> material);
+  std::shared_ptr<Skin> skin;
 
 };
 

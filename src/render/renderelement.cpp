@@ -63,6 +63,8 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform & initTransform) : state(view->getState()), MemoryTransferer(*view) {
 
+  std::cout << "Creating RenderElement" << std::endl;
+  
     std::vector<Shader::Binding> binds;
 
     Shader::Binding uniformBufferBinding;
@@ -72,6 +74,8 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
     uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
     binds.push_back(uniformBufferBinding);
 
+    std::cout << "Material has " << mat->getTextures().size() << " textures" << std::endl;
+    
     if (mat->getTextures().size()) {
         Shader::Binding textureBinding;
         textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
@@ -413,6 +417,8 @@ RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_p
 
     if (strc->hasAnimations()) {
 
+      std::cout << "Element has animations" << std::endl;
+      
         if (!strc->getSkin())
             throw dbg::trace_exception("Trying to create animated renderelement with no skin");
         RenderElementAnim * rElem = new RenderElementAnim(view, strc, initTrans);

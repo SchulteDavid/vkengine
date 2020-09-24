@@ -8,11 +8,11 @@ comp physics = {
 comp elements = [
 
      {
-	string structure = "exports.glb"
+	string structure = "test.glb"
 	string entityType = "Entity"
 	comp transform = {
 
-	     float64 position = [0, 0, 10]
+	     float64 position = [0, 0, 0]
 	     float64 rotation = [1, 0, 0, 0]
 	     float64 scale = [1, 1, 1]
 	     
@@ -20,7 +20,7 @@ comp elements = [
 
 	comp physics = {
 
-	     float64 mass = 1000.0
+	     float64 mass = 0.0
 
 	     comp collision = {
 	     	  string type = "box"

@@ -7,7 +7,7 @@ SRC_LIBS := config
 LIBS := glfw vulkan ply tga pthread z BulletDynamics BulletCollision LinearMath
 
 # Finding source files
-C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c")# | sed ':a;N;$!ba;s/\n/ /g')
+C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c" -and -not -name "*_flymake.cpp")# | sed ':a;N;$!ba;s/\n/ /g')
 L_FILES := $(shell find src/ -name "*.l")
 Y_FILES := $(shell find src/ -name "*.y")
 
@@ -64,6 +64,9 @@ shaders.spirv+=$(call shader_target,${1})
 endef
 
 all: Debug
+
+run: Debug
+	./bin/Debug/vkengine
 
 Debug: CFLAGS +=-g -rdynamic -DDEBUG
 Debug: CXXFLAGS +=-g -rdynamic -DDEBUG
