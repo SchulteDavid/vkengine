@@ -164,6 +164,13 @@ class MeshUploader : public ResourceUploader<Mesh> {
 
 };
 
+class MeshLoader : public ResourceLoader<Mesh> {
+
+public:
+  std::shared_ptr<ResourceUploader<Mesh>> loadResource(std::string fname);
+  
+};
+
 std::shared_ptr<Mesh> operator*(Math::Matrix<4,4,float> m, std::shared_ptr<Mesh> mesh);
 
 #endif // MESH_H

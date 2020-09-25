@@ -347,7 +347,7 @@ void from_json(const json & j, gltf_mesh_primitive_t & prim) {
   try {
     j.at("material").get_to(prim.material);
   } catch (std::exception e) {
-    prim.material = 0;
+    prim.material = -1;
   }
   j.at("indices").get_to(prim.indices);
 
@@ -359,6 +359,7 @@ void from_json(const json & j, gltf_mesh_primitive_t & prim) {
 
 struct gltf_mesh_t {
 
+  std::string name;
   std::vector<gltf_mesh_primitive_t> primitives;
   std::unordered_map<std::string, int> attributes;
 
@@ -373,6 +374,8 @@ void from_json(const json & j, gltf_mesh_t & mesh) {
 
     }*/
   j.at("primitives")[0].at("attributes").get_to(mesh.attributes);
+
+  j.at("name").get_to(mesh.name);
 
 }
 
@@ -747,6 +750,8 @@ GLTFLoader::GLTFLoader(vkutil::VulkanState & state, const VkRenderPass & renderP
 
 struct gltf_file_data_t {
 
+  uint32_t rootScene;
+  
   std::vector<gltf_scene_t> scenes;
   std::vector<gltf_node_t> nodes;
   std::vector<gltf_material_t> materials;
@@ -922,6 +927,8 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     data->animations = animations;
     data->skins = skins;
 
+    data->rootScene = sceneID;
+
   } else {
     delete[] binaryBuffer;
   }
@@ -988,6 +995,143 @@ struct gltf_anim_vertex {
   int16_t bones[4];
 
 };
+
+#include "node/nodeloader.h"
+#include "node/meshnode.h"
+
+GLTFNodeLoader::GLTFNodeLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent)
+  : state(state), renderPass(renderPass), swapChainExtent(swapChainExtent) {
+
+}
+
+std::string gltfSubresName(const std::string fname, const std::string name) {
+  std::string resName = fname;
+  return resName.append(":").append(name);
+}
+
+LoadingResource GLTFNodeLoader::loadTexture(gltf_file_data_t & fileData, const int textureId, const std::string fname) {
+
+  gltf_texture_t & texture = fileData.textures[textureId];
+
+  gltf_image_t & image = fileData.images[texture.source];
+
+  uint32_t width, height;
+  std::vector<uint8_t> imageData = gltfLoadPackedImage(fileData.binaryBuffer, fileData.bufferViews[image.bufferView], &width, &height);
+
+  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, imageData, width, height, 1));
+
+  std::string textureName = gltfSubresName(fname, image.name);
+  
+  return this->scheduleSubresource("Texture", textureName, upldr);
+  
+}
+
+LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const int materialId, const std::string fname) {
+
+  gltf_material_t & material = fileData.materials[materialId];
+
+  LoadingResource shader = loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
+
+  LoadingResource colorImg = loadTexture(fileData, material.baseColorTexture.index, fname);
+  LoadingResource normalImg = loadTexture(fileData, material.normalTexture.index, fname);
+  LoadingResource metalImg = loadTexture(fileData, material.metallicRoughnessTexture.index, fname);
+
+  std::vector<LoadingResource> textures = {colorImg, normalImg, metalImg};
+  
+  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shader, textures));
+  
+
+  return scheduleSubresource("Material", gltfSubresName(fname, material.name), upldr);
+  
+}
+
+std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string filename) {
+
+  std::cout << "Loading gltf-node " << nodeId << std::endl;
+  
+  // Fetch node
+  gltf_node_t & node = fileData.nodes[nodeId];
+
+  // create transform
+
+  Transform<float> tmptrans;
+  tmptrans.position = node.translation;
+  tmptrans.rotation = node.rotation;
+  tmptrans.scale = node.scale;
+
+  Transform<double> trans = convertTransform<float, double>(tmptrans);
+
+  std::shared_ptr<NodeUploader> uploader = nullptr;
+  
+  if (node.mesh >= 0) {
+
+    std::cout << "Node " << nodeId << " has a mesh: " << node.mesh << std::endl;
+
+    gltf_mesh_t gltfMesh = fileData.meshes[node.mesh];
+
+    std::shared_ptr<Mesh> mesh = gltfLoadMesh(gltfMesh, fileData.accessors, fileData.bufferViews, fileData.binaryBuffer);
+    std::string meshName = gltfSubresName(filename, gltfMesh.name);
+    LoadingResource meshRes = this->scheduleSubresource("Mesh", meshName, std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
+    std::cout << "MeshRes " << meshRes << std::endl;
+    
+    int materialIndex = gltfMesh.primitives[0].material;
+    std::cout << "Material index " << materialIndex << " materials: " << fileData.materials.size() << std::endl;
+
+    if (materialIndex >= 0) {
+
+      LoadingResource matRes = this->loadMaterial(fileData, materialIndex, filename);
+      uploader = std::make_shared<MeshNodeUploader>(meshRes, matRes, trans);
+
+    } else {
+
+      LoadingResource matRes = this->loadDependency("Material", "resources/materials/gltf_default.mat");
+      uploader = std::make_shared<MeshNodeUploader>(meshRes, matRes, trans);
+      
+    }
+    
+    
+  } else {
+    std::shared_ptr<strc::Node> snode = std::make_shared<strc::Node>(trans);
+    uploader = std::make_shared<NodeUploader>(snode);
+  }
+
+  for (const int id : node.children) {
+
+    std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, id, filename);
+    uploader->addChild(child);
+    
+  }
+
+  return uploader;
+  
+}
+
+std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::string fname) {
+
+  std::cout << "Loading gltf-data as Node" << std::endl;
+  
+  gltf_file_data_t fileData;
+  std::vector<std::shared_ptr<GLTFNode>> nodes = gltfLoadFile(fname, &fileData);
+
+  std::cout << "GLTF-Data is loaded" << std::endl;
+
+  gltf_scene_t scene = fileData.scenes[fileData.rootScene];
+  std::shared_ptr<strc::Node> sceneNode(new strc::Node());
+
+  std::shared_ptr<NodeUploader> sceneUploader = std::make_shared<NodeUploader>(sceneNode);
+  
+  for (int nodeId : scene.nodes) {
+
+    std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, fname);
+    sceneUploader->addChild(child);
+    
+  }
+
+  std::cout << "Loaded GLTF-Node successfully" << std::endl;
+
+  return sceneUploader;
+  
+}
 
 std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::string fname) {
 

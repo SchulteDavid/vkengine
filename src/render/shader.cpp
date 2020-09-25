@@ -415,16 +415,16 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
     vertElements[0].location = 0;
 
     vertElements[1].attributeName = "NORMAL";
-    vertElements[1].location = 12;
+    vertElements[1].location = 1;
 
     vertElements[2].attributeName = "TANGENT";
-    vertElements[2].location = 24;
+    vertElements[2].location = 2;
 
     vertElements[3].attributeName = "TEXCOORD_0";
-    vertElements[3].location = 36;
+    vertElements[3].location = 3;
 
     vertElements[4].attributeName = "MATERIAL_INDEX";
-    vertElements[4].location = 44;
+    vertElements[4].location = 4;
 
     shader->setInputs(vertElements);
 

@@ -10,6 +10,8 @@
 #include <mathutils/vector.h>
 #include <mathutils/quaternion.h>
 
+#include "node/node.h"
+
 class GLTFNode {
 
 public:
@@ -67,6 +69,30 @@ private:
   const VkExtent2D & swapChainExtent;
 
 };
+
+struct gltf_file_data_t;
+
+#include "node/nodeloader.h"
+
+class GLTFNodeLoader : public ResourceLoader<strc::Node> {
+
+public:
+
+  GLTFNodeLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
+  
+  std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname);
+  std::shared_ptr<NodeUploader> loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string fname);
+
+  LoadingResource loadMaterial(gltf_file_data_t & fileData, const int materialId, const std::string fname);
+  LoadingResource loadTexture(gltf_file_data_t & fileData, const int textureId, const std::string fname);
+
+private:
+  vkutil::VulkanState & state;
+  const VkRenderPass & renderPass;
+  const VkExtent2D & swapChainExtent;
+  
+};
+
 struct gltf_file_data_t;
 std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file_data_t * data = nullptr);
 

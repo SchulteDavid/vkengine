@@ -284,11 +284,20 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std:
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, elementSize);
     std::vector<uint8_t> indexData = mesh->getCompactIndices(&indexSizeBytes, &indexCount);
 
+    std::cout << "Data is ok " << indexSizeBytes << std::endl;
+    
     this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
     this->bindingDescription = createInputBindingDescriptions(elementSize);
 
+    std::cout << "Descriptions" << std::endl;
+
+    std::cout << "meshData " << meshData.size() << " bytes" << std::endl;
+    
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
+    std::cout << "Vertex Buffer done" << std::endl;
     this->iBuffer = new IndexBuffer<uint8_t>(state, indexData, indexSizeBytes);
+
+    std::cout << "Buffers are up" << std::endl;
 
     this->vCount = mesh->getVertexCount();
     this->iCount = indexCount;

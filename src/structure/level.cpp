@@ -82,42 +82,42 @@ void Level::addElement(std::shared_ptr<Structure> strc, Placement & p) {
 
 void Level::applyToWorld(std::shared_ptr<World> world, Viewport * view) {
 
-    std::cout << "Level, internal " << this->structs.size() << std::endl;
+  std::cout << "Level, internal " << this->structs.size() << std::endl;
 
-    for (std::shared_ptr<Structure> strc : structs) {
+  for (std::shared_ptr<Structure> strc : structs) {
 
-        RenderElement::Transform initTrans;
-        initTrans.scale = 0.0;
-        initTrans.position = Vector<4,float>();
-        initTrans.qRot = Quaternion<float>(0,0,0,0);
-        std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, strc, initTrans));
+    Transform<float> initTrans;
+    initTrans.scale = Vector<3, float>({1, 1, 1});
+    initTrans.position = Vector<3,float>();
+    initTrans.rotation = Quaternion<float>(0,0,0,0);
+    std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, strc, initTrans));
 
-        view->addRenderElement(rElem);
+    view->addRenderElement(rElem);
 
-        for (Placement & p : placements[strc]) {
+    for (Placement & p : placements[strc]) {
 
-            std::shared_ptr<PhysicsObject> physObj(new PhysicsObject(p.mass, p.pos, p.rot, p.collisionShape));
+      std::shared_ptr<PhysicsObject> physObj(new PhysicsObject(p.mass, p.pos, p.rot, p.collisionShape));
 
-            physObj->setAngularFactor(p.angularFactor);
+      physObj->setAngularFactor(p.angularFactor);
 
-            std::shared_ptr<Entity> entity;
-            if (!p.placeStructure) {
-                entity = Entity::buildEntityFromType(p.entityType, nullptr, (RenderElement::Instance) {0}, physObj);
-            } else {
-                RenderElement::Transform trans;
-                trans.scale = p.scale[0];
-                trans.qRot = Quaternion<float>(p.rot.a, p.rot.b, p.rot.c, p.rot.d);
-                trans.position = Vector<4,float>(p.pos[0], p.pos[1], p.pos[2], 0);
+      std::shared_ptr<Entity> entity;
+      if (!p.placeStructure) {
+	entity = Entity::buildEntityFromType(p.entityType, nullptr, (RenderElement::Instance) {0}, physObj);
+      } else {
+	Transform<float> trans;
+	trans.scale = Vector<3, float>({(float)p.scale[0], (float)p.scale[1], (float)p.scale[2]});
+	trans.rotation = Quaternion<float>(p.rot.a, p.rot.b, p.rot.c, p.rot.d);
+	trans.position = Vector<3, float>({(float)p.pos[0], (float)p.pos[1], (float)p.pos[2]});
 
-                RenderElement::Instance instance = rElem->addInstance(trans);
-                entity = Entity::buildEntityFromType(p.entityType, rElem, instance, physObj);
-            }
+	RenderElement::Instance instance = rElem->addInstance(trans);
+	entity = Entity::buildEntityFromType(p.entityType, rElem, instance, physObj);
+      }
 
-            world->addEntity(entity);
-
-        }
+      world->addEntity(entity);
 
     }
+
+  }
 
 }
 

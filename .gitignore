@@ -15,3 +15,4 @@
 # diff-files
 *.diff
 *.orig
+\#*\#

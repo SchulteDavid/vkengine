@@ -1,6 +1,6 @@
 #include "renderelementanim.h"
 
-RenderElementAnim::RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform & initTransform) : RenderElement(view, strc, initTransform, getShaderBindings(strc->getMaterial())) {
+RenderElementAnim::RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform) : RenderElement(view, strc, initTransform, getShaderBindings(strc->getMaterial())) {
 
     this->skin = strc->getSkin();
 

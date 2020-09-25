@@ -4,6 +4,8 @@
 #include "entity.h"
 #include "physics/physicscontext.h"
 
+class Entity;
+
 class World {
 
     public:
