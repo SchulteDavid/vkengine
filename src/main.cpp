@@ -29,23 +29,37 @@
 static bool run = true;
 static bool wait;
 
-void rotateFunc(std::shared_ptr<World> world, Viewport * view) {
+void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<strc::Node> baseNode) {
   
   auto startRenderTime = std::chrono::high_resolution_clock::now();
+  auto initTime = std::chrono::high_resolution_clock::now();
+
+  Transform<double> originTrans;
   
   while (run){
     auto now = std::chrono::high_resolution_clock::now();
     double dt = std::chrono::duration<double, std::chrono::seconds::period>(now - startRenderTime).count();
     startRenderTime = now;
+
+    double time = std::chrono::duration<double, std::chrono::seconds::period>(now - initTime).count();
+    
     world->simulateStep(dt);
     
     world->synchronize();
     world->update(dt);
     
     view->manageMemoryTransfer();
+
+    Transform<double> trans;
+    trans.position = Math::Vector<3, double>({10*cos(time), 10*sin(time), 0});
     
-    while (wait);
-    wait = true;
+    baseNode->transformSet(trans, originTrans);
+
+    //while (wait)
+    //std::cout << "Waiting" << std::endl;
+      //wait = true;
+
+    //std::cout << "Wait " << wait << std::endl;
     
   }
 
@@ -106,8 +120,8 @@ int main(int argc, char ** argv) {
   }
   
   std::future<std::shared_ptr<Mesh>> futureMesh = generateBackground(noiseFunc,
-								     Math::Vector<3, float>({0,0,0}),
-								     Math::Vector<3, float>({64.0f,64.0f,64.0f}),
+								     Math::Vector<3, float>(0,0,0),
+								     Math::Vector<3, float>(64.0f,64.0f,64.0f),
 								     0.5, 128);
   
   Entity::registerDefaultEntityTypes();
@@ -129,7 +143,7 @@ int main(int argc, char ** argv) {
   
   //LoadingResource treeStruct = resourceManager->loadResourceBg("Structure", "tree.glb");
   //LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
-  LoadingResource node = resourceManager->loadResourceBg("Node", "exports.glb");
+  LoadingResource node = resourceManager->loadResourceBg("Node", "export_anim.glb");
   LoadingResource node2 = resourceManager->loadResourceBg("Node", "tree.glb");
   
   
@@ -159,42 +173,14 @@ int main(int argc, char ** argv) {
   
   std::shared_ptr<World> world(new World());
   
-  //std::shared_ptr<Level> lvl = resourceManager->get<Level>("Level", "resources/level/test.lvl");
-  //lvl->applyToWorld(world, view);
-
-  //std::shared_ptr<Mesh> testMesh = Mesh::loadFromFile("resources/models/cube.ply");
-  
   std::cout << "Adding baseNode to Viewport" << std::endl;
-  std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>("Node", "exports.glb");
+  std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>("Node", "export_anim.glb");
   baseNode->viewportAdd(view);
 
-  /*std::shared_ptr<strc::Node> treeNode = resourceManager->get<strc::Node>("Node", "tree.glb");
-    treeNode->viewportAdd(view);*/
   
-  std::thread rotateThread(rotateFunc, world, view);
+  std::thread rotateThread(rotateFunc, world, view, baseNode);
   
   std::cerr << "Rotate Thread: " << &rotateThread << std::endl;
-  
-  /*std::shared_ptr<Mesh> m = resourceManager->get<Mesh>("Mesh", "tree.glb");
-    m->saveAsPLY("sheep.ply");*/
-  
-  /*int rElemCount = 0;
-  Transform<float> initTrans;
-  initTrans.position = Math::Vector<3, float>({0, 1, 0});
-  initTrans.scale = Math::Vector<3, float>({1,1,1});
-  initTrans.rotation = Math::Quaternion<float>(1,0,0,0);
-  std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, resourceManager->get<Structure>("Structure", "tree.glb"), initTrans));
-  
-  view->addRenderElement(rElem);
-  
-  while (rElemCount < 2) {
-    Transform<float> initTrans;
-    initTrans.position = Math::Vector<3, float>({rElemCount * 3.0f, 1, 0});
-    initTrans.scale = Math::Vector<3, float>({1,1,1});
-    initTrans.rotation = Math::Quaternion<float>(1,0,0,0);
-    rElem->addInstance(initTrans);
-    rElemCount++;
-    }*/
   
   while (!glfwWindowShouldClose(window->getGlfwWindow())) {
     

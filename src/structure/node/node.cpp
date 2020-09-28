@@ -13,6 +13,7 @@ Node::Node() : Node(Transform<double>()) {
 Node::Node(Transform<double> transform) {
 
   this->transform = transform;
+  this->globalTransform = transform;
   
 }
 
@@ -25,6 +26,12 @@ void Node::addChild(std::shared_ptr<Node> child) {
     throw dbg::trace_exception("Trying to add null-child to node");
   }
   this->children.push_back(child);
+}
+
+void Node::setParentTransform(Transform<double> ptrans) {
+
+  this->globalTransform = ptrans * transform;
+  
 }
 
 const std::vector<std::shared_ptr<Node>> & Node::getChildren() {
@@ -55,6 +62,33 @@ std::shared_ptr<NodeUploader> loadDefaultNode(std::shared_ptr<config::NodeCompou
   
   return std::make_shared<NodeUploader>(node);
   
+}
+
+void Node::transformSet(Transform<double> trans, Transform<double> ptrans) {
+
+  this->transform = trans;
+  this->globalTransform = ptrans * trans;
+
+  this->setTransform(trans);
+
+  for (std::shared_ptr<Node> child : children) {
+    child->transformSet(trans, globalTransform);
+  }
+  
+}
+
+void Node::setTransform(Transform<double> trans) {
+
+  this->transform = trans;
+  
+}
+
+const Transform<double> & Node::getTransform() {
+  return transform;
+}
+
+const Transform<double> & Node::getGlobalTransform() {
+  return globalTransform;
 }
 
 #include "meshnode.h"

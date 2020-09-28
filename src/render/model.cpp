@@ -26,7 +26,7 @@ std::vector<VkVertexInputBindingDescription> Model::Vertex::getBindingDescriptio
 
 std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(std::vector<InterleaveElement> elements, std::shared_ptr<Mesh> mesh) {
 
-    std::vector<VkVertexInputAttributeDescription> descriptions(elements.size() + 4); // +4 for instance transform matrix data
+    std::vector<VkVertexInputAttributeDescription> descriptions(elements.size()); // +4 for instance transform matrix data
 
     for (unsigned int i = 0; i < elements.size(); ++i) {
 
@@ -93,9 +93,10 @@ std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(
 
     }
 
+    /// TODO : Move into InstancedRenderElement
     /// binding instance transform matrix data
 
-    descriptions[elements.size()].binding = 1;
+    /*descriptions[elements.size()].binding = 1;
     descriptions[elements.size()].location = elements.size();
     descriptions[elements.size()].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     descriptions[elements.size()].offset = 0;
@@ -113,7 +114,7 @@ std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(
     descriptions[elements.size()+3].binding = 1;
     descriptions[elements.size()+3].location = elements.size()+3;
     descriptions[elements.size()+3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[elements.size()+3].offset = 3*sizeof(glm::vec4);
+    descriptions[elements.size()+3].offset = 3*sizeof(glm::vec4);*/
 
     return descriptions;
 
@@ -126,12 +127,13 @@ std::vector<VkVertexInputBindingDescription> createInputBindingDescriptions(size
     description.stride = stride;
     description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    VkVertexInputBindingDescription instances = {};
+    /// TODO : move into InstacedRenderElement
+    /*VkVertexInputBindingDescription instances = {};
     instances.binding = 1;
     instances.stride = sizeof(glm::mat4);
-    instances.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+    instances.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;*/
 
-    std::vector<VkVertexInputBindingDescription> bindings = {description, instances};
+    std::vector<VkVertexInputBindingDescription> bindings = {description};//,instances};
 
     return bindings;
 

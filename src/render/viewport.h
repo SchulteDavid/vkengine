@@ -68,6 +68,8 @@ class Viewport : public MemoryTransferHandler
 
         void updateUniformBuffer(uint32_t frameIndex);
 
+  void recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIndex);
+
     private:
 
         struct SwapchainInfo : vkutil::SwapChain {

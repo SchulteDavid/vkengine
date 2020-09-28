@@ -29,9 +29,9 @@ void Entity::synchronize() {
 
     if (!renderElement) return;
 
-    Transform trans;
-    float tmp[4] = {(float) physObject->position[0], (float) physObject->position[1], (float) physObject->position[2], 0.0};
-    trans.position = Math::Vector<4, float>(tmp);
+    Transform<float> trans;
+    float tmp[3] = {(float) physObject->position[0], (float) physObject->position[1], (float) physObject->position[2]};
+    trans.position = Math::Vector<3, float>(tmp);
     trans.rotation = Math::Quaternion<float>(physObject->rotation.a, physObject->rotation.b, physObject->rotation.c, physObject->rotation.d);
     trans.scale = Math::Vector<3, float>({1,1,1});
 

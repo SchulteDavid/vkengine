@@ -48,4 +48,15 @@ template <typename T> std::ostream & operator<<(std::ostream & stream, Transform
   
 }
 
+template <typename T> inline Transform<T> operator*(const Transform<T> & t1, const Transform<T> & t2) {
+
+  Transform<T> res;
+  res.position = t1.position + t2.position;
+  res.rotation = t2.rotation * t1.rotation;
+  res.scale = Math::compMultiply(t1.scale, t2.scale);
+
+  return res;
+  
+}
+
 #endif

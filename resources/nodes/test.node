@@ -1,0 +1,35 @@
+string type = "Node"
+
+comp transform = {
+     float64 position = [0,0,0]
+     float64 rotation = [1,0,0,0]
+     float64 scale = [1,1,1]
+}
+
+comp children = [
+
+     {
+	string type = "MeshNode"
+
+	comp transform = {
+	     float64 position = [0,12,0]
+	     float64 rotation = [1,0,0,0]
+     	     float64 scale = [1,1,1]
+	}
+
+	string meshfile = "tree.glb"
+	string matfile = "resources/materials/test.mat"
+	
+     },
+     {
+	string type = "LightNode"
+	comp transform = {
+	     float64 position = [0,11,0]
+	     float64 rotation = [1,0,0,0]
+     	     float64 scale = [1,1,1]
+	}
+	int32 lighttype = 1
+	float32 power = 3.0
+     }
+
+]

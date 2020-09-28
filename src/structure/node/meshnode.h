@@ -5,6 +5,7 @@
 
 #include "util/mesh.h"
 #include "render/material.h"
+#include "render/renderelement.h"
 
 #include "nodeloader.h"
 
@@ -23,11 +24,16 @@ namespace strc {
 
     void addToWorld(std::shared_ptr<World> world) override;
     void addToViewport(Viewport * view) override;
+
+    void setTransform(Transform<double> trans) override;
     
   private:
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Model> model;
     std::shared_ptr<Material> material;
+    std::shared_ptr<RenderElement> renderElement;
+
+    RenderElement::Instance instance;
   
   };
 

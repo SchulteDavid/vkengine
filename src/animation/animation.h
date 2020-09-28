@@ -4,11 +4,11 @@
 #include <mathutils/quaternion.h>
 #include <mathutils/vector.h>
 
+#include "util/transform.h"
+
 struct Keyframe {
 
-    std::vector<Math::Quaternion<float>> rotations;
-    std::vector<Math::Vector<3, float>> offsets;
-    double t;
+  Transform<double> transform;
 
 };
 

@@ -208,6 +208,8 @@ void Viewport::drawFrame(bool updateElements) {
 
     }
 
+    recordSingleBuffer(commandBuffers[imageIndex], imageIndex);
+
     switch(result) {
 
     case VK_SUBOPTIMAL_KHR:
@@ -1046,72 +1048,78 @@ vkutil::VulkanState & Viewport::getState() {
     return state;
 }
 
+void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIndex) {
+
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+  beginInfo.pInheritanceInfo = nullptr;
+  
+  if (vkBeginCommandBuffer(buffer, &beginInfo) != VK_SUCCESS)
+    throw dbg::trace_exception("Unable to start recording to command buffer");
+  
+  VkRenderPassBeginInfo renderPassInfo = {};
+  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+  renderPassInfo.renderPass = renderPass;
+  renderPassInfo.framebuffer = swapchain.framebuffers[frameIndex];
+  renderPassInfo.renderArea.offset = {0,0};
+  renderPassInfo.renderArea.extent = swapchain.extent;
+  
+  std::array<VkClearValue, 5> clearValues;
+  clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+  clearValues[1].depthStencil = {1.0f, 0};
+  clearValues[2].color = {0.0f, 0.0f, 0.0f};
+  clearValues[3].color = {0.0f, 0.0f, 0.0f};
+  clearValues[4].color = {0.0f, 0.0f, 0.0f};
+  renderPassInfo.clearValueCount = clearValues.size();
+  renderPassInfo.pClearValues = clearValues.data();
+  
+  vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+  
+  /*for (unsigned int j = 0; j < renderElements.size(); ++j) {
+    
+    renderElements[j]->render(commandBuffers[i], i);
+    
+    }*/
+  
+  for (auto it : renderElementsByShader) {
+    
+    vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
+    vkCmdPushConstants(buffer, it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
+    
+    for (std::shared_ptr<RenderElement> relem : it.second) {
+      
+      relem->renderShaderless(buffer, frameIndex);
+      
+    }
+    
+  }
+  
+  vkCmdNextSubpass(buffer, VK_SUBPASS_CONTENTS_INLINE);
+  
+  vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipeline);
+  
+  ppBufferModel->bindForRender(buffer);
+  
+  vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipelineLayout, 0, 1, &ppDescSets[frameIndex], 0, nullptr);
+  
+  vkCmdDrawIndexed(buffer, ppBufferModel->getIndexCount(), 1, 0, 0, 0);
+  
+  vkCmdEndRenderPass(buffer);
+  
+  if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
+    throw dbg::trace_exception("Unable to record command buffer");
+  
+  
+}
+
 void Viewport::recordCommandBuffers() {
 
 
-    for (unsigned int i = 0; i < commandBuffers.size(); ++i) {
+  for (unsigned int i = 0; i < commandBuffers.size(); ++i) {
 
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-        beginInfo.pInheritanceInfo = nullptr;
-
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS)
-            throw dbg::trace_exception("Unable to start recording to command buffer");
-
-        VkRenderPassBeginInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapchain.framebuffers[i];
-        renderPassInfo.renderArea.offset = {0,0};
-        renderPassInfo.renderArea.extent = swapchain.extent;
-
-        std::array<VkClearValue, 5> clearValues;
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-        clearValues[1].depthStencil = {1.0f, 0};
-        clearValues[2].color = {0.0f, 0.0f, 0.0f};
-        clearValues[3].color = {0.0f, 0.0f, 0.0f};
-        clearValues[4].color = {0.0f, 0.0f, 0.0f};
-        renderPassInfo.clearValueCount = clearValues.size();
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        /*for (unsigned int j = 0; j < renderElements.size(); ++j) {
-
-            renderElements[j]->render(commandBuffers[i], i);
-
-        }*/
-
-        for (auto it : renderElementsByShader) {
-
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
-            vkCmdPushConstants(commandBuffers[i], it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
-
-            for (std::shared_ptr<RenderElement> relem : it.second) {
-
-                relem->renderShaderless(commandBuffers[i], i);
-
-            }
-
-        }
-
-        vkCmdNextSubpass(commandBuffers[i], VK_SUBPASS_CONTENTS_INLINE);
-
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipeline);
-
-        ppBufferModel->bindForRender(commandBuffers[i]);
-
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipelineLayout, 0, 1, &ppDescSets[i], 0, nullptr);
-
-        vkCmdDrawIndexed(commandBuffers[i], ppBufferModel->getIndexCount(), 1, 0, 0, 0);
-
-        vkCmdEndRenderPass(commandBuffers[i]);
-
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
-            throw dbg::trace_exception("Unable to record command buffer");
-
-    }
+    recordSingleBuffer(commandBuffers[i], i);
+  }
 
 }
 

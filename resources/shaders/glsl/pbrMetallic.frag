@@ -40,6 +40,7 @@ void main() {
     //outColor.a = texture(specularMap, uvPos).r;
     outColor.a = texture(textures[3 * matIndex + 2], uvPos).b;
 
+
     //outColor = vec4(1);
 
 }

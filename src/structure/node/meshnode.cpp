@@ -58,18 +58,27 @@ std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
 void MeshNode::addToViewport(Viewport * view) {
 
   std::cout << "Adding MeshNode to Viewport" << std::endl;
-  
+
   Transform<float> vTransform = convertTransform<double, float>(transform);
   std::cout << "Building RenderElement at position " << vTransform << std::endl;
-  std::shared_ptr<Model> tmpModel = buildModel(view->getState());
-  std::cout << "Model " << tmpModel << std::endl;
-  std::shared_ptr<RenderElement> rElem(RenderElement::buildRenderElement(view, tmpModel, material, vTransform));
-  std::cout << "Adding RenderElement for MeshNode " << rElem << std::endl;
-  view->addRenderElement(rElem);
+  
+  if (!this->renderElement) {
+    std::shared_ptr<Model> tmpModel = buildModel(view->getState());
+    renderElement = std::shared_ptr<RenderElement>(RenderElement::buildRenderElement(view, tmpModel, material, vTransform));
+    view->addRenderElement(renderElement);
+  }
 
-  rElem->addInstance(vTransform);
+  instance = renderElement->addInstance(vTransform);
   
-  
+}
+
+void MeshNode::setTransform(Transform<double> trans) {
+
+  if (!this->renderElement) return;
+
+  Transform<float> vTransform = convertTransform<double, float>(globalTransform);
+
+  this->renderElement->updateInstance(instance, vTransform);
 }
 
 MeshNodeUploader::MeshNodeUploader(LoadingResource mesh, LoadingResource material, Transform<double> transform) {

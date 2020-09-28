@@ -40,6 +40,7 @@ public:
   struct Instance {
     uint32_t id;
   };
+  
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform);
   RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform);
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, std::vector<Shader::Binding> binds);
@@ -51,9 +52,9 @@ public:
   virtual void render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex);
   virtual void renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex);
 
-  Instance addInstance(Transform<float> & trans);
-  void updateInstance(Instance & instance, Transform<float> & trans);
-  void deleteInstance(Instance & instance);
+  virtual Instance addInstance(Transform<float> & trans);
+  virtual void updateInstance(Instance & instance, Transform<float> & trans);
+  virtual void deleteInstance(Instance & instance);
 
   virtual void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings);
   virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
@@ -65,7 +66,7 @@ public:
   std::vector<VkDescriptorSet> & getDescriptorSets();
   std::vector<VmaAllocation> & getMemories();
 
-  bool needsDrawCmdUpdate();
+  virtual bool needsDrawCmdUpdate();
 
   void recordTransfer(VkCommandBuffer & cmdBuffer);
   bool reusable();
@@ -87,20 +88,10 @@ protected:
   std::vector<VmaAllocation> uniformBuffersMemory;
 
   std::vector<Shader::Binding> binds;
+  Transform<float> transform;
 
-  bool instanceBufferDirty;
-  bool instanceCountUpdated;
-
-private:
-
-  struct InstanceInfo {
-
-    uint32_t id;
-    uint32_t pos;
-
-  };
-
-  void constructBuffers(int scSize);
+  virtual void constructBuffers(int scSize);
+  void markBufferDirty();
 
   std::shared_ptr<Model> model;
   std::shared_ptr<Shader> shader;
@@ -110,16 +101,9 @@ private:
   VkPipeline pipeline;
   VkPipelineLayout pipelineLayout;
 
-  DynamicBuffer<glm::mat4> * instanceBuffer;
-  std::vector<glm::mat4> instanceTransforms;
-  std::unordered_map<uint32_t, InstanceInfo> instances;
-  std::vector<Transform<float>> transforms;
-  uint32_t instanceCount;
-
-  std::mutex transformBufferMutex;
+private:
 
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform<float> & initTransform);
-  void markBufferDirty();
 
 
 };
