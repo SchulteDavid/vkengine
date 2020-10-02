@@ -134,8 +134,6 @@ VkDescriptorPool Shader::setupDescriptorPool(int scSize, std::vector<Binding> & 
 
     Binding b = binds[i];
     VkDescriptorPoolSize poolSize;
-
-    std::cout << "Creating poolSize for binding " << b.bindingId << " of type " << b.type << " and size " << b.elementCount << std::endl;
     
     switch (b.type) {
 
@@ -254,8 +252,6 @@ VkDescriptorPool Shader::setupDescriptorPool(int scSize, std::vector<Binding> & 
   }*/
 
 std::vector<VkDescriptorSet> Shader::createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<Binding> & binds, std::vector<std::shared_ptr<Texture>> & tex, int scSize) {
-
-  std::cout << "Creating descriptor sets" << std::endl;
 
   if (descPool == VK_NULL_HANDLE)
     throw dbg::trace_exception("Cannot create descriptor in NULL-pool!");

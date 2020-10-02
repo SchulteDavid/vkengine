@@ -11,135 +11,146 @@
 #include "renderelement.h"
 #include "camera.h"
 
-class Viewport : public MemoryTransferHandler
-{
-    public:
-        Viewport(std::shared_ptr<Window> window, Camera * camera);
-        virtual ~Viewport();
+class Viewport : public MemoryTransferHandler {
+public:
+  Viewport(std::shared_ptr<Window> window, Camera * camera);
+  virtual ~Viewport();
 
-        struct LightData {
+  struct LightData {
 
-            int32_t activeCount;
-            alignas(16) glm::vec4 position[32];
-            alignas(16) glm::vec4 color[32];
+    int32_t activeCount;
+    alignas(16) glm::vec4 position[32];
+    alignas(16) glm::vec4 color[32];
 
-        };
+  };
 
-        struct CameraData;
+  struct CameraData;
 
-        void drawFrame(bool updateElements = true);
+  void drawFrame(bool updateElements = true);
 
-        vkutil::VulkanState & getState();
-        const VkRenderPass & getRenderpass();
-        const VkExtent2D & getSwapchainExtent();
-        unsigned int getSwapchainSize();
+  vkutil::VulkanState & getState();
+  const VkRenderPass & getRenderpass();
+  const VkExtent2D & getSwapchainExtent();
+  unsigned int getSwapchainSize();
 
-        void addRenderElement(std::shared_ptr<RenderElement> rElem);
+  void addRenderElement(std::shared_ptr<RenderElement> rElem);
 
-        void addLight(glm::vec4 pos, glm::vec4 color);
+  void addLight(glm::vec4 pos, glm::vec4 color);
 
-        void manageMemoryTransfer();
+  void manageMemoryTransfer();
 
-        Camera * getCamera();
+  Camera * getCamera();
 
-    protected:
+protected:
 
-        void setupRenderPass();
-        void createPPObjects();
-        void destroyPPObjects();
+  void setupRenderPass();
+  void createPPObjects();
+  void destroyPPObjects();
 
-        void createPpDescriptorSetLayout();
-        void createPpDescriptorPool();
-        void createPPDescriptorSets();
+  void createPpDescriptorSetLayout();
+  void createPpDescriptorPool();
+  void createPPDescriptorSets();
 
-        void setupPostProcessingPipeline();
-        void setupFramebuffers();
+  void setupPostProcessingPipeline();
+  void setupFramebuffers();
 
-        void destroySwapChain();
-        void recreateSwapChain();
+  void destroySwapChain();
+  void recreateSwapChain();
 
-        void recordCommandBuffers();
-        void setupCommandBuffers();
-        void createSyncObjects();
+  void recordCommandBuffers();
+  void setupCommandBuffers();
+  void createSyncObjects();
 
-        void createTransferCommandBuffer();
+  void createTransferCommandBuffer();
 
-        void prepareRenderElements();
+  void prepareRenderElements();
 
-        void updateUniformBuffer(uint32_t frameIndex);
+  void updateUniformBuffer(uint32_t frameIndex);
 
   void recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIndex);
 
-    private:
+private:
 
-        struct SwapchainInfo : vkutil::SwapChain {
+  struct SwapchainInfo : vkutil::SwapChain {
 
-            std::vector<VkFramebuffer> framebuffers;
-            std::vector<VkImageView> imageViews;
+    std::vector<VkFramebuffer> framebuffers;
+    std::vector<VkImageView> imageViews;
 
 
-        } swapchain;
+  } swapchain;
 
-        vkutil::VulkanState & state;
+  vkutil::VulkanState & state;
 
-        Camera * camera;
-        bool framebufferResized;
+  Camera * camera;
+  bool framebufferResized;
 
-        Window * window;
-        VkRenderPass renderPass;
+  Window * window;
+  VkRenderPass renderPass;
 
-        VkImage depthImage;
-        VkImageView depthImageView;
-        VmaAllocation depthImageMemory;
+  VkImage depthImage;
+  VkImageView depthImageView;
+  VmaAllocation depthImageMemory;
 
-        VkImage gBufferImage;
-        VkImageView gBufferImageView;
-        VmaAllocation gBufferImageMemory;
+  VkImage gBufferImage;
+  VkImageView gBufferImageView;
+  VmaAllocation gBufferImageMemory;
 
-        VkImage nBufferImage;
-        VkImageView nBufferImageView;
-        VmaAllocation nBufferImageMemory;
+  VkImage nBufferImage;
+  VkImageView nBufferImageView;
+  VmaAllocation nBufferImageMemory;
 
-        VkImage aBufferImage;
-        VkImageView aBufferImageView;
-        VmaAllocation aBufferImageMemory;
+  VkImage aBufferImage;
+  VkImageView aBufferImageView;
+  VmaAllocation aBufferImageMemory;
 
-        std::vector<VkBuffer> ppLightBuffers;
-        std::vector<VmaAllocation> ppLightBuffersMemory;
-        std::vector<VkBuffer> ppCameraBuffers;
-        std::vector<VmaAllocation> ppCameraBuffersMemory;
+  std::vector<VkBuffer> ppLightBuffers;
+  std::vector<VmaAllocation> ppLightBuffersMemory;
+  std::vector<VkBuffer> ppCameraBuffers;
+  std::vector<VmaAllocation> ppCameraBuffersMemory;
 
-        VkDescriptorSetLayout ppDescLayout;
-        VkDescriptorPool ppDescPool;
-        std::vector<VkDescriptorSet> ppDescSets;
+  VkDescriptorSetLayout ppDescLayout;
+  VkDescriptorPool ppDescPool;
+  std::vector<VkDescriptorSet> ppDescSets;
 
-        VkPipelineLayout ppPipelineLayout;
-        VkPipeline ppPipeline;
+  VkPipelineLayout ppPipelineLayout;
+  VkPipeline ppPipeline;
 
-        std::vector<VkCommandBuffer> commandBuffers;
-        VkCommandBuffer transferCmdBuffer;
+  std::vector<VkCommandBuffer> commandBuffers;
+  VkCommandBuffer transferCmdBuffer;
 
-        std::vector<VkSemaphore> imageAvailableSemaphores;
-        std::vector<VkSemaphore> renderFinishedSemaphores;
-        unsigned int frameIndex;
-        std::vector<VkFence> inFlightFences;
-        VkFence transferFence;
+  std::vector<VkSemaphore> imageAvailableSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
+  unsigned int frameIndex;
+  std::vector<VkFence> inFlightFences;
+  VkFence transferFence;
 
-        std::shared_ptr<Model> ppBufferModel;
+  std::shared_ptr<Model> ppBufferModel;
 
-        uint32_t lightDataModified;
-        LightData lights;
-        unsigned int lightIndex;
+  uint32_t lightDataModified;
+  LightData lights;
+  unsigned int lightIndex;
 
-        UniformBufferObject ubo;
+  UniformBufferObject ubo;
 
-        std::vector<std::shared_ptr<RenderElement>> renderElements;
-        std::unordered_map<Shader *, std::vector<std::shared_ptr<RenderElement>>> renderElementsByShader;
+  std::vector<std::shared_ptr<RenderElement>> renderElements;
+  std::unordered_map<Shader *, std::vector<std::shared_ptr<RenderElement>>> renderElementsByShader;
 
-        std::queue<SwapchainInfo> destroyableSwapchains;
+  std::queue<SwapchainInfo> destroyableSwapchains;
 
-        bool isLightDataModified(uint32_t imageIndex);
-        void markLightDataCorrect(uint32_t imageIndex);
+  bool isLightDataModified(uint32_t imageIndex);
+  void markLightDataCorrect(uint32_t imageIndex);
+
+  
+
+  void createSecondaryBuffers();
+
+  void renderIntoSecondary();
+  
+  VkCommandPool secondaryPool;
+  std::queue<VkCommandBuffer> useableBuffers;
+  VkCommandBuffer bufferToSubmit;
+  std::vector<VkCommandBuffer> secondaryBuffers;
+  std::mutex secondaryBufferMutex;
 
 };
 

@@ -61,8 +61,6 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 }
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform) : state(view->getState()), MemoryTransferer(*view) {
-
-  std::cout << "Creating RenderElement" << std::endl;
   
   std::vector<Shader::Binding> binds;
 
@@ -72,8 +70,6 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   uniformBufferBinding.bindingId = 0;
   uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
   binds.push_back(uniformBufferBinding);
-
-  std::cout << "Material has " << mat->getTextures().size() << " textures" << std::endl;
     
   if (mat->getTextures().size()) {
     Shader::Binding textureBinding;
@@ -168,9 +164,6 @@ RenderElement::~RenderElement() {
 
 void RenderElement::constructBuffers(int scSize) {
 
-  //std::cout << "Material " << this->material << std::endl;
-
-  std::cout << "Constricting buffers" << std::endl;
   //this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
   this->createUniformBuffers(scSize, this->binds);
 
@@ -375,7 +368,6 @@ RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_p
 RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform) {
 
   RenderElement * rElem = new RenderElement(view, model, material, view->getSwapchainSize(), initTransform);
-  std::cout << "RenderElement at " << rElem << std::endl;
   rElem->constructBuffers(view->getSwapchainSize());
   return rElem;
 

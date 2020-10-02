@@ -185,7 +185,7 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
 
         std::cout << matUploader << std::endl;
 
-        LoadingResource materialRes = this->scheduleSubresource("Material", matName, matUploader);
+        LoadingResource materialRes = this->scheduleSubresource(ResourceLocation("Material", matName), matUploader);
 
         std::cout << "Loading elements from file" << std::endl;
 
@@ -248,7 +248,7 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
         //Model * model = new Model(state, mesh, vertElements, sizeof(Model::Vertex));
 
         std::shared_ptr<ResourceUploader<Resource>> modelUploader((ResourceUploader<Resource> *) new MeshUploader(mesh));
-        modelRes = this->scheduleSubresource("Mesh", matName, modelUploader);
+        modelRes = this->scheduleSubresource(ResourceLocation("Mesh", matName), modelUploader);
 
         StructureUploader * uploader = new StructureUploader(modelRes, materialRes, mesh);
         std::cout << "Uploader : " << uploader << std::endl;

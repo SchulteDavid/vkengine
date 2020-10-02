@@ -227,7 +227,7 @@ std::shared_ptr<ResourceUploader<Level>> LevelLoader::loadResource(std::string f
         std::string strcName(elem->getNode<char>("structure")->getRawData());
         std::string entityType(elem->getNode<char>("entityType")->getRawData());
 
-        LoadingResource strcRes = this->loadDependency("Structure", strcName);
+        LoadingResource strcRes = this->loadDependency(ResourceLocation("Structure", strcName));
         structureResources[i] = strcRes;
 
         std::shared_ptr<NodeCompound> trans = elem->getNodeCompound("transform");

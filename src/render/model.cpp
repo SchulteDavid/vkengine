@@ -239,6 +239,8 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
     this->vCount = verts.size();
     this->iCount = indices.size();
 
+    status = STATUS_UNDEFINED;
+
 }
 
 Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
@@ -276,6 +278,8 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
     this->vCount = mesh->getVertexCount();
     this->iCount = indexCount;
 
+    status = STATUS_UNDEFINED;
+
 }
 
 Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize) {
@@ -285,30 +289,24 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std:
 
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, elementSize);
     std::vector<uint8_t> indexData = mesh->getCompactIndices(&indexSizeBytes, &indexCount);
-
-    std::cout << "Data is ok " << indexSizeBytes << std::endl;
     
     this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
     this->bindingDescription = createInputBindingDescriptions(elementSize);
 
-    std::cout << "Descriptions" << std::endl;
-
-    std::cout << "meshData " << meshData.size() << " bytes" << std::endl;
     
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
-    std::cout << "Vertex Buffer done" << std::endl;
     this->iBuffer = new IndexBuffer<uint8_t>(state, indexData, indexSizeBytes);
-
-    std::cout << "Buffers are up" << std::endl;
 
     this->vCount = mesh->getVertexCount();
     this->iCount = indexCount;
+
+    status = STATUS_UNDEFINED;
 
 }
 
 Model::~Model() {
 
-    std::cout << "Deleting model" << std::endl;
+  //std::cout << "Deleting model" << std::endl;
 
     delete iBuffer;
     delete vBuffer;
@@ -335,8 +333,13 @@ Model * Model::loadFromFile(const vkutil::VulkanState & state, std::string fname
 
 void Model::uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const vkutil::Queue & q) {
 
+  if (status & STATUS_UPLOADED)
+    return;
+  
     this->vBuffer->upload(device, commandPool, q);
     this->iBuffer->upload(device, commandPool, q);
+
+    status = STATUS_UPLOADED;
 
 }
 

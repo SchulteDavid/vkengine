@@ -28,12 +28,6 @@ void Node::addChild(std::shared_ptr<Node> child) {
   this->children.push_back(child);
 }
 
-void Node::setParentTransform(Transform<double> ptrans) {
-
-  this->globalTransform = ptrans * transform;
-  
-}
-
 const std::vector<std::shared_ptr<Node>> & Node::getChildren() {
   return children;
 }
@@ -64,23 +58,33 @@ std::shared_ptr<NodeUploader> loadDefaultNode(std::shared_ptr<config::NodeCompou
   
 }
 
-void Node::transformSet(Transform<double> trans, Transform<double> ptrans) {
+void Node::setTransform(Transform<double> trans) {
+
+  this->transform = trans;
+  this->globalTransform = trans;
+
+  this->onTransformUpdate();
+
+  for (std::shared_ptr<Node> child : children) {
+    child->setTransform(trans, globalTransform);
+  }
+  
+}
+void Node::setTransform(Transform<double> trans, Transform<double> ptrans) {
 
   this->transform = trans;
   this->globalTransform = ptrans * trans;
 
-  this->setTransform(trans);
+  this->onTransformUpdate();
 
   for (std::shared_ptr<Node> child : children) {
-    child->transformSet(trans, globalTransform);
+    child->setTransform(trans, globalTransform);
   }
   
 }
 
-void Node::setTransform(Transform<double> trans) {
+void Node::onTransformUpdate() {
 
-  this->transform = trans;
-  
 }
 
 const Transform<double> & Node::getTransform() {

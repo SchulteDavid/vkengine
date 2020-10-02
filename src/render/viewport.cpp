@@ -76,6 +76,9 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 
     ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
 
+
+    createSecondaryBuffers();
+    
     recordCommandBuffers();
 
     this->lightDataModified = false;
@@ -196,7 +199,7 @@ void Viewport::drawFrame(bool updateElements) {
     if (updateElements)
         prepareRenderElements();
 
-    vkWaitForFences(state.device, 1, &inFlightFences[frameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+    vkWaitForFences(state.device, 1, &inFlightFences[(frameIndex-(MAX_FRAMES_IN_FLIGHT-1))%MAX_FRAMES_IN_FLIGHT], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 
     uint32_t imageIndex = 0;
@@ -208,7 +211,12 @@ void Viewport::drawFrame(bool updateElements) {
 
     }
 
+    //auto recordStartTime = std::chrono::high_resolution_clock::now();
     recordSingleBuffer(commandBuffers[imageIndex], imageIndex);
+    //auto recordEndTime = std::chrono::high_resolution_clock::now();
+
+    //double recordTime = std::chrono::duration<double, std::chrono::milliseconds::period>(recordEndTime - recordStartTime).count();
+    //std::cout << "Recording took " << recordTime << " ms" << std::endl; 
 
     switch(result) {
 
@@ -1050,6 +1058,11 @@ vkutil::VulkanState & Viewport::getState() {
 
 void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIndex) {
 
+  vkResetCommandBuffer(buffer, 0);
+
+  /// TODO: move to another thread.
+  renderIntoSecondary();
+  
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -1074,7 +1087,7 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   renderPassInfo.clearValueCount = clearValues.size();
   renderPassInfo.pClearValues = clearValues.data();
   
-  vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+  vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
   
   /*for (unsigned int j = 0; j < renderElements.size(); ++j) {
     
@@ -1082,7 +1095,7 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
     
     }*/
   
-  for (auto it : renderElementsByShader) {
+  /*for (auto it : renderElementsByShader) {
     
     vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
     vkCmdPushConstants(buffer, it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
@@ -1093,7 +1106,10 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
       
     }
     
-  }
+    }*/
+  secondaryBufferMutex.lock();
+  vkCmdExecuteCommands(buffer, 1, &bufferToSubmit);
+  secondaryBufferMutex.unlock();
   
   vkCmdNextSubpass(buffer, VK_SUBPASS_CONTENTS_INLINE);
   
@@ -1135,4 +1151,88 @@ void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
     this->lightDataModified = 0xffffffff;
 
+}
+
+#include "util/vk_trace_exception.h"
+
+void Viewport::createSecondaryBuffers() {
+
+  this->secondaryPool = vkutil::createSecondaryCommandPool(state.physicalDevice, state.device, state.surface);
+
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+  allocInfo.commandPool = secondaryPool;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+
+  secondaryBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+  
+  if (VkResult res = vkAllocateCommandBuffers(state.device, &allocInfo, secondaryBuffers.data()))
+    throw vkutil::vk_trace_exception("Failed to allocate command buffers", res);
+
+
+  for (VkCommandBuffer buffer : secondaryBuffers) {
+    useableBuffers.push(buffer);
+  }
+  
+}
+
+void Viewport::renderIntoSecondary() {
+
+  /// Get the next usable buffer.
+
+  std::cout << "Useable Buffers " << useableBuffers.size() << std::endl;
+  
+  secondaryBufferMutex.lock();
+  VkCommandBuffer buffer = useableBuffers.front();
+  useableBuffers.pop();
+  secondaryBufferMutex.unlock();
+
+  std::cout << "Buffer " << buffer << std::endl;
+
+  /// Reset the buffer
+
+  vkResetCommandBuffer(buffer, 0);
+
+  VkCommandBufferInheritanceInfo inheritanceInfo = {};
+  inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+  inheritanceInfo.renderPass = renderPass;
+  inheritanceInfo.framebuffer = VK_NULL_HANDLE;
+  inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+  beginInfo.pInheritanceInfo = &inheritanceInfo;
+  
+  if (vkBeginCommandBuffer(buffer, &beginInfo) != VK_SUCCESS)
+    throw dbg::trace_exception("Unable to start recording to command buffer");
+
+  /// Record the rendering commands
+  for (auto it : renderElementsByShader) {
+    
+    vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
+    vkCmdPushConstants(buffer, it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
+    
+    for (std::shared_ptr<RenderElement> relem : it.second) {
+      
+      relem->renderShaderless(buffer, frameIndex);
+      
+    }
+    
+  }
+
+  if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
+    throw dbg::trace_exception("Unable to record command buffer");
+
+  /// Submit the resulting buffer as the current state
+  secondaryBufferMutex.lock();
+  // resuse the old buffer
+  if (bufferToSubmit)
+    useableBuffers.push(bufferToSubmit);
+  // Set the new one as current.
+  this->bufferToSubmit = buffer;
+  secondaryBufferMutex.unlock();
+  
+  
 }

@@ -23,6 +23,7 @@
 #include "util/mesh/marchingcubes.h"
 #include "util/transform.h"
 #include "structure/node/node.h"
+#include "structure/node/meshnode.h"
 #include "structure/node/nodeloader.h"
 
 
@@ -53,7 +54,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
     Transform<double> trans;
     trans.position = Math::Vector<3, double>({10*cos(time), 10*sin(time), 0});
     
-    baseNode->transformSet(trans, originTrans);
+    baseNode->setTransform(trans);
 
     //while (wait)
     //std::cout << "Waiting" << std::endl;
@@ -143,8 +144,8 @@ int main(int argc, char ** argv) {
   
   //LoadingResource treeStruct = resourceManager->loadResourceBg("Structure", "tree.glb");
   //LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
-  LoadingResource node = resourceManager->loadResourceBg("Node", "export_anim.glb");
-  LoadingResource node2 = resourceManager->loadResourceBg("Node", "tree.glb");
+  LoadingResource node = resourceManager->loadResourceBg(ResourceLocation("Node", "export_anim.glb"));
+  LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "tree.glb"));
   
   
   std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
@@ -174,8 +175,34 @@ int main(int argc, char ** argv) {
   std::shared_ptr<World> world(new World());
   
   std::cout << "Adding baseNode to Viewport" << std::endl;
-  std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>("Node", "export_anim.glb");
+  std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "export_anim.glb"));
+  std::cout << "Node " << baseNode << std::endl;
   baseNode->viewportAdd(view);
+  
+  /*for (unsigned int i = 0; i < 1024; ++i) {
+
+    
+    Transform<float> trans;
+    trans.position = Math::Vector<3, float>(0, i, 0);
+    std::shared_ptr<strc::MeshNode> meshNode = std::dynamic_pointer_cast<strc::MeshNode>(baseNode->getChildren()[0]);
+
+    std::shared_ptr<Mesh> mesh = meshNode->getMesh();
+    std::shared_ptr<Material> material = meshNode->getMaterial();
+    
+    unsigned int stride;
+    const std::vector<InputDescription> & elements = material->getShader()->getInputs();
+    
+    std::vector<InterleaveElement> iData = mesh->compactStorage(elements, &stride);
+  
+
+    std::shared_ptr<Model> model = std::shared_ptr<Model>(new Model(view->getState(), mesh, iData, stride));
+    
+    std::shared_ptr<RenderElement> rElem = std::shared_ptr<RenderElement>(RenderElement::buildRenderElement(view, meshNode->buildModel(view->getState()), meshNode->getMaterial(), trans));
+
+    view->addRenderElement(rElem);
+    
+    }*/
+    
 
   
   std::thread rotateThread(rotateFunc, world, view, baseNode);

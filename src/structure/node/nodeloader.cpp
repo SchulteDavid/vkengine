@@ -75,9 +75,9 @@ NodeLoader::NodeLoader() {
   
 }
 
-LoadingResource NodeLoader::loadDependencyResource(std::string regName, std::string name) {
+LoadingResource NodeLoader::loadDependencyResource(ResourceLocation location) {
 
-  return this->loadDependency(regName, name);
+  return this->loadDependency(location);
   
 }
 

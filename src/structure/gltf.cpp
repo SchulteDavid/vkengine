@@ -1022,7 +1022,7 @@ LoadingResource GLTFNodeLoader::loadTexture(gltf_file_data_t & fileData, const i
 
   std::string textureName = gltfSubresName(fname, image.name);
   
-  return this->scheduleSubresource("Texture", textureName, upldr);
+  return this->scheduleSubresource(ResourceLocation("Texture", fname, image.name), upldr);
   
 }
 
@@ -1030,7 +1030,7 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
 
   gltf_material_t & material = fileData.materials[materialId];
 
-  LoadingResource shader = loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
+  LoadingResource shader = loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallic.shader"));
 
   LoadingResource colorImg = loadTexture(fileData, material.baseColorTexture.index, fname);
   LoadingResource normalImg = loadTexture(fileData, material.normalTexture.index, fname);
@@ -1041,7 +1041,7 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
   std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shader, textures));
   
 
-  return scheduleSubresource("Material", gltfSubresName(fname, material.name), upldr);
+  return scheduleSubresource(ResourceLocation("Material", fname, material.name), upldr);
   
 }
 
@@ -1071,7 +1071,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
     std::shared_ptr<Mesh> mesh = gltfLoadMesh(gltfMesh, fileData.accessors, fileData.bufferViews, fileData.binaryBuffer);
     std::string meshName = gltfSubresName(filename, gltfMesh.name);
-    LoadingResource meshRes = this->scheduleSubresource("Mesh", meshName, std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
+    LoadingResource meshRes = this->scheduleSubresource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
     std::cout << "MeshRes " << meshRes << std::endl;
     
     int materialIndex = gltfMesh.primitives[0].material;
@@ -1080,12 +1080,14 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     if (materialIndex >= 0) {
 
       LoadingResource matRes = this->loadMaterial(fileData, materialIndex, filename);
-      uploader = std::make_shared<MeshNodeUploader>(meshRes, matRes, trans);
+      uploader = std::shared_ptr<NodeUploader>(new MeshNodeUploader(meshRes, matRes, trans));
+      scheduleSubresourceUpload(resourceManager, ResourceLocation("Node",filename, node.name) , uploader);
 
     } else {
 
-      LoadingResource matRes = this->loadDependency("Material", "resources/materials/gltf_default.mat");
+      LoadingResource matRes = this->loadDependency(ResourceLocation("Material", "resources/materials/gltf_default.mat"));
       uploader = std::make_shared<MeshNodeUploader>(meshRes, matRes, trans);
+      scheduleSubresource(ResourceLocation("Node",filename, node.name), uploader);
       
     }
     
@@ -1095,6 +1097,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     uploader = std::make_shared<NodeUploader>(snode);
   }
 
+  
   for (const int id : node.children) {
 
     std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, id, filename);
@@ -1145,15 +1148,15 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
   if (fileData.materials.size() == 0) {
 
     if (fileData.skins.size()) {
-      shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_lowPolyAnim.shader");
+      shaderRes = this->loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_lowPolyAnim.shader"));
     } else {
-      shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_lowPoly.shader");
+      shaderRes = this->loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_lowPoly.shader"));
     }
 
   } else if (fileData.skins.size()) {
-    shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallicAnim.shader");
+    shaderRes = this->loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallicAnim.shader"));
   } else {
-    shaderRes = this->loadDependency("Shader", "resources/shaders/gltf_pbrMetallic.shader");
+    shaderRes = this->loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallic.shader"));
   }
 
   std::shared_ptr<Mesh> resultMesh = nullptr;
@@ -1218,13 +1221,13 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
 
     std::shared_ptr<ResourceUploader<Resource>> metallUploader((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, metallData, metallWidth, metallHeight, 1));
 
-    LoadingResource colorImgRes = this->scheduleSubresource("Texture", colorImgName, colorUploader);
+    LoadingResource colorImgRes = this->scheduleSubresource(ResourceLocation("Texture", colorImgName), colorUploader);
     textureRes.push_back(colorImgRes);
 
-    LoadingResource normalImgRes = this->scheduleSubresource("Texture", normalImgName, normalUploader);
+    LoadingResource normalImgRes = this->scheduleSubresource(ResourceLocation("Texture", normalImgName), normalUploader);
     textureRes.push_back(normalImgRes);
 
-    LoadingResource metallImgRes = this->scheduleSubresource("Texture", metallImgName, metallUploader);
+    LoadingResource metallImgRes = this->scheduleSubresource(ResourceLocation("Texture", metallImgName), metallUploader);
     textureRes.push_back(metallImgRes);
 
   }
@@ -1235,11 +1238,11 @@ std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::strin
   std::string materialName = fname;
   if (fileData.materials.size())
     materialName.append(":").append(fileData.materials[0].name);
-  LoadingResource materialLRes = this->scheduleSubresource("Material", materialName, materialRes);
+  LoadingResource materialLRes = this->scheduleSubresource(ResourceLocation("Material", materialName), materialRes);
   //LoadingResource modelRes = this->scheduleSubresource("Model", fname, meshRes);
   std::string meshName = fname;
   std::shared_ptr<ResourceUploader<Resource>> meshUploader((ResourceUploader<Resource> *) new MeshUploader(resultMesh));
-  LoadingResource meshRes = this->scheduleSubresource("Mesh", meshName, meshUploader);
+  LoadingResource meshRes = this->scheduleSubresource(ResourceLocation("Mesh", meshName), meshUploader);
 
   delete[] fileData.binaryBuffer;
 

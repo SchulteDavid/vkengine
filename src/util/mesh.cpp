@@ -525,8 +525,6 @@ std::vector<InterleaveElement> Mesh::compactStorage(const std::vector<InputDescr
     std::string name = id.attributeName;
     VertexAttributeType type = this->attributes[name].type;
 
-    std::cout << "Input " << name << " of type " << type << " at location " << id.location << std::endl;
-    std::cout << iData.size() << std::endl;
     size_t s = getAttributeSize(type);
 
     *stride += s;
@@ -547,7 +545,7 @@ std::vector<InterleaveElement> Mesh::compactStorage(const std::vector<InputDescr
 
 std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride) {
 
-  std::cout << stride << " " << attributes["POSITION"].value.size() << std::endl;
+  //std::cout << stride << " " << attributes["POSITION"].value.size() << std::endl;
   if (!attributes["POSITION"].value.size()) {
     throw dbg::trace_exception("Creating mesh with no data");
   }
@@ -566,7 +564,7 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
 
     VertexAttribute attr = attributes[e.attributeName];
 
-    std::cout << "Writing to buffer: " << e.attributeName << " : " << e.offset << " type = " << std::hex << attr.type << std::dec << std::endl;
+    //std::cout << "Writing to buffer: " << e.attributeName << " : " << e.offset << " type = " << std::hex << attr.type << std::dec << std::endl;
 
     switch (attr.type) {
 
@@ -675,7 +673,7 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
 
   }
 
-  std::cout << "dataSize: " << data.size() << " bytes" << std::endl;
+  //std::cout << "dataSize: " << data.size() << " bytes" << std::endl;
 
   return data;
 

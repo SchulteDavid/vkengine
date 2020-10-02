@@ -17,15 +17,18 @@ namespace strc {
     MeshNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans);
     
     virtual ~MeshNode();
+
+    std::shared_ptr<Model> buildModel(vkutil::VulkanState & state);
+    std::shared_ptr<Material> getMaterial();
+    std::shared_ptr<Mesh> getMesh();
     
   protected:
 
-    std::shared_ptr<Model> buildModel(vkutil::VulkanState & state);
 
     void addToWorld(std::shared_ptr<World> world) override;
     void addToViewport(Viewport * view) override;
 
-    void setTransform(Transform<double> trans) override;
+    void onTransformUpdate() override;
     
   private:
     std::shared_ptr<Mesh> mesh;

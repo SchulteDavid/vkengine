@@ -49,7 +49,7 @@ public:
   std::shared_ptr<NodeUploader> loadNodeFromCompound(std::shared_ptr<config::NodeCompound> comp, const LoadingContext & context);
   std::shared_ptr<NodeUploader> loadNodeFromFile(std::string fname, const LoadingContext & context);
 
-  LoadingResource loadDependencyResource(std::string regName, std::string name);
+  LoadingResource loadDependencyResource(ResourceLocation location);
 
   static void registerNodeLoader(std::string type, NodeLoadingFunction func);
   

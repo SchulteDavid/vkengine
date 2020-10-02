@@ -115,7 +115,7 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
   
   std::string shaderFname(root->getNode<char>("shader")->getRawData());
   std::cout << "Pushing " << shaderFname << " on the queue" << std::endl;
-  LoadingResource shaderRes = this->loadDependency("Shader", shaderFname);
+  LoadingResource shaderRes = this->loadDependency(ResourceLocation("Shader", shaderFname));
   
   std::cout << "Dependency queued" << std::endl;
   
@@ -136,7 +136,7 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
 	
       std::cout << tFname << " -> " << index << " / " << textureComps->getElementCount() << std::endl;
 	
-      textureRes[index] = this->loadDependency("Texture", tFname);
+      textureRes[index] = this->loadDependency(ResourceLocation("Texture", tFname));
 	
     }
 

@@ -27,10 +27,13 @@ namespace strc {
 
     void viewportAdd(Viewport * view);
 
-    void transformSet(Transform<double> transform, Transform<double> parenTransform);
+    //void transformSet(Transform<double> transform, Transform<double> parenTransform);
 
     const Transform<double> & getTransform();
     const Transform<double> & getGlobalTransform();
+
+    void setTransform(Transform<double> trans);
+    void setTransform(Transform<double> trans, Transform<double> ptrans);
 
     static void registerLoaders();
     
@@ -45,8 +48,8 @@ namespace strc {
 
     virtual void addToWorld(std::shared_ptr<World> world);
     virtual void addToViewport(Viewport * view);
-    virtual void setTransform(Transform<double> trans);
-    virtual void setParentTransform(Transform<double> trans);
+
+    virtual void onTransformUpdate();
     
   private:
     std::vector<std::shared_ptr<Node>> children;

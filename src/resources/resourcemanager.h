@@ -30,28 +30,28 @@ public:
   void addLoader(std::string name, ResourceLoader<Resource> * loader);
   ResourceLoader<Resource> * getLoader(std::string name, int index = 0);
 
-  template<typename T> std::shared_ptr<ResourceUploader<T>> loadResource(std::string regName, std::string name) {
-    return ((ResourceRegistry<T> *) this->registries[regName])->load(name);
+  template<typename T> std::shared_ptr<ResourceUploader<T>> loadResource(ResourceLocation location) {
+    return ((ResourceRegistry<T> *) this->registries[location.type])->load(location);
   }
 
-  template<typename T> std::shared_ptr<T> get(std::string regName, std::string name) {
-    if (this->registries.find(regName) == this->registries.end()){
-      throw dbg::trace_exception(std::string("No such registry ").append(regName));
+  template<typename T> std::shared_ptr<T> get(ResourceLocation location) {
+    if (this->registries.find(location.type) == this->registries.end()){
+      throw dbg::trace_exception(std::string("No such registry ").append(location.type));
     }
-    std::shared_ptr<Resource> r = this->registries[regName]->get(name);
+    std::shared_ptr<Resource> r = this->registries[location.type]->get(location);
     std::shared_ptr<T> val = std::dynamic_pointer_cast<T>(r);
     if (!val) {
-      throw dbg::trace_exception(std::string("Wrong resource type detected in registry ").append(regName).append(" : ").append(name));
+      throw dbg::trace_exception(std::string("Wrong resource type detected in registry ").append(location.type).append(" : ").append(location.filename));
     }
     return val;
   }
 
-  bool isLoaded(std::string regName, std::string name);
-  std::shared_ptr<Resource> registerResource(std::string regName, std::string name, std::shared_ptr<Resource> res);
+  bool isLoaded(ResourceLocation location);
+  std::shared_ptr<Resource> registerResource(ResourceLocation location, std::shared_ptr<Resource> res);
 
   void startLoadingThreads(unsigned int threadCount);
   void joinLoadingThreads();
-  LoadingResource loadResourceBg(std::string regName, std::string name);
+  LoadingResource loadResourceBg(ResourceLocation location);
 
   void submitUpload(LoadingResource resource);
 
@@ -68,7 +68,7 @@ private:
   std::queue<LoadingResource> uploadingQueue;
 
   std::mutex pipelineInfoMutex;
-  std::unordered_map<std::string, std::unordered_set<std::string>> pipelineInfo;
+  std::unordered_map<std::string, std::unordered_set<ResourceLocation>> pipelineInfo;
 
   std::vector<std::thread *> loadingThreads;
 

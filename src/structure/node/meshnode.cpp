@@ -55,6 +55,14 @@ std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
   
 }
 
+std::shared_ptr<Material> MeshNode::getMaterial() {
+  return material;
+}
+
+std::shared_ptr<Mesh> MeshNode::getMesh() {
+  return mesh;
+}
+
 void MeshNode::addToViewport(Viewport * view) {
 
   std::cout << "Adding MeshNode to Viewport" << std::endl;
@@ -72,7 +80,7 @@ void MeshNode::addToViewport(Viewport * view) {
   
 }
 
-void MeshNode::setTransform(Transform<double> trans) {
+void MeshNode::onTransformUpdate() {
 
   if (!this->renderElement) return;
 
@@ -90,6 +98,7 @@ MeshNodeUploader::MeshNodeUploader(LoadingResource mesh, LoadingResource materia
 std::shared_ptr<strc::Node> MeshNodeUploader::uploadResource() {
 
   std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(meshRes->location);
+  std::cout << "material location " << meshRes->location << std::endl;
   std::shared_ptr<Material> mat = std::dynamic_pointer_cast<Material>(materialRes->location);
   
   std::shared_ptr<strc::Node> node = std::make_shared<strc::MeshNode>(mesh, mat, transform);
@@ -111,12 +120,12 @@ std::shared_ptr<NodeUploader> strc::loadMeshNode(std::shared_ptr<config::NodeCom
   
   if (root->hasChild("meshfile")) {
     std::string name(root->getNode<char>("meshfile")->getRawData());
-    mesh = context.loader->loadDependencyResource("Mesh", name);
+    mesh = context.loader->loadDependencyResource(ResourceLocation("Mesh", name));
   }
 
   if (root->hasChild("matfile")) {
     std::string name(root->getNode<char>("matfile")->getRawData());
-    material = context.loader->loadDependencyResource("Material", name);
+    material = context.loader->loadDependencyResource(ResourceLocation("Material", name));
   }
 
   return std::make_shared<MeshNodeUploader>(mesh, material, context.transform);

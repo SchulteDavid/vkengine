@@ -509,6 +509,24 @@ VkCommandPool vkutil::createGraphicsCommandPool(const VkPhysicalDevice & physica
 
 }
 
+VkCommandPool vkutil::createSecondaryCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface) {
+
+  VkCommandPool commandPool;
+
+  QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
+
+  VkCommandPoolCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  createInfo.queueFamilyIndex = indices.graphicsFamily;
+  createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+  if (VkResult r = vkCreateCommandPool(device, &createInfo, nullptr, &commandPool))
+        throw vkutil::vk_trace_exception("Unable to create command pool", r);
+
+    return commandPool;
+  
+}
+
 VkCommandPool vkutil::createTransferCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface) {
 
     VkCommandPool commandPool;

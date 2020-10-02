@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "resource.h"
+#include "resourceloader.h"
 
 #include <iostream>
 
@@ -15,86 +16,75 @@
 
 template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::value>::type* = nullptr> class ResourceRegistry {
 
-    public:
-        ResourceRegistry(){
+public:
+  ResourceRegistry(){
 
-        }
+  }
 
-        virtual ~ResourceRegistry(){
+  virtual ~ResourceRegistry(){
 
-        }
+  }
 
-        /// Get a resource by its name
-        std::shared_ptr<T> get(std::string name) {
+  /// Get a resource by its name
+  std::shared_ptr<T> get(ResourceLocation name) {
 
-            if (objects.find(name) == objects.end()) {
-                throw dbg::trace_exception(std::string("Unable to find resource '").append(name).append("'"));
-            }
-            return objects[name];
-        }
+    if (objects.find(name) == objects.end()) {
+      throw dbg::trace_exception(std::string("Unable to find resource '").append(name.filename).append("'"));
+    }
+    return objects[name];
+  }
 
-        /// Register a resource to a name
-        /*std::shared_ptr<T> registerObject(std::string name, T * obj) {
+  std::shared_ptr<T> registerObject(ResourceLocation name, std::shared_ptr<T> obj) {
 
-            std::shared_ptr<T> ptr(obj);
+    this->objects[name] = obj;
+    return obj;
 
-            this->objects[name] = ptr;
+  }
 
-            return ptr;
+  void addLoader(ResourceLoader<T> * loader) {
 
-        }*/
+    this->loaders.push_back(loader);
 
-        std::shared_ptr<T> registerObject(std::string name, std::shared_ptr<T> obj) {
+  }
 
-            this->objects[name] = obj;
-            return obj;
+  ResourceLoader<T> * getLoader(int index) {
+    return loaders[index];
+  }
 
-        }
+  std::shared_ptr<ResourceUploader<T>> load(ResourceLocation name) {
 
-        void addLoader(ResourceLoader<T> * loader) {
+    for (ResourceLoader<T> * l : loaders) {
 
-            this->loaders.push_back(loader);
+      std::cout << "Loader " << l << std::endl;
 
-        }
+      try {
+	return l->loadResource(name.filename);
+      } catch (res::wrong_file_exception e) {
+	std::cerr << e.what() << std::endl;
+      }
 
-        ResourceLoader<T> * getLoader(int index) {
-            return loaders[index];
-        }
+    }
 
-        std::shared_ptr<ResourceUploader<T>> load(std::string name) {
+    return nullptr;
 
-            for (ResourceLoader<T> * l : loaders) {
+  }
 
-                std::cout << "Loader " << l << std::endl;
+  bool isLoaded(ResourceLocation name) {
+    return objects.find(name) != objects.end();
+  }
 
-                try {
-                    return l->loadResource(name);
-                } catch (res::wrong_file_exception e) {
-                    std::cerr << e.what() << std::endl;
-                }
+  void printSummary() {
+    for (auto const & o : objects) {
+      std::cout << "\t" << o.first << std::endl;
+    }
+  }
 
-            }
+protected:
 
-            return nullptr;
+private:
 
-        }
-
-        bool isLoaded(std::string name) {
-            return objects.find(name) != objects.end();
-        }
-
-        void printSummary() {
-            for (auto const & o : objects) {
-                std::cout << "\t" << o.first << std::endl;
-            }
-        }
-
-    protected:
-
-    private:
-
-        std::unordered_map<std::string, std::shared_ptr<T>> objects;
-        std::vector<ResourceLoader<T> *> loaders;
+  std::unordered_map<ResourceLocation, std::shared_ptr<T>> objects;
+  std::vector<ResourceLoader<T> *> loaders;
 
 
 };

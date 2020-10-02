@@ -15,77 +15,84 @@ struct InterleaveElement;
 
 class Model : public Resource {
 
-    public:
+public:
 
-        struct Vertex {
+  struct Vertex {
 
-            glm::vec3 pos;
-            glm::vec3 normal;
-            glm::vec3 tangent;
-            glm::vec2 uv;
-            int32_t matIndex;
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec3 tangent;
+    glm::vec2 uv;
+    int32_t matIndex;
 
-            static std::vector<VkVertexInputBindingDescription> getBindingDescription();
-            static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+    static std::vector<VkVertexInputBindingDescription> getBindingDescription();
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
-        };
+  };
 
-        Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices);
-        Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh);
-        Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize);
-        virtual ~Model();
+  enum Status {
+	       STATUS_UNDEFINED,
+	       STATUS_UPLOADED,
+  };
 
-        void uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const vkutil::Queue & q);
+  Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices);
+  Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh);
+  Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize);
+  virtual ~Model();
 
-        void bindForRender(VkCommandBuffer & cmdBuffer);
-        int getIndexCount();
+  void uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const vkutil::Queue & q);
 
-        virtual std::vector<VkVertexInputBindingDescription> getBindingDescription();
-        virtual std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+  void bindForRender(VkCommandBuffer & cmdBuffer);
+  int getIndexCount();
 
-        static Model * loadFromFile(const vkutil::VulkanState & state, std::string fname);
+  virtual std::vector<VkVertexInputBindingDescription> getBindingDescription();
+  virtual std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
 
-    protected:
+  static Model * loadFromFile(const vkutil::VulkanState & state, std::string fname);
 
-    private:
+protected:
 
-        VertexBuffer<uint8_t> * vBuffer;
-        IndexBuffer<uint8_t> * iBuffer;
+private:
 
-        int vCount;
-        int iCount;
+  VertexBuffer<uint8_t> * vBuffer;
+  IndexBuffer<uint8_t> * iBuffer;
 
-        std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-        std::vector<VkVertexInputBindingDescription> bindingDescription;
+  int vCount;
+  int iCount;
+
+  std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+  std::vector<VkVertexInputBindingDescription> bindingDescription;
+
+  Status status;
 
 };
 
 class ModelUploader : public ResourceUploader<Model> {
 
-    public:
-        ModelUploader(const vkutil::VulkanState & state, Model * model);
+public:
+  ModelUploader(const vkutil::VulkanState & state, Model * model);
 
-        std::shared_ptr<Model> uploadResource();
-        bool uploadReady();
+  std::shared_ptr<Model> uploadResource();
+  bool uploadReady();
 
-    private:
+private:
 
-        const vkutil::VulkanState & state;
-        Model * model;
+  const vkutil::VulkanState & state;
+  Model * model;
 
 };
 
 class ModelLoader : public ResourceLoader<Model> {
 
-    public:
+public:
 
-        ModelLoader(const vkutil::VulkanState & state);
+  ModelLoader(const vkutil::VulkanState & state);
 
-        std::shared_ptr<ResourceUploader<Model>> loadResource(std::string fname);
+  std::shared_ptr<ResourceUploader<Model>> loadResource(std::string fname);
 
-    private:
+private:
 
-        const vkutil::VulkanState & state;
+  const vkutil::VulkanState & state;
 
 };
 
