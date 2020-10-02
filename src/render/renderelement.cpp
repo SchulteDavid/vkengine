@@ -61,7 +61,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 }
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform) : state(view->getState()), MemoryTransferer(*view) {
-  
+
   std::vector<Shader::Binding> binds;
 
   Shader::Binding uniformBufferBinding;
@@ -70,7 +70,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   uniformBufferBinding.bindingId = 0;
   uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
   binds.push_back(uniformBufferBinding);
-    
+
   if (mat->getTextures().size()) {
     Shader::Binding textureBinding;
     textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
@@ -113,6 +113,70 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
 }
 
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, bool useStaticShader) : state(view->getState()), MemoryTransferer(*view) {
+
+  std::vector<Shader::Binding> binds;
+
+  Shader::Binding uniformBufferBinding;
+  uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
+  uniformBufferBinding.elementCount = 1;
+  uniformBufferBinding.bindingId = 0;
+  uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
+  binds.push_back(uniformBufferBinding);
+
+  if (mat->getTextures().size()) {
+    Shader::Binding textureBinding;
+    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+    textureBinding.bindingId = 1;
+    binds.push_back(textureBinding);
+  }
+
+
+  this->binds = binds;
+
+  this->model = model;
+  if (!useStaticShader) {
+    this->shader = mat->getShader();
+  } else {
+    this->shader = mat->getStaticShader();
+    if (!this->shader) {
+      throw dbg::trace_exception("Used non-static material for static renderelement");
+    }
+  }
+  this->texture = mat->getTextures();
+
+  /*instanceTransforms = std::vector<glm::mat4>(1);
+  instances = std::unordered_map<uint32_t, InstanceInfo>(1);
+  transforms = std::vector<Transform<float>>(1);*/
+
+  //std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
+
+  /*transforms[0] = initTransform;
+
+  instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
+
+  instanceCount = 1;*/
+
+  transform = initTransform;
+
+  model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+
+  descSetLayout = mat->prepareDescriptors(this->binds);
+  if (!useStaticShader) {
+    pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
+  } else {
+    pipeline = mat->setupStaticPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
+  }
+
+  /*this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    this->createUniformBuffers(scSize, this->binds);
+    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
+    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, this->binds, texture, scSize);*/
+
+  //constructBuffers(scSize);
+
+}
+
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform) : RenderElement(view, strc->getModel(view->getState()), strc->getMaterial(), view->getSwapchainSize(), initTransform) {
 
 
@@ -131,7 +195,7 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   instances = std::unordered_map<uint32_t, InstanceInfo>(1);
   transforms = std::vector<Transform<float>>(1);*/
 
-  std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
+  //std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
 
   /*transforms[0] = initTransform;
   instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
@@ -199,7 +263,7 @@ void RenderElement::markBufferDirty() {
 RenderElement::Instance RenderElement::addInstance(Transform<float> & i) {
 
   return (Instance) {0};
-  
+
 }
 
 void RenderElement::updateInstance(Instance & instance, Transform<float> & trans) {
@@ -210,7 +274,7 @@ void RenderElement::updateInstance(Instance & instance, Transform<float> & trans
 
 void RenderElement::deleteInstance(Instance & instance) {
 
-  
+
 
 }
 
@@ -268,7 +332,7 @@ void RenderElement::destroyUniformBuffers(const vkutil::SwapChain & swapchain) {
 
 void RenderElement::recordTransfer(VkCommandBuffer & cmdBuffer) {
 
-  
+
 
 }
 
@@ -295,19 +359,14 @@ Shader * RenderElement::getShader() {
 
 void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
 
+  //std::cout << "Pipeline " << pipeline << std::endl;
   vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
   vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-  static float data[16] = {
-		  1,0,0,0,
-		  0,1,0,0,
-		  0,0,1,0,
-		  0,0,0,1
-  };
+  glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
 
-  std::cout << "Updating push constants" << std::endl;
-  vkCmdPushConstants(cmdBuffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), data);
-  
+  vkCmdPushConstants(cmdBuffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
+
   model->bindForRender(cmdBuffer);
   VkDeviceSize offsets[] = {0};
   //vkCmdBindVertexBuffers(cmdBuffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
@@ -320,10 +379,10 @@ void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameInd
 
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-  //std::cout << "Updating push constants" << std::endl;
+  std::cout << "Updating push constants " << this << " " << model->getBindingDescription().size() << std::endl;
 
   glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
-  
+
   vkCmdPushConstants(buffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
 
   model->bindForRender(buffer);
@@ -331,7 +390,7 @@ void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameInd
   //vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
   vkCmdDrawIndexed(buffer, model->getIndexCount(), 1, 0, 0, 0);
 
-  
+
 }
 
 std::vector<VkDescriptorSet> & RenderElement::getDescriptorSets() {
@@ -347,7 +406,7 @@ RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_p
   if (strc->hasAnimations()) {
 
     std::cout << "Element has animations" << std::endl;
-      
+
     if (!strc->getSkin())
       throw dbg::trace_exception("Trying to create animated renderelement with no skin");
     RenderElementAnim * rElem = new RenderElementAnim(view, strc, initTrans);

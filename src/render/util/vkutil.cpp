@@ -28,7 +28,7 @@ GLFWwindow * vkutil::createWindow(unsigned int width, unsigned int height, void 
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(width, height, "RT-Window", nullptr, nullptr);
+    window = glfwCreateWindow(width, height, "VkEngine", nullptr, nullptr);
     glfwSetWindowUserPointer(window, userData);
 
     return window;
@@ -524,7 +524,7 @@ VkCommandPool vkutil::createSecondaryCommandPool(const VkPhysicalDevice & physic
         throw vkutil::vk_trace_exception("Unable to create command pool", r);
 
     return commandPool;
-  
+
 }
 
 VkCommandPool vkutil::createTransferCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface) {

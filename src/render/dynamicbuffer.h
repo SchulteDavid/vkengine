@@ -16,7 +16,9 @@ template <typename T> class DynamicBuffer : public StorageBuffer
 
             this->usage = usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
+            std::cout << "Creating staging buffer" << std::endl;
             createStagingBuffer();
+            std::cout << "Filling with " << data.size() << " elements" << std::endl;
             fill(state, data);
 
         }

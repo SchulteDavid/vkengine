@@ -11,6 +11,44 @@
 #include "renderelement.h"
 #include "camera.h"
 
+class ThreadedBufferManager {
+
+  public:
+
+    struct BufferElement {
+
+      uint32_t usageCount;
+      VkCommandBuffer buffer;
+
+    };
+
+    ThreadedBufferManager();
+    ThreadedBufferManager(unsigned int bufferCount, unsigned int frameCount, vkutil::VulkanState & state);
+
+    /// returns the active buffer
+    VkCommandBuffer getBufferForRender(uint32_t frameIndex);
+    /// releases the active buffer back to the queue
+    void releaseRenderBuffer(uint32_t frameIndex);
+
+    /// returns a buffer that can be recorded to
+    BufferElement * getBufferForRecording();
+    /// sets the next buffer to use.
+    void setActiveBuffer(BufferElement * buffer);
+
+  private:
+
+    std::mutex lock;
+
+    VkCommandPool bufferPool;
+    std::vector<BufferElement> buffers;
+    std::vector<BufferElement *> attachedBuffers;
+
+    std::queue<BufferElement *> useableBuffers;
+    BufferElement * activeBuffer;
+    BufferElement * nextBuffer;
+
+};
+
 class Viewport : public MemoryTransferHandler {
 public:
   Viewport(std::shared_ptr<Window> window, Camera * camera);
@@ -38,6 +76,9 @@ public:
   void addLight(glm::vec4 pos, glm::vec4 color);
 
   void manageMemoryTransfer();
+
+  void createSecondaryBuffers();
+  void renderIntoSecondary();
 
   Camera * getCamera();
 
@@ -140,17 +181,7 @@ private:
   bool isLightDataModified(uint32_t imageIndex);
   void markLightDataCorrect(uint32_t imageIndex);
 
-  
-
-  void createSecondaryBuffers();
-
-  void renderIntoSecondary();
-  
-  VkCommandPool secondaryPool;
-  std::queue<VkCommandBuffer> useableBuffers;
-  VkCommandBuffer bufferToSubmit;
-  std::vector<VkCommandBuffer> secondaryBuffers;
-  std::mutex secondaryBufferMutex;
+  ThreadedBufferManager * bufferManager;
 
 };
 

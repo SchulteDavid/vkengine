@@ -40,7 +40,7 @@ public:
   struct Instance {
     uint32_t id;
   };
-  
+
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform);
   RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform);
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, std::vector<Shader::Binding> binds);
@@ -73,10 +73,14 @@ public:
 
   Shader * getShader();
 
+  virtual void constructBuffers(int scSize);
+
   static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform);
   static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform);
 
 protected:
+
+  RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, bool useStaticShader);
 
   static glm::mat4 toGLMMatrx(Math::Matrix<4,4,float> mat);
 
@@ -90,8 +94,7 @@ protected:
   std::vector<Shader::Binding> binds;
   Transform<float> transform;
 
-  virtual void constructBuffers(int scSize);
-  void markBufferDirty();
+  virtual void markBufferDirty();
 
   std::shared_ptr<Model> model;
   std::shared_ptr<Shader> shader;

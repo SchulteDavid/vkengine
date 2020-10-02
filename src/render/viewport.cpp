@@ -30,6 +30,8 @@ std::vector<uint16_t> viewModelIndices = {
 
 Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(window->getState()) {
 
+  bufferManager = nullptr;
+
     this->camera = camera;
     this->lightIndex = 0;
     //camera->move(0,0,1);
@@ -77,9 +79,9 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
     ppBufferModel->uploadToGPU(state.device, state.graphicsCommandPool, state.graphicsQueue);
 
 
-    createSecondaryBuffers();
-    
-    recordCommandBuffers();
+    //createSecondaryBuffers();
+
+    //recordCommandBuffers();
 
     this->lightDataModified = false;
 
@@ -88,6 +90,9 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 Viewport::~Viewport() {
     for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         vkWaitForFences(state.device, 1, &inFlightFences[i], VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+    if (bufferManager) delete bufferManager;
+
 }
 
 void Viewport::createSyncObjects() {
@@ -174,7 +179,7 @@ void Viewport::manageMemoryTransfer() {
         vkWaitForFences(state.device, 1, &transferFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
         vkResetFences(state.device, 1, &transferFence);
 
-        //std::cout << "Recording transfer" << std::endl;
+        std::cout << "Recording transfer" << std::endl;
         this->recordTransfer(transferCmdBuffer);
 
         VkSubmitInfo transferSubmit = {};
@@ -199,11 +204,22 @@ void Viewport::drawFrame(bool updateElements) {
     if (updateElements)
         prepareRenderElements();
 
-    vkWaitForFences(state.device, 1, &inFlightFences[(frameIndex-(MAX_FRAMES_IN_FLIGHT-1))%MAX_FRAMES_IN_FLIGHT], VK_TRUE, std::numeric_limits<uint64_t>::max());
+    uint32_t releaseFrameIndex = (frameIndex)%MAX_FRAMES_IN_FLIGHT;
+    vkWaitForFences(state.device, 1, &inFlightFences[releaseFrameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 
     uint32_t imageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+
+    /*secondaryBufferMutex.lock();
+    std::cout << "Reusing " << submittedBuffers[imageIndex] << std::endl;
+    if (submittedBuffers[imageIndex] && submittedBuffers[imageIndex] != bufferToSubmit)
+        useableBuffers.push(submittedBuffers[imageIndex]);
+    secondaryBufferMutex.unlock();*/
+    if (bufferManager) {
+      //std::cout << "Releasing buffer" << std::endl;
+      bufferManager->releaseRenderBuffer(releaseFrameIndex);
+    }
 
     if (!this->destroyableSwapchains.empty()) {
 
@@ -216,7 +232,7 @@ void Viewport::drawFrame(bool updateElements) {
     //auto recordEndTime = std::chrono::high_resolution_clock::now();
 
     //double recordTime = std::chrono::duration<double, std::chrono::milliseconds::period>(recordEndTime - recordStartTime).count();
-    //std::cout << "Recording took " << recordTime << " ms" << std::endl; 
+    //std::cout << "Recording took " << recordTime << " ms" << std::endl;
 
     switch(result) {
 
@@ -1061,23 +1077,23 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   vkResetCommandBuffer(buffer, 0);
 
   /// TODO: move to another thread.
-  renderIntoSecondary();
-  
+  //renderIntoSecondary();
+
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
   beginInfo.pInheritanceInfo = nullptr;
-  
+
   if (vkBeginCommandBuffer(buffer, &beginInfo) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to start recording to command buffer");
-  
+
   VkRenderPassBeginInfo renderPassInfo = {};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   renderPassInfo.renderPass = renderPass;
   renderPassInfo.framebuffer = swapchain.framebuffers[frameIndex];
   renderPassInfo.renderArea.offset = {0,0};
   renderPassInfo.renderArea.extent = swapchain.extent;
-  
+
   std::array<VkClearValue, 5> clearValues;
   clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
   clearValues[1].depthStencil = {1.0f, 0};
@@ -1086,47 +1102,59 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   clearValues[4].color = {0.0f, 0.0f, 0.0f};
   renderPassInfo.clearValueCount = clearValues.size();
   renderPassInfo.pClearValues = clearValues.data();
-  
+
   vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-  
+
   /*for (unsigned int j = 0; j < renderElements.size(); ++j) {
-    
+
     renderElements[j]->render(commandBuffers[i], i);
-    
+
     }*/
-  
+
   /*for (auto it : renderElementsByShader) {
-    
+
     vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
     vkCmdPushConstants(buffer, it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
-    
+
     for (std::shared_ptr<RenderElement> relem : it.second) {
-      
+
       relem->renderShaderless(buffer, frameIndex);
-      
+
     }
-    
+
     }*/
-  secondaryBufferMutex.lock();
-  vkCmdExecuteCommands(buffer, 1, &bufferToSubmit);
-  secondaryBufferMutex.unlock();
-  
+  /*secondaryBufferMutex.lock();
+  if (bufferToSubmit != VK_NULL_HANDLE) {
+    std::cout << "Submitted buffer " << bufferToSubmit << std::endl;
+    vkCmdExecuteCommands(buffer, 1, &bufferToSubmit);
+    submittedBuffers[frameIndex] = bufferToSubmit;
+    bufferToSubmit = 0;
+
+  }
+  secondaryBufferMutex.unlock();*/
+  if (bufferManager) {
+    VkCommandBuffer secBuffer = bufferManager->getBufferForRender(frameIndex);
+    //std::cout << "Submitting buffer " << secBuffer << std::endl;
+    if (secBuffer)
+      vkCmdExecuteCommands(buffer, 1, &secBuffer);
+  }
+
   vkCmdNextSubpass(buffer, VK_SUBPASS_CONTENTS_INLINE);
-  
+
   vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipeline);
-  
+
   ppBufferModel->bindForRender(buffer);
-  
+
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipelineLayout, 0, 1, &ppDescSets[frameIndex], 0, nullptr);
-  
+
   vkCmdDrawIndexed(buffer, ppBufferModel->getIndexCount(), 1, 0, 0, 0);
-  
+
   vkCmdEndRenderPass(buffer);
-  
+
   if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to record command buffer");
-  
-  
+
+
 }
 
 void Viewport::recordCommandBuffers() {
@@ -1157,38 +1185,41 @@ void Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
 void Viewport::createSecondaryBuffers() {
 
-  this->secondaryPool = vkutil::createSecondaryCommandPool(state.physicalDevice, state.device, state.surface);
+  uint32_t bufferCount = MAX_FRAMES_IN_FLIGHT * 3;
+
+  /*this->secondaryPool = vkutil::createSecondaryCommandPool(state.physicalDevice, state.device, state.surface);
 
   VkCommandBufferAllocateInfo allocInfo = {};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+  allocInfo.commandBufferCount = bufferCount;
   allocInfo.commandPool = secondaryPool;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
-  secondaryBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-  
+  secondaryBuffers.resize(bufferCount);
+
   if (VkResult res = vkAllocateCommandBuffers(state.device, &allocInfo, secondaryBuffers.data()))
     throw vkutil::vk_trace_exception("Failed to allocate command buffers", res);
 
+  useableBuffers = std::queue<VkCommandBuffer>();
 
   for (VkCommandBuffer buffer : secondaryBuffers) {
+    std::cout << "Queueing " << buffer << std::endl;
     useableBuffers.push(buffer);
-  }
-  
+  }*/
+
+  this->bufferManager = new ThreadedBufferManager(bufferCount, MAX_FRAMES_IN_FLIGHT, state);
+
 }
 
 void Viewport::renderIntoSecondary() {
 
   /// Get the next usable buffer.
 
-  std::cout << "Useable Buffers " << useableBuffers.size() << std::endl;
-  
-  secondaryBufferMutex.lock();
-  VkCommandBuffer buffer = useableBuffers.front();
-  useableBuffers.pop();
-  secondaryBufferMutex.unlock();
+  ThreadedBufferManager::BufferElement * bufferElem = bufferManager->getBufferForRecording();
 
-  std::cout << "Buffer " << buffer << std::endl;
+  //std::cout << "Buffer " << buffer << std::endl;
+
+  VkCommandBuffer buffer = bufferElem->buffer;
 
   /// Reset the buffer
 
@@ -1204,35 +1235,180 @@ void Viewport::renderIntoSecondary() {
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
   beginInfo.pInheritanceInfo = &inheritanceInfo;
-  
+
   if (vkBeginCommandBuffer(buffer, &beginInfo) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to start recording to command buffer");
 
   /// Record the rendering commands
-  for (auto it : renderElementsByShader) {
-    
+  /*for (auto it : renderElementsByShader) {
+
     vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, it.first->getPipeline());
     vkCmdPushConstants(buffer, it.first->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 32 * sizeof(float), &ubo);
-    
+
     for (std::shared_ptr<RenderElement> relem : it.second) {
-      
+
       relem->renderShaderless(buffer, frameIndex);
-      
+
     }
-    
+
+  }*/
+
+  for (std::shared_ptr<RenderElement> relem : renderElements) {
+    relem->render(buffer, frameIndex);
   }
 
   if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to record command buffer");
 
   /// Submit the resulting buffer as the current state
-  secondaryBufferMutex.lock();
-  // resuse the old buffer
-  if (bufferToSubmit)
-    useableBuffers.push(bufferToSubmit);
-  // Set the new one as current.
-  this->bufferToSubmit = buffer;
-  secondaryBufferMutex.unlock();
-  
-  
+  bufferManager->setActiveBuffer(bufferElem);
+
+
+}
+
+ThreadedBufferManager::ThreadedBufferManager() {
+
+}
+
+ThreadedBufferManager::ThreadedBufferManager(unsigned int bufferCount, unsigned int frameCount, vkutil::VulkanState & state) {
+
+  bufferPool = vkutil::createSecondaryCommandPool(state.physicalDevice, state.device, state.surface);
+
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandBufferCount = bufferCount;
+  allocInfo.commandPool = bufferPool;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+
+  std::vector<VkCommandBuffer> commandBuffers(bufferCount);
+  buffers.resize(bufferCount);
+
+  if (VkResult res = vkAllocateCommandBuffers(state.device, &allocInfo, commandBuffers.data()))
+    throw vkutil::vk_trace_exception("Failed to allocate command buffers", res);
+
+  useableBuffers = std::queue<BufferElement *>();
+
+  uint32_t i = 0;
+  for (VkCommandBuffer buffer : commandBuffers) {
+    std::cout << "Queueing " << buffer << std::endl;
+    //useableBuffers.push(buffer);
+
+    BufferElement elem;
+    elem.buffer = buffer;
+    elem.usageCount = 0;
+    buffers[i] = elem;
+
+    useableBuffers.push(&buffers[i]);
+
+    i++;
+
+  }
+
+  activeBuffer = nullptr;
+  nextBuffer = nullptr;
+
+  attachedBuffers.resize(frameCount);
+
+}
+
+VkCommandBuffer ThreadedBufferManager::getBufferForRender(uint32_t frameIndex) {
+
+  //std::cout << "Getting buffer for render" << std::endl;
+
+
+  if (!activeBuffer) {
+    //std::cout << "No active buffer set" << std::endl;
+    if (nextBuffer) {
+      activeBuffer = nextBuffer;
+      //return nextBuffer->buffer;
+    } else {
+      return VK_NULL_HANDLE;
+    }
+  }
+
+  lock.lock();
+  if (nextBuffer != activeBuffer) {
+    activeBuffer = nextBuffer;
+  }
+
+  attachedBuffers[frameIndex] = activeBuffer;
+  activeBuffer->usageCount++;
+
+  lock.unlock();
+
+  return this->activeBuffer->buffer;
+}
+
+void ThreadedBufferManager::releaseRenderBuffer(uint32_t frameIndex) {
+
+  lock.lock();
+  BufferElement * buffer = attachedBuffers[frameIndex];
+
+  if (!buffer) {
+    lock.unlock();
+    //std::cout << "Released buffer is NULL" << std::endl;
+    return;
+  }
+
+  buffer->usageCount--;
+  //std::cout << "Releasing " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << std::endl;
+
+  if (!buffer->usageCount) {
+    useableBuffers.push(buffer);
+  }
+
+  attachedBuffers[frameIndex] = nullptr;
+  lock.unlock();
+
+}
+
+ThreadedBufferManager::BufferElement * ThreadedBufferManager::getBufferForRecording() {
+  //std::cout << "Getting buffer for recording" << std::endl;
+  lock.lock();
+  //std::cout << "Getting buffer for recording" << std::endl;
+
+  if (useableBuffers.empty()) {
+    lock.unlock();
+
+    std::cout << "Attached Buffers: " << attachedBuffers.size() << std::endl;
+    for (BufferElement & e : buffers) {
+      std::cout << "Buffer " << e.buffer << " : " << e.usageCount << std::endl;
+    }
+
+    throw dbg::trace_exception("Empty buffer queue for recording");
+  }
+
+
+  BufferElement * buffer = useableBuffers.front();
+  if (buffer->usageCount) {
+    std::cerr << buffer->buffer << " : " << buffer->usageCount << std::endl;
+    std::cerr << "Active: " << activeBuffer->buffer << std::endl;
+    throw dbg::trace_exception("attached buffer in queue:");
+  }
+  useableBuffers.pop();
+
+  lock.unlock();
+
+  //std::cout << "Returning " << buffer->buffer << " : " << buffer->usageCount << " for recording" << std::endl;
+
+  return buffer;
+}
+
+void ThreadedBufferManager::setActiveBuffer(BufferElement * buffer) {
+
+  //std::cout << "Setting active buffer " << buffer->buffer << std::endl;
+
+  lock.lock();
+  if (nextBuffer && nextBuffer->usageCount == 0) {
+    //std::cout << "Recycling buffer " << nextBuffer->buffer << std::endl;
+    useableBuffers.push(nextBuffer);
+    //std::cout << useableBuffers.size() << " buffers in queue" << std::endl;
+  }
+
+  this->nextBuffer = buffer;
+
+  lock.unlock();
+
+  //std::cout << "Next buffer set to " << nextBuffer->buffer << " : " << nextBuffer->usageCount << std::endl;
+
 }

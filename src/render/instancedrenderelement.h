@@ -20,16 +20,19 @@ class InstancedRenderElement : public RenderElement {
   void recordTransfer(VkCommandBuffer & buffer) override;
   bool needsDrawCmdUpdate() override;
   void renderShaderless(VkCommandBuffer & buffer, uint32_t frameIndex) override;
+  void render(VkCommandBuffer & buffer, uint32_t frameIndex) override;
 
   void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex) override;
+
+  void constructBuffers(int scSize) override;
 
  protected:
 
   bool instanceBufferDirty;
   bool instanceCountUpdated;
 
-  void constructBuffers(int scSize) override;
-  
+  void markBufferDirty() override;
+
  private:
 
   struct InstanceInfo {
@@ -46,7 +49,7 @@ class InstancedRenderElement : public RenderElement {
   uint32_t instanceCount;
 
   std::mutex transformBufferMutex;
-  
+
 
 };
 

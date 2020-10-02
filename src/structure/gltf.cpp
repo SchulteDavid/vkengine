@@ -70,42 +70,42 @@ struct gltf_node_t {
 
   std::string name;
   int mesh;
-  
+
   Math::Vector<3,float> translation;
   Math::Quaternion<float> rotation;
   Math::Vector<3, float> scale;
-  
+
   Math::Vector<3,float> globalTranslation;
   Math::Quaternion<float> globalRotation;
   Math::Vector<3, float> globalScale;
-  
+
   std::vector<int> children;
   int skin;
-  
+
 };
 
 void from_json(const json & j, gltf_node_t & node) {
-  
+
   j.at("name").get_to(node.name);
   try {
     j.at("mesh").get_to(node.mesh);
   } catch (std::exception e) {
     node.mesh = -1;
   }
-  
+
   try {
     std::vector<float> tData = j.at("translation").get<std::vector<float>>();
     node.translation = Math::Vector<3, float>(tData.data());
   } catch (std::exception e) {
   }
-  
+
   try {
     std::vector<float> rData = j.at("rotation").get<std::vector<float>>();
     node.rotation = Math::Quaternion<float>(rData[3], rData[0], rData[1], rData[2]);
   } catch (std::exception e) {
     node.rotation = Math::Quaternion<float>(1,0,0,0);
   }
-  
+
   try {
     std::vector<float> tData = j.at("scale").get<std::vector<float>>();
     node.scale = Math::Vector<3, float>(tData.data());
@@ -207,10 +207,10 @@ void from_json(const json & j, gltf_buffer_view_t & view) {
 }
 
 enum gltf_data_type_e {
-		       
+
 		       GLTF_TYPE_SINT8 = 5120,
 		       GLTF_TYPE_UINT8 = 5121,
-		       
+
 		       GLTF_TYPE_SINT16 = 5122,
 		       GLTF_TYPE_UINT16 = 5123,
 
@@ -751,7 +751,7 @@ GLTFLoader::GLTFLoader(vkutil::VulkanState & state, const VkRenderPass & renderP
 struct gltf_file_data_t {
 
   uint32_t rootScene;
-  
+
   std::vector<gltf_scene_t> scenes;
   std::vector<gltf_node_t> nodes;
   std::vector<gltf_material_t> materials;
@@ -774,6 +774,8 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
     throw res::wrong_file_exception("Not a glb file");
 
   FILE * file = fopen(fname.c_str(), "rb");
+  if (!file)
+    throw dbg::trace_exception(std::string("No such file: ").append(fname));
 
   glb_header_t header;
   fread(&header, sizeof(glb_header_t), 1, file);
@@ -844,10 +846,10 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
   }
 
   try {
-    
+
     std::cout << "Loading skins from gltf-file" << std::endl;
     skins = jsonData.at("skins").get<std::vector<gltf_skin_t>>();
-    
+
   } catch (json::out_of_range & e) {
 
   }
@@ -1021,9 +1023,9 @@ LoadingResource GLTFNodeLoader::loadTexture(gltf_file_data_t & fileData, const i
   std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, imageData, width, height, 1));
 
   std::string textureName = gltfSubresName(fname, image.name);
-  
+
   return this->scheduleSubresource(ResourceLocation("Texture", fname, image.name), upldr);
-  
+
 }
 
 LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const int materialId, const std::string fname) {
@@ -1031,24 +1033,25 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
   gltf_material_t & material = fileData.materials[materialId];
 
   LoadingResource shader = loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallic.shader"));
+  LoadingResource staticShader = loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallicStatic.shader"));
 
   LoadingResource colorImg = loadTexture(fileData, material.baseColorTexture.index, fname);
   LoadingResource normalImg = loadTexture(fileData, material.normalTexture.index, fname);
   LoadingResource metalImg = loadTexture(fileData, material.metallicRoughnessTexture.index, fname);
 
   std::vector<LoadingResource> textures = {colorImg, normalImg, metalImg};
-  
-  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shader, textures));
-  
+
+  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shader, staticShader, textures));
+
 
   return scheduleSubresource(ResourceLocation("Material", fname, material.name), upldr);
-  
+
 }
 
 std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string filename) {
 
   std::cout << "Loading gltf-node " << nodeId << std::endl;
-  
+
   // Fetch node
   gltf_node_t & node = fileData.nodes[nodeId];
 
@@ -1062,7 +1065,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
   Transform<double> trans = convertTransform<float, double>(tmptrans);
 
   std::shared_ptr<NodeUploader> uploader = nullptr;
-  
+
   if (node.mesh >= 0) {
 
     std::cout << "Node " << nodeId << " has a mesh: " << node.mesh << std::endl;
@@ -1073,7 +1076,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     std::string meshName = gltfSubresName(filename, gltfMesh.name);
     LoadingResource meshRes = this->scheduleSubresource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
     std::cout << "MeshRes " << meshRes << std::endl;
-    
+
     int materialIndex = gltfMesh.primitives[0].material;
     std::cout << "Material index " << materialIndex << " materials: " << fileData.materials.size() << std::endl;
 
@@ -1088,31 +1091,31 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
       LoadingResource matRes = this->loadDependency(ResourceLocation("Material", "resources/materials/gltf_default.mat"));
       uploader = std::make_shared<MeshNodeUploader>(meshRes, matRes, trans);
       scheduleSubresource(ResourceLocation("Node",filename, node.name), uploader);
-      
+
     }
-    
-    
+
+
   } else {
     std::shared_ptr<strc::Node> snode = std::make_shared<strc::Node>(trans);
     uploader = std::make_shared<NodeUploader>(snode);
   }
 
-  
+
   for (const int id : node.children) {
 
     std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, id, filename);
     uploader->addChild(child);
-    
+
   }
 
   return uploader;
-  
+
 }
 
 std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::string fname) {
 
   std::cout << "Loading gltf-data as Node" << std::endl;
-  
+
   gltf_file_data_t fileData;
   std::vector<std::shared_ptr<GLTFNode>> nodes = gltfLoadFile(fname, &fileData);
 
@@ -1122,18 +1125,18 @@ std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::
   std::shared_ptr<strc::Node> sceneNode(new strc::Node());
 
   std::shared_ptr<NodeUploader> sceneUploader = std::make_shared<NodeUploader>(sceneNode);
-  
+
   for (int nodeId : scene.nodes) {
 
     std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, fname);
     sceneUploader->addChild(child);
-    
+
   }
 
   std::cout << "Loaded GLTF-Node successfully" << std::endl;
 
   return sceneUploader;
-  
+
 }
 
 std::shared_ptr<ResourceUploader<Structure>> GLTFLoader::loadResource(std::string fname) {

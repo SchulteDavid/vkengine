@@ -31,14 +31,6 @@
 				<Linker>
 					<Add option="-rdynamic" />
 				</Linker>
-				<MakeCommands>
-					<Build command="$make -f $makefile $target" />
-					<CompileFile command="$make -f $makefile $file" />
-					<Clean command="$make -f $makefile clean$target" />
-					<DistClean command="$make -f $makefile distclean$target" />
-					<AskRebuildNeeded command="$make -q -f $makefile $target" />
-					<SilentBuild command="$make -f $makefile $target &gt; $(CMD_NULL)" />
-				</MakeCommands>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/VkEngine" prefix_auto="1" extension_auto="1" />
@@ -94,6 +86,7 @@
 		<Unit filename="resources/shaders/gltf_lowPoly.shader" />
 		<Unit filename="resources/shaders/gltf_pbrMetallic.shader" />
 		<Unit filename="resources/shaders/gltf_pbrMetallicAnim.shader" />
+		<Unit filename="resources/shaders/gltf_pbrMetallicStatic.shader" />
 		<Unit filename="resources/shaders/id.vert" />
 		<Unit filename="resources/shaders/normals.frag" />
 		<Unit filename="resources/shaders/pp.frag" />
@@ -119,6 +112,8 @@
 		<Unit filename="src/render/camera.h" />
 		<Unit filename="src/render/dynamicbuffer.h" />
 		<Unit filename="src/render/indexbuffer.h" />
+		<Unit filename="src/render/instancedrenderelement.cpp" />
+		<Unit filename="src/render/instancedrenderelement.h" />
 		<Unit filename="src/render/material.cpp" />
 		<Unit filename="src/render/material.h" />
 		<Unit filename="src/render/memorytransferhandler.cpp" />
@@ -155,6 +150,14 @@
 		<Unit filename="src/structure/gltf.h" />
 		<Unit filename="src/structure/level.cpp" />
 		<Unit filename="src/structure/level.h" />
+		<Unit filename="src/structure/node/lightnode.cpp" />
+		<Unit filename="src/structure/node/lightnode.h" />
+		<Unit filename="src/structure/node/meshnode.cpp" />
+		<Unit filename="src/structure/node/meshnode.h" />
+		<Unit filename="src/structure/node/node.cpp" />
+		<Unit filename="src/structure/node/node.h" />
+		<Unit filename="src/structure/node/nodeloader.cpp" />
+		<Unit filename="src/structure/node/nodeloader.h" />
 		<Unit filename="src/structure/structure.cpp" />
 		<Unit filename="src/structure/structure.h" />
 		<Unit filename="src/util/debug/logger.h" />
@@ -173,6 +176,7 @@
 		<Unit filename="src/util/meshhelper.h" />
 		<Unit filename="src/util/simplexnoise.cpp" />
 		<Unit filename="src/util/simplexnoise.h" />
+		<Unit filename="src/util/transform.h" />
 		<Unit filename="src/world/entity.cpp" />
 		<Unit filename="src/world/entity.h" />
 		<Unit filename="src/world/world.cpp" />

@@ -24,9 +24,9 @@ std::vector<VkVertexInputBindingDescription> Model::Vertex::getBindingDescriptio
 
 }
 
-std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(std::vector<InterleaveElement> elements, std::shared_ptr<Mesh> mesh) {
+std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(std::vector<InterleaveElement> elements, std::shared_ptr<Mesh> mesh, bool isStatic=false) {
 
-    std::vector<VkVertexInputAttributeDescription> descriptions(elements.size()); // +4 for instance transform matrix data
+    std::vector<VkVertexInputAttributeDescription> descriptions(isStatic ? elements.size()+4 : elements.size()); // +4 for instance transform matrix data
 
     for (unsigned int i = 0; i < elements.size(); ++i) {
 
@@ -96,44 +96,50 @@ std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(
     /// TODO : Move into InstancedRenderElement
     /// binding instance transform matrix data
 
-    /*descriptions[elements.size()].binding = 1;
-    descriptions[elements.size()].location = elements.size();
-    descriptions[elements.size()].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[elements.size()].offset = 0;
+  if (isStatic) {
+      descriptions[elements.size()].binding = 1;
+      descriptions[elements.size()].location = elements.size();
+      descriptions[elements.size()].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      descriptions[elements.size()].offset = 0;
 
-    descriptions[elements.size()+1].binding = 1;
-    descriptions[elements.size()+1].location = elements.size()+1;
-    descriptions[elements.size()+1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[elements.size()+1].offset = sizeof(glm::vec4);
+      descriptions[elements.size()+1].binding = 1;
+      descriptions[elements.size()+1].location = elements.size()+1;
+      descriptions[elements.size()+1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      descriptions[elements.size()+1].offset = sizeof(glm::vec4);
 
-    descriptions[elements.size()+2].binding = 1;
-    descriptions[elements.size()+2].location = elements.size()+2;
-    descriptions[elements.size()+2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[elements.size()+2].offset = 2*sizeof(glm::vec4);
+      descriptions[elements.size()+2].binding = 1;
+      descriptions[elements.size()+2].location = elements.size()+2;
+      descriptions[elements.size()+2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      descriptions[elements.size()+2].offset = 2*sizeof(glm::vec4);
 
-    descriptions[elements.size()+3].binding = 1;
-    descriptions[elements.size()+3].location = elements.size()+3;
-    descriptions[elements.size()+3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    descriptions[elements.size()+3].offset = 3*sizeof(glm::vec4);*/
+      descriptions[elements.size()+3].binding = 1;
+      descriptions[elements.size()+3].location = elements.size()+3;
+      descriptions[elements.size()+3].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      descriptions[elements.size()+3].offset = 3*sizeof(glm::vec4);
+  }
+
+  std::cout << "Model uses " << descriptions.size() << " Attribute Descriptions for " << elements.size() << " inputs" << std::endl;
 
     return descriptions;
 
 }
 
-std::vector<VkVertexInputBindingDescription> createInputBindingDescriptions(size_t stride) {
+std::vector<VkVertexInputBindingDescription> createInputBindingDescriptions(size_t stride, bool isStatic=false) {
 
     VkVertexInputBindingDescription description = {};
     description.binding = 0;
     description.stride = stride;
     description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    /// TODO : move into InstacedRenderElement
-    /*VkVertexInputBindingDescription instances = {};
-    instances.binding = 1;
-    instances.stride = sizeof(glm::mat4);
-    instances.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;*/
+    std::vector<VkVertexInputBindingDescription> bindings = {description};
 
-    std::vector<VkVertexInputBindingDescription> bindings = {description};//,instances};
+    if (isStatic) {
+      VkVertexInputBindingDescription instances = {};
+      instances.binding = 1;
+      instances.stride = sizeof(glm::mat4);
+      instances.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+      bindings.push_back(instances);
+    }
 
     return bindings;
 
@@ -269,8 +275,8 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, sizeof(Vertex));
     std::vector<uint8_t> indexData = mesh->getCompactIndices(&indexSizeBytes, &indexCount);
 
-    this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
-    this->bindingDescription = createInputBindingDescriptions(sizeof(Vertex));
+    this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh, false);
+    this->bindingDescription = createInputBindingDescriptions(sizeof(Vertex), false);
 
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
     this->iBuffer = new IndexBuffer<uint8_t>(state, indexData, indexSizeBytes);
@@ -282,18 +288,23 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { //
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize) {
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize) : Model(state, mesh, elements, elementSize, false) {
+
+
+}
+
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize, bool isStatic) {
 
     uint32_t indexSizeBytes;
     uint32_t indexCount;
 
     std::vector<uint8_t> meshData = mesh->getInterleavedData(elements, elementSize);
     std::vector<uint8_t> indexData = mesh->getCompactIndices(&indexSizeBytes, &indexCount);
-    
-    this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh);
-    this->bindingDescription = createInputBindingDescriptions(elementSize);
 
-    
+    this->attributeDescriptions = createInputAttributeDescriptions(elements, mesh, isStatic);
+    this->bindingDescription = createInputBindingDescriptions(elementSize, isStatic);
+
+
     this->vBuffer = new VertexBuffer<uint8_t>(state, meshData);
     this->iBuffer = new IndexBuffer<uint8_t>(state, indexData, indexSizeBytes);
 
@@ -335,7 +346,7 @@ void Model::uploadToGPU(const VkDevice & device, const VkCommandPool & commandPo
 
   if (status & STATUS_UPLOADED)
     return;
-  
+
     this->vBuffer->upload(device, commandPool, q);
     this->iBuffer->upload(device, commandPool, q);
 

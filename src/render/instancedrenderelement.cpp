@@ -2,21 +2,28 @@
 
 Transform<float> nullTransform;
 
-InstancedRenderElement::InstancedRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, int scSize) : RenderElement(view, model, material, scSize, nullTransform) {
+InstancedRenderElement::InstancedRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, int scSize) : RenderElement(view, model, material, scSize, nullTransform, true) {
 
-  instanceTransforms = std::vector<glm::mat4>();
-  instances = std::unordered_map<uint32_t, InstanceInfo>();
-  transforms = std::vector<Transform<float>>();
+  instanceTransforms = std::vector<glm::mat4>(1);
+  instances = std::unordered_map<uint32_t, InstanceInfo>(1);
+  transforms = std::vector<Transform<float>>(1);
 
-  //transforms[0] = initTransform;
+  transforms[0] = Transform<float>();
 
-  //instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
+  instanceTransforms[0] = toGLMMatrx(getTransformationMatrix(transforms[0]));
 
-  instanceCount = 0;
+  instanceCount = 1;
 
-  //this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-  //this->createUniformBuffers(scSize, this->binds);
-  
+  std::cout << "Creating DynamicBuffer" << std::endl;
+
+  this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+  std::cout << "Creating uniform buffers" << std::endl;
+  this->createUniformBuffers(scSize, this->binds);
+
+  std::cout << "Creating descriptor pool" << std::endl;
+
+  std::cout << "Shader: " << this->shader << std::endl;
+
   //this->descPool = this->shader->setupDescriptorPool(scSize, binds);
   //this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, this->binds, texture, scSize);
 
@@ -26,15 +33,20 @@ void InstancedRenderElement::constructBuffers(int scSize) {
 
   RenderElement::constructBuffers(scSize);
   this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-  
+
+}
+
+void InstancedRenderElement::markBufferDirty() {
+  this->instanceBufferDirty = true;
+  this->handler.signalTransfer(this);
 }
 
 RenderElement::Instance InstancedRenderElement::addInstance(Transform<float> & trans) {
   uint32_t index = this->transforms.size();
 
   transforms.push_back(trans);
-  instanceTransforms.push_back(getTransformationMatrixGLM(trans));
- 
+  instanceTransforms.push_back(toGLMMatrx(getTransformationMatrix(trans)));
+
   instances[index] = (InstanceInfo){index, index};
   this->markBufferDirty();
 
@@ -57,12 +69,12 @@ void InstancedRenderElement::updateInstance(Instance &instance, Transform<float>
   transformBufferMutex.lock();
 
   this->transforms[info.pos] = trans;
-  this->instanceTransforms[info.pos] = getTransformationMatrixGLM(transforms[info.pos]);
+  this->instanceTransforms[info.pos] = toGLMMatrx(getTransformationMatrix(trans));
 
   transformBufferMutex.unlock();
 
   this->markBufferDirty();
-  
+
 }
 
 void InstancedRenderElement::deleteInstance(Instance &instance) {
@@ -103,15 +115,16 @@ void InstancedRenderElement::deleteInstance(Instance &instance) {
   instanceCount--;
   //this->instanceCountUpdated = true;
   transformBufferMutex.unlock();
-  
+
 }
 
 void InstancedRenderElement::recordTransfer(VkCommandBuffer &cmdBuffer) {
 
+  std::cout << "Recording instance-transfer " << instanceTransforms.size() << std::endl;
   transformBufferMutex.lock();
   this->instanceBuffer->fill(instanceTransforms, cmdBuffer);
   transformBufferMutex.unlock();
-  
+
 }
 
 void InstancedRenderElement::updateUniformBuffer(UniformBufferObject & obj,  uint32_t imageIndex) {
@@ -131,7 +144,7 @@ void InstancedRenderElement::updateUniformBuffer(UniformBufferObject & obj,  uin
     this->instanceBufferDirty = false;
 
   }
-  
+
 }
 
 bool InstancedRenderElement::needsDrawCmdUpdate() {
@@ -142,16 +155,37 @@ void InstancedRenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t
 
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
+  //std::cout << "InstancedRenderElement::renderShaderless" << std::endl;
+
   //std::cout << "Updating push constants" << std::endl;
 
-  glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
-  
-  vkCmdPushConstants(buffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
+  //glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
+
+  //vkCmdPushConstants(buffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
 
   model->bindForRender(buffer);
   VkDeviceSize offsets[] = {0};
-  //vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
-  vkCmdDrawIndexed(buffer, model->getIndexCount(), 1, 0, 0, 0);
-
-  
+  vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
+  vkCmdDrawIndexed(buffer, model->getIndexCount(), instanceCount, 0, 0, 0);
 }
+
+void InstancedRenderElement::render(VkCommandBuffer & buffer, uint32_t frameIndex) {
+
+  //std::cout << "Pipeline (Instanced) " << pipeline << std::endl;
+  vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+  vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
+
+  //std::cout << "InstancedRenderElement::render" << std::endl;
+
+  //std::cout << "Updating push constants" << std::endl;
+
+  //glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
+
+  //vkCmdPushConstants(buffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
+
+  model->bindForRender(buffer);
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
+  vkCmdDrawIndexed(buffer, model->getIndexCount(), instanceCount, 0, 0, 0);
+}
+

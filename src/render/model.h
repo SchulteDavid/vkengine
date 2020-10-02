@@ -38,6 +38,7 @@ public:
   Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices);
   Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh);
   Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize);
+  Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize, bool isStatic);
   virtual ~Model();
 
   void uploadToGPU(const VkDevice & device, const VkCommandPool & commandPool, const vkutil::Queue & q);
