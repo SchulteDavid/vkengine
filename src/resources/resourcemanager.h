@@ -62,9 +62,13 @@ protected:
 private:
 
   std::unordered_map<std::string, ResourceRegistry<Resource> *> registries;
+
   std::mutex loadingQueueMutex;
+  std::condition_variable loadingCV;
   std::queue<LoadingResource> loadingQueue;
+
   std::mutex uploadingQueueMutex;
+  std::condition_variable uploadingCV;
   std::queue<LoadingResource> uploadingQueue;
 
   std::mutex pipelineInfoMutex;

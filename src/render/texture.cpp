@@ -49,9 +49,9 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, i
     copyBufferToImage(state, stagingBuffer, image, width, height, depth);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    logger(std::cout) << "Generating mipmaps" << std::endl;
+    lout << "Generating mipmaps" << std::endl;
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
-    logger(std::cout) << "done" << std::endl;
+    lout << "done" << std::endl;
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -94,18 +94,23 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data,
 
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
+    lout << "Creating Image" << std::endl;
 
     vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
+    lout << "Trasitioning Layout" << std::endl;
+
+    //state.graphicsQueueMutex.lock();
     this->transitionLayout(state, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyBufferToImage(state, stagingBuffer, image, width, height, depth);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    logger(std::cout) << "Generating mipmaps" << std::endl;
+    lout << "Generating mipmaps" << std::endl;
     //state.graphicsQueueMutex.lock();
-    generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
+    generateMipmaps(width, height, state.loadingCommandPool, device, state.graphicsQueue);
     //state.graphicsQueueMutex.unlock();
-    logger(std::cout) << "done" << std::endl;
+    lout << "done" << std::endl;
+    //state.graphicsQueueMutex.unlock();
 
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
@@ -229,7 +234,8 @@ void Texture::copyBufferToImage(VulkanState & state, VkBuffer & buffer, VkImage 
 void Texture::transitionLayout(VulkanState & state, VkImageLayout newLayout) {
 
 
-    transitionImageLayout(state, image, format, layout, newLayout, mipLevels);
+    //transitionImageLayout(state, image, format, layout, newLayout, mipLevels);
+    vkutil::transitionImageLayout(image, format, layout, newLayout, mipLevels, state.loadingCommandPool, state.device, state.loadingGraphicsQueue);
 
     layout = newLayout;
 
@@ -313,7 +319,7 @@ VkImageView Texture::createImageView(const VulkanState & state, VkImage & image,
 
 VkSampler Texture::createSampler(const VulkanState & state, int mipLevels) {
 
-    logger(std::cout) << "Creating sampler with " << mipLevels << " mip levels" << std::endl;
+    lout << "Creating sampler with " << mipLevels << " mip levels" << std::endl;
 
     VkSamplerCreateInfo samplerInfo = {};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

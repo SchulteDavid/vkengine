@@ -134,7 +134,7 @@ VkDescriptorPool Shader::setupDescriptorPool(int scSize, std::vector<Binding> & 
 
     Binding b = binds[i];
     VkDescriptorPoolSize poolSize;
-    
+
     switch (b.type) {
 
     case BINDING_UNIFORM_BUFFER:
@@ -173,7 +173,7 @@ VkDescriptorPool Shader::setupDescriptorPool(int scSize, std::vector<Binding> & 
   if (descPool == VK_NULL_HANDLE)
   throw dbg::trace_exception("Cannot create descriptor in NULL-pool!");
 
-  std::cout << "Creating descriptor set with " << tex.size() << " textures" << std::endl;
+  lout << "Creating descriptor set with " << tex.size() << " textures" << std::endl;
 
   std::vector<VkDescriptorSetLayout> layouts(scSize, descLayout);
 

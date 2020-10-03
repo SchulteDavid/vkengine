@@ -1,5 +1,6 @@
 #include "skeletalrig.h"
 #include "util/debug/trace_exception.h"
+#include "util/debug/logger.h"
 
 #include "string.h"
 
@@ -19,9 +20,9 @@ Skin::Skin(std::vector<Joint> joints) {
     this->joints = joints;
     for (Joint & j : this->joints) {
 
-        std::cout << "Before transpose " << std::endl << j.inverseTransform << std::endl;
+        lout << "Before transpose " << std::endl << j.inverseTransform << std::endl;
         j.inverseTransform = j.inverseTransform.transpose();
-        std::cout << "After transpose " << std::endl << j.inverseTransform << std::endl;
+        lout << "After transpose " << std::endl << j.inverseTransform << std::endl;
 
     }
 }
@@ -39,11 +40,11 @@ void Skin::writeTransformDataToBuffer(float * buffer) {
     for (unsigned int i = 0; i < joints.size(); ++i) {
 
         Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
-	//std::cout << i << std::endl;
-        //std::cout << mat << std::endl;
+	//lout << i << std::endl;
+        //lout << mat << std::endl;
         const float * arr = mat.asArray();
 
-        //std::cout << "arr[0] = " << arr[0] << " arr[4] = " << arr[4] << std::endl;
+        //lout << "arr[0] = " << arr[0] << " arr[4] = " << arr[4] << std::endl;
 
         memcpy(buffer + 16 * i, arr, 16 * sizeof(float));
 

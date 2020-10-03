@@ -16,12 +16,12 @@ class World;
 namespace strc {
 
   class Node : public Resource {
-    
+
   public:
-    Node();
-    Node(Transform<double> transform);
+    Node(std::string name);
+    Node(std::string name, Transform<double> transform);
     virtual ~Node();
-    
+
     void addChild(std::shared_ptr<Node> child);
     const std::vector<std::shared_ptr<Node>> & getChildren();
 
@@ -36,7 +36,9 @@ namespace strc {
     void setTransform(Transform<double> trans, Transform<double> ptrans);
 
     static void registerLoaders();
-    
+
+    const std::string getName();
+
   protected:
     /// This is the transform relative to
     /// the parent node.
@@ -50,11 +52,13 @@ namespace strc {
     virtual void addToViewport(Viewport * view);
 
     virtual void onTransformUpdate();
-    
+
+    const std::string name;
+
   private:
     std::vector<std::shared_ptr<Node>> children;
   };
-  
+
 } // namespace strc
 
 #endif

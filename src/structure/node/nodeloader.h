@@ -8,15 +8,17 @@
 class NodeUploader : public ResourceUploader<strc::Node> {
 
  public:
-  
+
   NodeUploader(std::shared_ptr<strc::Node> node);
-  
+
   std::shared_ptr<strc::Node> uploadResource() override;
-  
+
   bool uploadReady() override;
 
-  void addChild(std::shared_ptr<NodeUploader> child);
-  
+  void addChild(LoadingResource child);
+
+  virtual std::string getNodeName();
+
  protected:
 
   NodeUploader();
@@ -25,8 +27,8 @@ class NodeUploader : public ResourceUploader<strc::Node> {
 
  private:
   std::shared_ptr<strc::Node> rootNode;
-  std::vector<std::shared_ptr<NodeUploader>> children;
-  
+  std::vector<LoadingResource> children;
+
 };
 
 class NodeLoader : public ResourceLoader<strc::Node> {
@@ -39,20 +41,21 @@ public:
     NodeLoader * loader;
     Transform<double> parentTransform;
     Transform<double> transform;
+    std::string fname;
   };
 
-  typedef std::function<std::shared_ptr<NodeUploader>(std::shared_ptr<config::NodeCompound>, const LoadingContext & context)> NodeLoadingFunction;
-  
+  typedef std::function<std::shared_ptr<NodeUploader>(std::shared_ptr<config::NodeCompound>, const LoadingContext &, const std::string)> NodeLoadingFunction;
+
   NodeLoader();
-  
-  std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname);
+
+  std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname) override;
   std::shared_ptr<NodeUploader> loadNodeFromCompound(std::shared_ptr<config::NodeCompound> comp, const LoadingContext & context);
   std::shared_ptr<NodeUploader> loadNodeFromFile(std::string fname, const LoadingContext & context);
 
   LoadingResource loadDependencyResource(ResourceLocation location);
 
   static void registerNodeLoader(std::string type, NodeLoadingFunction func);
-  
+
 private:
   static std::unordered_map<std::string, NodeLoadingFunction> fmap;
 

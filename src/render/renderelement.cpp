@@ -359,7 +359,7 @@ Shader * RenderElement::getShader() {
 
 void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
 
-  //std::cout << "Pipeline " << pipeline << std::endl;
+  //lout << "Pipeline " << pipeline << std::endl;
   vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
   vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
@@ -379,7 +379,7 @@ void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameInd
 
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-  std::cout << "Updating push constants " << this << " " << model->getBindingDescription().size() << std::endl;
+  lout << "Updating push constants " << this << " " << model->getBindingDescription().size() << std::endl;
 
   glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
 
@@ -405,7 +405,7 @@ RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_p
 
   if (strc->hasAnimations()) {
 
-    std::cout << "Element has animations" << std::endl;
+    lout << "Element has animations" << std::endl;
 
     if (!strc->getSkin())
       throw dbg::trace_exception("Trying to create animated renderelement with no skin");

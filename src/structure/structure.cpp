@@ -167,27 +167,27 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
 
     try {
 
-        std::cout << "Loading Structure " << fname << std::endl;
+        lout << "Loading Structure " << fname << std::endl;
 
         std::shared_ptr<NodeCompound> root = config::parseFile(fname);
 
-        std::cout << "strc root: " << root << std::endl;
+        lout << "strc root: " << root << std::endl;
 
         std::string matName = fname;
         matName.append(".mat");
 
-        std::cout << matName << std::endl;
+        lout << matName << std::endl;
 
         MaterialLoader * matLoader = (MaterialLoader *) resourceManager->getLoader("Material", 0);
         std::shared_ptr<NodeCompound> matCompound = root->getNodeCompound("material");//->getElement(0);
-        std::cout << "matCompound: " << matCompound.get() << std::endl;
+        lout << "matCompound: " << matCompound.get() << std::endl;
         std::shared_ptr<ResourceUploader<Resource>> matUploader((ResourceUploader<Resource> *) matLoader->buildResource(matCompound));
 
-        std::cout << matUploader << std::endl;
+        lout << matUploader << std::endl;
 
         LoadingResource materialRes = this->scheduleSubresource(ResourceLocation("Material", matName), matUploader);
 
-        std::cout << "Loading elements from file" << std::endl;
+        lout << "Loading elements from file" << std::endl;
 
         std::shared_ptr<Node<std::shared_ptr<NodeCompound>>> elements = root->getNode<std::shared_ptr<NodeCompound>>("elements");
 
@@ -202,9 +202,9 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
             if (type == 0) {
                 std::string modelName = elements->getElement(i)->getNode<char>("model")->getValueString();
 
-                std::cout << "Loading mesh from " << modelName << std::endl;
+                lout << "Loading mesh from " << modelName << std::endl;
                 std::shared_ptr<Mesh> tmpMesh = Mesh::loadFromFile(modelName);
-                std::cout << "Done loading mesh" << std::endl;
+                lout << "Done loading mesh" << std::endl;
 
                 Matrix<4,4,float> trans = getTransform(elements->getElement(i)->getNodeCompound("transform"));
 
@@ -251,11 +251,11 @@ std::shared_ptr<ResourceUploader<Structure>> StructureLoader::loadResource(std::
         modelRes = this->scheduleSubresource(ResourceLocation("Mesh", matName), modelUploader);
 
         StructureUploader * uploader = new StructureUploader(modelRes, materialRes, mesh);
-        std::cout << "Uploader : " << uploader << std::endl;
+        lout << "Uploader : " << uploader << std::endl;
         return std::shared_ptr<ResourceUploader<Structure>>(uploader);
 
     } catch (std::runtime_error e) {
-        std::cerr << e.what() << std::endl;
+        lerr << e.what() << std::endl;
     }
 
     return nullptr;

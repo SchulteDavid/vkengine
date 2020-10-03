@@ -118,7 +118,7 @@ std::vector<VkVertexInputAttributeDescription> createInputAttributeDescriptions(
       descriptions[elements.size()+3].offset = 3*sizeof(glm::vec4);
   }
 
-  std::cout << "Model uses " << descriptions.size() << " Attribute Descriptions for " << elements.size() << " inputs" << std::endl;
+  lout << "Model uses " << descriptions.size() << " Attribute Descriptions for " << elements.size() << " inputs" << std::endl;
 
     return descriptions;
 
@@ -317,7 +317,7 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std:
 
 Model::~Model() {
 
-  //std::cout << "Deleting model" << std::endl;
+  //lout << "Deleting model" << std::endl;
 
     delete iBuffer;
     delete vBuffer;

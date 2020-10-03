@@ -1,4 +1,4 @@
-g++
+gcc
 -std=c++14
 -stdlib=stdlibc++
 -I./include/

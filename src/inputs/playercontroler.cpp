@@ -97,7 +97,7 @@ void PlayerControler::onMouseButton(int button, int action, int mods) {
 
 void PlayerControler::onScroll(double dx, double dy) {
 
-    logger(std::cout) << "Scroll " << dx << " " << dy << std::endl;
+    lout << "Scroll " << dx << " " << dy << std::endl;
 
     this->radius -= dy * 0.05 * radius;
 

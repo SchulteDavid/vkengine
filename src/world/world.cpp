@@ -24,7 +24,7 @@ void World::simulateStep(double dt) {
     this->physicsContext->simulateStep(dt);
 
     /*for (std::shared_ptr<Entity> e : entities) {
-        std::cout << "Updating " << e << std::endl;
+        lout << "Updating " << e << std::endl;
         e->onUpdate(dt);
     }*/
 

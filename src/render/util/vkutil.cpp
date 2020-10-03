@@ -69,10 +69,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityF
         #ifdef THROW_ON_WARN
         throw dbg::trace_exception(pCallbackData->pMessage);
         #else
-        logger(std::cerr) << "WARNING : " << pCallbackData->pMessage << std::endl;
+        lerr << "WARNING : " << pCallbackData->pMessage << std::endl;
         #endif
     } else {
-        logger(std::cout) << "DEBUG   : " << pCallbackData->pMessage << std::endl;
+        lout << "DEBUG   : " << pCallbackData->pMessage << std::endl;
     }
     //exit(1);
     return VK_FALSE;
@@ -177,10 +177,10 @@ VkInstance vkutil::createInstance(std::vector<const char *> validationLayers) {
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-    logger(std::cout) << "available extensions:" << std::endl;
+    lout << "available extensions:" << std::endl;
     for (int i = 0; i < extensions.size(); ++i) {
 
-        logger(std::cout) << "\t" << extensions[i].extensionName << std::endl;
+        lout << "\t" << extensions[i].extensionName << std::endl;
 
     }
 
@@ -703,8 +703,8 @@ void vkutil::endSingleCommand(VkCommandBuffer & commandBuffer, const VkCommandPo
 
     q.lock();
     vkQueueSubmit(q.q, 1, &submitInfo, VK_NULL_HANDLE);
-    q.unlock();
     vkQueueWaitIdle(q.q);
+    q.unlock();
 
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 
@@ -777,13 +777,13 @@ std::vector<VkImageView> vkutil::createSwapchainImageViews(const std::vector<VkI
 }
 
 void Queue::lock() const {
-    //std::cerr << "Locking queue: " << (void *) q << std::endl;
+    //lerr << "Locking queue: " << (void *) q << std::endl;
     //print_stacktrace(stderr);
     m->lock();
 }
 
 void Queue::unlock() const {
-    //std::cerr << "Unlocking queue: " << (void *) q << std::endl;
+    //lerr << "Unlocking queue: " << (void *) q << std::endl;
     //print_stacktrace(stderr);
     m->unlock();
 }

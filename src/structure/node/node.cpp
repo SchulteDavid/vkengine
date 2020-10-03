@@ -6,15 +6,15 @@
 using namespace Math;
 using namespace strc;
 
-Node::Node() : Node(Transform<double>()) {
+Node::Node(std::string name) : Node(name, Transform<double>()) {
 
 }
 
-Node::Node(Transform<double> transform) {
+Node::Node(std::string name, Transform<double> transform) : name(name) {
 
   this->transform = transform;
   this->globalTransform = transform;
-  
+
 }
 
 Node::~Node() {
@@ -39,23 +39,23 @@ void Node::viewportAdd(Viewport * view) {
   for (std::shared_ptr<Node> n : this->children) {
     n->viewportAdd(view);
   }
-  
+
 }
 
 void Node::addToWorld(std::shared_ptr<World> world) {
-  
+
 }
 
 void Node::addToViewport(Viewport * view) {
 
 }
 
-std::shared_ptr<NodeUploader> loadDefaultNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context) {
+std::shared_ptr<NodeUploader> loadDefaultNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
 
-  std::shared_ptr<strc::Node> node = std::make_shared<strc::Node>(context.transform);
-  
+  std::shared_ptr<strc::Node> node = std::make_shared<strc::Node>(nodeName, context.transform);
+
   return std::make_shared<NodeUploader>(node);
-  
+
 }
 
 void Node::setTransform(Transform<double> trans) {
@@ -68,7 +68,7 @@ void Node::setTransform(Transform<double> trans) {
   for (std::shared_ptr<Node> child : children) {
     child->setTransform(trans, globalTransform);
   }
-  
+
 }
 void Node::setTransform(Transform<double> trans, Transform<double> ptrans) {
 
@@ -80,7 +80,7 @@ void Node::setTransform(Transform<double> trans, Transform<double> ptrans) {
   for (std::shared_ptr<Node> child : children) {
     child->setTransform(trans, globalTransform);
   }
-  
+
 }
 
 void Node::onTransformUpdate() {
@@ -95,6 +95,10 @@ const Transform<double> & Node::getGlobalTransform() {
   return globalTransform;
 }
 
+const std::string Node::getName() {
+  return name;
+}
+
 #include "meshnode.h"
 #include "lightnode.h"
 
@@ -103,5 +107,5 @@ void Node::registerLoaders() {
   NodeLoader::registerNodeLoader("Node", loadDefaultNode);
   NodeLoader::registerNodeLoader("MeshNode", strc::loadMeshNode);
   NodeLoader::registerNodeLoader("LightNode", strc::loadLightNode);
-  
+
 }

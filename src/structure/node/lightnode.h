@@ -16,7 +16,7 @@ namespace strc {
 		    LIGHT_SUN,
     };
 
-    LightNode(LightType type, float power, Transform<double> transform);
+    LightNode(std::string name, LightType type, float power, Transform<double> transform);
 
     void addToViewport(Viewport * view) override;
 
@@ -24,12 +24,12 @@ namespace strc {
 
     LightType type;
     float power;
-    
-    
+
+
   };
 
-  std::shared_ptr<NodeUploader> loadLightNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context);
-  
+  std::shared_ptr<NodeUploader> loadLightNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName);
+
 };
 
 #endif

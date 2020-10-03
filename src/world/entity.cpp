@@ -78,7 +78,7 @@ std::shared_ptr<PhysicsObject> Entity::getPhysicsObject() {
 
 void Entity::applyImpulse(Vector<3> impulse) {
 
-    std::cout << "EntityImpulse " << impulse << std::endl;
+    lout << "EntityImpulse " << impulse << std::endl;
     this->physObject->applyImpulse(impulse);
 
 }

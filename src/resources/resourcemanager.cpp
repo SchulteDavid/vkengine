@@ -72,7 +72,7 @@ void ResourceManager::submitUpload(LoadingResource resource) {
 
 }
 
-#define dbg_log (std::cout << "[ " << __FILE__ << " : " << __PRETTY_FUNCTION__ << " ] ")
+#define dbg_log (lout << "[ " << __FILE__ << " : " << __PRETTY_FUNCTION__ << " ] ")
 
 void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
@@ -80,43 +80,43 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
     while (resourceManager->keepThreadsRunning) {
 
-      //std::cout << "Getting new Resource to load" << std::endl;
+      //lout << "Getting new Resource to load" << std::endl;
       LoadingResource fres = resourceManager->getNextResource();
       if (!fres->isPresent) continue;
 
       if (resourceManager->isLoaded(fres->name)) {
 
-	logger(std::cout) << "Skipping loading of " << fres->name << " is already loaded" << std::endl;
+        lout << "Skipping loading of " << fres->name << " is already loaded" << std::endl;
 
-	fres->location = resourceManager->get<Resource>(fres->name);
-	fres->status.isLoaded = true;
-	fres->status.isUploaded = true;
-	fres->status.isUseable = true;
-	fres->prom.set_value();
+        fres->location = resourceManager->get<Resource>(fres->name);
+        fres->status.isLoaded = true;
+        fres->status.isUploaded = true;
+        fres->status.isUseable = true;
+        fres->prom.set_value();
 
-	continue;
+        continue;
 
       }
 
       if (resourceManager->isResourceInPipeline(fres)){
 
-	/// Reschedule loading for later checks.
-	//std::cout << "Reschedule of " << fres->name << std::endl;
-	resourceManager->rescheduleLoad(fres);
-	continue;
+        /// Reschedule loading for later checks.
+        //lout << "Reschedule of " << fres->name << std::endl;
+        resourceManager->rescheduleLoad(fres);
+        continue;
 
       }
 
-      logger(std::cout) << "Loading " << fres->name << std::endl;
+      lout << "Loading " << fres->name << std::endl;
 
       resourceManager->markResourceInPipeline(fres);
 
       std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->name);
       if (!uploader)
-	throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name.filename));
+        throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name.filename));
       fres->uploader = uploader;
 
-      logger(std::cout) << fres->name << " : " << uploader << std::endl;
+      lout << fres->name << " : " << uploader << std::endl;
 
       fres->status.isLoaded = true;
 
@@ -124,13 +124,13 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
 
 
-      logger(std::cout) << "Loading Done " << fres->name << std::endl;
+      lout << "Loading Done " << fres->name << std::endl;
 
     }
   } catch (std::exception & e) {
 
-    logger(std::cerr) << "Exception while loading" << std::endl;
-    logger(std::cerr) << e.what() << std::endl;
+    lerr << "Exception while loading" << std::endl;
+    lerr << e.what() << std::endl;
     exit(1);
 
   }
@@ -139,17 +139,23 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
 void ResourceManager::rescheduleUpload(LoadingResource res) {
 
-  uploadingQueueMutex.lock();
-  uploadingQueue.push(res);
-  uploadingQueueMutex.unlock();
+  //uploadingQueueMutex.lock();
+  {
+    std::lock_guard<std::mutex> guard(uploadingQueueMutex);
+    uploadingQueue.push(res);
+  }
+
+  uploadingCV.notify_one();
 
 }
 
 void ResourceManager::rescheduleLoad(LoadingResource res) {
 
-  loadingQueueMutex.lock();
-  loadingQueue.push(res);
-  loadingQueueMutex.unlock();
+  {
+    std::lock_guard<std::mutex> guard(loadingQueueMutex);
+    loadingQueue.push(res);
+  }
+  loadingCV.notify_one();
 
 }
 
@@ -179,7 +185,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
       throw dbg::trace_exception(std::string("Missing uploader for future resource ").append(fres->name.type).append(" / ").append(fres->name.filename));
 
     ResourceUploader<Resource>* tmpUploader = (ResourceUploader<Resource> *) fres->uploader.get();
-	
+
     if (!tmpUploader->uploadReady()) {
 
       resourceManager->rescheduleUpload(fres);
@@ -187,11 +193,11 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
     }
 
-    logger(std::cout) << "Uploading " << fres->name << std::endl;
+    lout << "Uploading " << fres->name << std::endl;
 
     std::shared_ptr<Resource> tmpResource = tmpUploader->uploadResource();
     if (!tmpResource) {
-      logger(std::cerr) << "Resource " << fres->name << " is empty pointer" << std::endl;
+      lerr << "Resource " << fres->name << " is empty pointer" << std::endl;
       throw dbg::trace_exception("Null pointer for uploaded resource");
     }
     fres->location = resourceManager->registerResource(fres->name, tmpResource);
@@ -211,9 +217,12 @@ LoadingResource ResourceManager::getNextResource() {
 
   std::shared_ptr<FutureResource> resource;
 
-  loadingQueueMutex.lock();
+  std::unique_lock<std::mutex> lock(loadingQueueMutex);
+
+  loadingCV.wait(lock, [&] {return !loadingQueue.empty() || !keepThreadsRunning;});
+
   if (loadingQueue.empty()) {
-    loadingQueueMutex.unlock();
+
 
     resource = std::shared_ptr<FutureResource>(new FutureResource());
 
@@ -224,7 +233,6 @@ LoadingResource ResourceManager::getNextResource() {
   resource = loadingQueue.front();
   loadingQueue.pop();
 
-  loadingQueueMutex.unlock();
   return resource;
 
 }
@@ -233,9 +241,12 @@ LoadingResource ResourceManager::getNextUploadingResource() {
 
   std::shared_ptr<FutureResource> resource;
 
-  uploadingQueueMutex.lock();
+  std::unique_lock<std::mutex> lock(uploadingQueueMutex);
+
+  uploadingCV.wait(lock, [&] {return !uploadingQueue.empty() || !keepThreadsRunning;});
+
   if (uploadingQueue.empty()) {
-    uploadingQueueMutex.unlock();
+
     resource = std::shared_ptr<FutureResource>(new FutureResource());
     resource->isPresent = false;
     return resource;
@@ -244,7 +255,7 @@ LoadingResource ResourceManager::getNextUploadingResource() {
   resource = uploadingQueue.front();
   uploadingQueue.pop();
 
-  uploadingQueueMutex.unlock();
+
   return resource;
 
 }
@@ -261,9 +272,11 @@ LoadingResource ResourceManager::loadResourceBg(ResourceLocation location) {
   res->status = status;
   res->fut = res->prom.get_future();
 
-  loadingQueueMutex.lock();
-  loadingQueue.push(res);
-  loadingQueueMutex.unlock();
+  {
+    std::lock_guard<std::mutex> guard(loadingQueueMutex);
+    loadingQueue.push(res);
+  }
+  loadingCV.notify_one();
 
   return res;
 
@@ -293,7 +306,7 @@ void ResourceManager::printSummary() {
 
   for (auto const & x : this->registries) {
 
-    logger(std::cout) << x.first << ": " << std::endl;
+    lout << x.first << ": " << std::endl;
     x.second->printSummary();
 
   }
@@ -303,6 +316,9 @@ void ResourceManager::printSummary() {
 void ResourceManager::joinLoadingThreads() {
 
   this->keepThreadsRunning = false;
+
+  loadingCV.notify_all();
+  uploadingCV.notify_all();
 
   for (std::thread * th : loadingThreads) {
     th->join();
@@ -353,5 +369,15 @@ LoadingResource scheduleSubresourceUpload(ResourceManager * manager, ResourceLoc
   manager->submitUpload(res);
 
   return res;
+
+}
+
+ResourceLocation ResourceLocation::parse(std::string type, std::string data) {
+
+  auto pos = data.find("::");
+  std::string fname = data.substr(0, pos);
+  std::string name = data.substr(pos+2, std::string::npos);
+
+  return ResourceLocation(type, fname, name);
 
 }

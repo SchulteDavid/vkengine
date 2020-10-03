@@ -8,7 +8,7 @@
 using namespace Math;
 using namespace strc;
 
-MeshNode::MeshNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans) : Node(trans) {
+MeshNode::MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans) : Node(name, trans) {
 
   this->mesh = mesh;
   this->material = material;
@@ -21,7 +21,7 @@ MeshNode::MeshNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> materia
   if (!this->mesh) {
     throw dbg::trace_exception("Empty mesh in MeshNode");
   }
-  
+
 }
 
 MeshNode::~MeshNode() {
@@ -29,7 +29,7 @@ MeshNode::~MeshNode() {
 }
 
 void MeshNode::addToWorld(std::shared_ptr<World> world) {
-  
+
 }
 
 std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
@@ -37,22 +37,22 @@ std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
   if (this->model){
         return model;
   }
-  
+
   unsigned int stride;
-  std::cout << "Getting input elements" << std::endl;
+  lout << "Getting input elements" << std::endl;
   const std::vector<InputDescription> & elements = material->getShader()->getInputs();
 
-  std::cout << "getting interleave data" << std::endl;
+  lout << "getting interleave data" << std::endl;
   std::vector<InterleaveElement> iData = mesh->compactStorage(elements, &stride);
 
-  std::cout << "Saving mesh" << std::endl;
+  lout << "Saving mesh" << std::endl;
   mesh->saveAsPLY("structure.ply");
 
-  std::cout << "contructing Model" << std::endl;
+  lout << "contructing Model" << std::endl;
   this->model = std::shared_ptr<Model>(new Model(state, mesh, iData, stride));
-  
+
   return model;
-  
+
 }
 
 std::shared_ptr<Material> MeshNode::getMaterial() {
@@ -65,11 +65,11 @@ std::shared_ptr<Mesh> MeshNode::getMesh() {
 
 void MeshNode::addToViewport(Viewport * view) {
 
-  std::cout << "Adding MeshNode to Viewport" << std::endl;
+  lout << "Adding MeshNode to Viewport" << std::endl;
 
   Transform<float> vTransform = convertTransform<double, float>(transform);
-  std::cout << "Building RenderElement at position " << vTransform << std::endl;
-  
+  lout << "Building RenderElement at position " << vTransform << std::endl;
+
   if (!this->renderElement) {
     std::shared_ptr<Model> tmpModel = buildModel(view->getState());
     renderElement = std::shared_ptr<RenderElement>(RenderElement::buildRenderElement(view, tmpModel, material, vTransform));
@@ -77,7 +77,7 @@ void MeshNode::addToViewport(Viewport * view) {
   }
 
   instance = renderElement->addInstance(vTransform);
-  
+
 }
 
 void MeshNode::onTransformUpdate() {
@@ -89,38 +89,44 @@ void MeshNode::onTransformUpdate() {
   this->renderElement->updateInstance(instance, vTransform);
 }
 
-MeshNodeUploader::MeshNodeUploader(LoadingResource mesh, LoadingResource material, Transform<double> transform) {
+MeshNodeUploader::MeshNodeUploader(std::string nodeName, LoadingResource mesh, LoadingResource material, Transform<double> transform) : nodeName(nodeName) {
     this->meshRes = mesh;
     this->materialRes = material;
     this->transform = transform;
 }
 
+std::string MeshNodeUploader::getNodeName() {
+  return nodeName;
+}
+
 std::shared_ptr<strc::Node> MeshNodeUploader::uploadResource() {
 
   std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(meshRes->location);
-  std::cout << "material location " << meshRes->location << std::endl;
+  lout << "material location " << meshRes->location << std::endl;
   std::shared_ptr<Material> mat = std::dynamic_pointer_cast<Material>(materialRes->location);
-  
-  std::shared_ptr<strc::Node> node = std::make_shared<strc::MeshNode>(mesh, mat, transform);
-  
+
+  std::shared_ptr<strc::Node> node = std::make_shared<strc::MeshNode>(nodeName, mesh, mat, transform);
+
   populateChildren(node);
-  
+
   return node;
 }
 
 bool MeshNodeUploader::uploadReady() {
-  std::cout << "Checking if MeshNode can be uploaded" << std::endl;
+  //lout << "Checking if MeshNode can be uploaded" << std::endl;
   return meshRes->status.isUseable && materialRes->status.isUseable && childrenReady();
 }
 
-std::shared_ptr<NodeUploader> strc::loadMeshNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context) {
+std::shared_ptr<NodeUploader> strc::loadMeshNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
 
   LoadingResource mesh = nullptr;
   LoadingResource material = nullptr;
-  
-  if (root->hasChild("meshfile")) {
-    std::string name(root->getNode<char>("meshfile")->getRawData());
-    mesh = context.loader->loadDependencyResource(ResourceLocation("Mesh", name));
+
+  if (root->hasChild("mesh")) {
+    std::string name(root->getNode<char>("mesh")->getRawData());
+    ResourceLocation location = ResourceLocation::parse("Mesh", name);
+    mesh = context.loader->loadDependencyResource(location);
+    //mesh = context.loader->loadDependencyResource(ResourceLocation("Mesh", name));
   }
 
   if (root->hasChild("matfile")) {
@@ -128,6 +134,6 @@ std::shared_ptr<NodeUploader> strc::loadMeshNode(std::shared_ptr<config::NodeCom
     material = context.loader->loadDependencyResource(ResourceLocation("Material", name));
   }
 
-  return std::make_shared<MeshNodeUploader>(mesh, material, context.transform);
-  
+  return std::make_shared<MeshNodeUploader>(nodeName, mesh, material, context.transform);
+
 }

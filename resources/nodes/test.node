@@ -1,5 +1,7 @@
 string type = "Node"
 
+string name = "Level1"
+
 comp transform = {
      float64 position = [0,0,0]
      float64 rotation = [1,0,0,0]
@@ -10,6 +12,7 @@ comp children = [
 
      {
 	string type = "MeshNode"
+	string name = "Mesh.001"
 
 	comp transform = {
 	     float64 position = [0,12,0]
@@ -17,12 +20,13 @@ comp children = [
      	     float64 scale = [1,1,1]
 	}
 
-	string meshfile = "tree.glb"
+	string mesh = "fmesh.ply"
 	string matfile = "resources/materials/test.mat"
 	
      },
      {
 	string type = "LightNode"
+	string name = "Light.001"
 	comp transform = {
 	     float64 position = [0,11,0]
 	     float64 rotation = [1,0,0,0]

@@ -22,13 +22,15 @@ struct ResourceLocation {
 
 
   ResourceLocation(std::string type, std::string filename) : type(type), filename(filename), name("") {
-    
+
+
   }
 
   ResourceLocation(std::string type, std::string filename, std::string name) : type(type), filename(filename), name(name) {
-    
+
+
   }
-  
+
   /// Registry in which this should be saved
   const std::string type;
 
@@ -38,7 +40,9 @@ struct ResourceLocation {
   /// Name of the resource in the file, can be empty if
   /// it does not apply.
   const std::string name;
-  
+
+  static ResourceLocation parse(std::string type, std::string name);
+
 };
 
 struct FutureResource {
@@ -52,7 +56,7 @@ struct FutureResource {
   bool isPresent;
   std::shared_ptr<void> uploader;
   std::shared_ptr<Resource> location;
-  
+
   std::future<void> fut;
   std::promise<void> prom;
 

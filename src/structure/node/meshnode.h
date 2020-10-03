@@ -12,16 +12,16 @@
 namespace strc {
 
   class MeshNode : public Node {
-    
+
   public:
-    MeshNode(std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans);
-    
+    MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans);
+
     virtual ~MeshNode();
 
     std::shared_ptr<Model> buildModel(vkutil::VulkanState & state);
     std::shared_ptr<Material> getMaterial();
     std::shared_ptr<Mesh> getMesh();
-    
+
   protected:
 
 
@@ -29,7 +29,7 @@ namespace strc {
     void addToViewport(Viewport * view) override;
 
     void onTransformUpdate() override;
-    
+
   private:
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Model> model;
@@ -37,29 +37,31 @@ namespace strc {
     std::shared_ptr<RenderElement> renderElement;
 
     RenderElement::Instance instance;
-  
+
   };
 
-  std::shared_ptr<NodeUploader> loadMeshNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context);
-  
+  std::shared_ptr<NodeUploader> loadMeshNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName);
+
 }
 
 class MeshNodeUploader : public NodeUploader {
 
 public:
 
-  MeshNodeUploader(LoadingResource mesh, LoadingResource material, Transform<double> transform);
+  MeshNodeUploader(std::string nodeName, LoadingResource mesh, LoadingResource material, Transform<double> transform);
 
   bool uploadReady() override;
 
   std::shared_ptr<strc::Node> uploadResource() override;
-  
+  std::string getNodeName() override;
+
 private:
 
   LoadingResource meshRes;
   LoadingResource materialRes;
   Transform<double> transform;
-  
+  const std::string nodeName;
+
 };
 
 #endif

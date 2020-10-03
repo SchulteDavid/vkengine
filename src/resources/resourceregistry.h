@@ -13,6 +13,7 @@
 #include <iostream>
 
 #include "util/debug/trace_exception.h"
+#include "util/debug/logger.h"
 
 template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::value>::type* = nullptr> class ResourceRegistry {
 
@@ -55,12 +56,12 @@ public:
 
     for (ResourceLoader<T> * l : loaders) {
 
-      std::cout << "Loader " << l << std::endl;
+      lout << "Loader " << l << std::endl;
 
       try {
 	return l->loadResource(name.filename);
       } catch (res::wrong_file_exception e) {
-	std::cerr << e.what() << std::endl;
+	lerr << e.what() << std::endl;
       }
 
     }
@@ -75,7 +76,7 @@ public:
 
   void printSummary() {
     for (auto const & o : objects) {
-      std::cout << "\t" << o.first << std::endl;
+      lout << "\t" << o.first << std::endl;
     }
   }
 

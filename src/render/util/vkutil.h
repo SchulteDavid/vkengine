@@ -23,7 +23,7 @@ struct QueueFamilyIndices {
     std::vector<int> counts;
 
     bool isComplete() {
-        logger(std::cerr) << (transferFamily == graphicsFamily ? "transfer is graphics" : "transfer != graphics") << std::endl;
+        lerr << (transferFamily == graphicsFamily ? "transfer is graphics" : "transfer != graphics") << std::endl;
         return graphicsFamily >= 0 && presentFamily >= 0 && transferFamily >= 0;// && transferFamily != graphicsFamily;
     }
 
@@ -99,6 +99,7 @@ struct VulkanState {
     VkDevice device;
     VmaAllocator vmaAllocator;
     VkCommandPool graphicsCommandPool;
+    VkCommandPool loadingCommandPool;
     VkCommandPool transferCommandPool;
 
     std::mutex graphicsQueueMutex;

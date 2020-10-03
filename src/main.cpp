@@ -27,7 +27,6 @@
 #include "structure/node/nodeloader.h"
 #include "render/instancedrenderelement.h"
 
-
 static bool run = true;
 static bool wait;
 
@@ -62,17 +61,17 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
     view->renderIntoSecondary();
 
     //while (wait)
-    //std::cout << "Waiting" << std::endl;
+    //lout << "Waiting" << std::endl;
       //wait = true;
 
-    //std::cout << "Wait " << wait << std::endl;
+    //lout << "Wait " << wait << std::endl;
 
   }
 
 }
 
 void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
-
+  
   resourceManager->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
   resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
   resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
@@ -139,7 +138,7 @@ int main(int argc, char ** argv) {
   Viewport * view = new Viewport(window, cam);
   window->setActiveViewport(view);
 
-  std::cout << "Viewport OK" << std::endl;
+  lout << "Viewport OK" << std::endl;
 
   ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
 
@@ -151,24 +150,25 @@ int main(int argc, char ** argv) {
   //LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
   LoadingResource node = resourceManager->loadResourceBg(ResourceLocation("Node", "exports.glb"));
   LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "tree.glb"));
+  LoadingResource node3 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/test.node"));
 
 
   std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
   window->addInputHandler(playerCtl);
 
-  std::cout << "Start wait for node " << node << std::endl;
+  lout << "Start wait for node " << node << std::endl;
   node->fut.wait();
-  node2->fut.wait();
+  node3->fut.wait();
 
-  std::cout << "All futures are ok" << std::endl;
+  lout << "All futures are ok" << std::endl;
 
-  resourceManager->joinLoadingThreads();
 
-  logger(std::cout) << "Resource-summary: " << std::endl;
+
+  lout << "Resource-summary: " << std::endl;
   resourceManager->printSummary();
-  logger(std::cout) << "Done" << std::endl;
+  lout << "Done" << std::endl;
 
-  std::cout << "Waiting for node, as it will be used" << std::endl;
+  lout << "Waiting for node, as it will be used" << std::endl;
   //node->fut.wait();
 
   //return 0;
@@ -179,10 +179,15 @@ int main(int argc, char ** argv) {
 
   std::shared_ptr<World> world(new World());
 
-  std::cout << "Adding baseNode to Viewport" << std::endl;
+  lout << "Adding baseNode to Viewport" << std::endl;
   std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "exports.glb"));
   baseNode->viewportAdd(view);
-  std::cout << "Done Node " << baseNode << std::endl;
+  lout << "Done Node " << baseNode << std::endl;
+
+  lout << "Adding other Node" << std::endl;
+  std::shared_ptr<strc::Node> n3 = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/test.node", "Mesh.001"));
+  n3->viewportAdd(view);
+  lout << "Done adding other node" << std::endl;
 
 
   {
@@ -191,7 +196,7 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Mesh> mesh = meshNode->getMesh();
     std::shared_ptr<Material> material = meshNode->getMaterial();
 
-    std::cout << "Shader " << material->getShader() << " static: " << material->getStaticShader() << std::endl;
+    lout << "Shader " << material->getShader() << " static: " << material->getStaticShader() << std::endl;
 
     unsigned int stride;
     const std::vector<InputDescription> & elements = material->getShader()->getInputs();
@@ -202,14 +207,14 @@ int main(int argc, char ** argv) {
     std::shared_ptr<Model> model = std::shared_ptr<Model>(new Model(view->getState(), mesh, iData, stride, true));
 
     //RenderElement::buildRenderElement(view, meshNode->buildModel(view->getState()), meshNode->getMaterial(), trans)
-    std::cout << "Building Instanced element" << std::endl;
+    lout << "Building Instanced element" << std::endl;
     std::shared_ptr<RenderElement> rElem(new InstancedRenderElement(view, model, material, view->getSwapchainSize()));
-    std::cout << "Constructing buffers" << std::endl;
+    lout << "Constructing buffers" << std::endl;
     rElem->constructBuffers(view->getSwapchainSize());
-    std::cout << "Adding to viewport" << std::endl;
+    lout << "Adding to viewport" << std::endl;
     view->addRenderElement(rElem);
 
-    std::cout << "Instanced element is built" << std::endl;
+    lout << "Instanced element is built" << std::endl;
 
     for (unsigned int i = 0; i < 1024; ++i) {
 
@@ -221,13 +226,12 @@ int main(int argc, char ** argv) {
     }
   }
 
-
-
   std::thread rotateThread(rotateFunc, world, view, baseNode);
 
-  std::cerr << "Rotate Thread: " << &rotateThread << std::endl;
+  lerr << "Rotate Thread: " << &rotateThread << std::endl;
 
-  //view->renderIntoSecondary();
+  //LoadingResource testRes = resourceManager->loadResourceBg(ResourceLocation("Node", "sheep_.glb"));
+  bool isInViewport = false;
 
   while (!glfwWindowShouldClose(window->getGlfwWindow())) {
 
@@ -236,14 +240,28 @@ int main(int argc, char ** argv) {
     view->drawFrame();
     wait = false;
 
+    /*if (testRes->status.isUseable && !isInViewport) {
+
+      std::shared_ptr<strc::Node> strcNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "sheep_.glb"));
+      strcNode->viewportAdd(view);
+      isInViewport = true;
+
+    }*/
+
+
   }
 
   run = false;
   wait = false;
 
+  resourceManager->joinLoadingThreads();
   rotateThread.join();
 
-  logger(std::cout) << "End of mainloop" << std::endl;
+  lout << "End of mainloop" << std::endl;
+
+  lout << "Final resources" << std::endl;
+
+  resourceManager->printSummary();
 
   return 0;
 }

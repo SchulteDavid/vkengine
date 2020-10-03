@@ -82,7 +82,7 @@ void Level::addElement(std::shared_ptr<Structure> strc, Placement & p) {
 
 void Level::applyToWorld(std::shared_ptr<World> world, Viewport * view) {
 
-  std::cout << "Level, internal " << this->structs.size() << std::endl;
+  lout << "Level, internal " << this->structs.size() << std::endl;
 
   for (std::shared_ptr<Structure> strc : structs) {
 

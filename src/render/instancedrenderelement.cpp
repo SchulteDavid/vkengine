@@ -14,15 +14,15 @@ InstancedRenderElement::InstancedRenderElement(Viewport * view, std::shared_ptr<
 
   instanceCount = 1;
 
-  std::cout << "Creating DynamicBuffer" << std::endl;
+  lout << "Creating DynamicBuffer" << std::endl;
 
   this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-  std::cout << "Creating uniform buffers" << std::endl;
+  lout << "Creating uniform buffers" << std::endl;
   this->createUniformBuffers(scSize, this->binds);
 
-  std::cout << "Creating descriptor pool" << std::endl;
+  lout << "Creating descriptor pool" << std::endl;
 
-  std::cout << "Shader: " << this->shader << std::endl;
+  lout << "Shader: " << this->shader << std::endl;
 
   //this->descPool = this->shader->setupDescriptorPool(scSize, binds);
   //this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, this->binds, texture, scSize);
@@ -120,7 +120,7 @@ void InstancedRenderElement::deleteInstance(Instance &instance) {
 
 void InstancedRenderElement::recordTransfer(VkCommandBuffer &cmdBuffer) {
 
-  std::cout << "Recording instance-transfer " << instanceTransforms.size() << std::endl;
+  //lout << "Recording instance-transfer " << instanceTransforms.size() << std::endl;
   transformBufferMutex.lock();
   this->instanceBuffer->fill(instanceTransforms, cmdBuffer);
   transformBufferMutex.unlock();
@@ -155,9 +155,9 @@ void InstancedRenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t
 
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-  //std::cout << "InstancedRenderElement::renderShaderless" << std::endl;
+  //lout << "InstancedRenderElement::renderShaderless" << std::endl;
 
-  //std::cout << "Updating push constants" << std::endl;
+  //lout << "Updating push constants" << std::endl;
 
   //glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
 
@@ -171,13 +171,13 @@ void InstancedRenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t
 
 void InstancedRenderElement::render(VkCommandBuffer & buffer, uint32_t frameIndex) {
 
-  //std::cout << "Pipeline (Instanced) " << pipeline << std::endl;
+  //lout << "Pipeline (Instanced) " << pipeline << std::endl;
   vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-  //std::cout << "InstancedRenderElement::render" << std::endl;
+  //lout << "InstancedRenderElement::render" << std::endl;
 
-  //std::cout << "Updating push constants" << std::endl;
+  //lout << "Updating push constants" << std::endl;
 
   //glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
 

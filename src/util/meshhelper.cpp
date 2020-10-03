@@ -7,11 +7,11 @@
 
 void printIndexVector(std::vector<uint16_t> & indices) {
 
-    std::cout << "indices: size = " << indices.size() << " { " << indices[0];
+    lout << "indices: size = " << indices.size() << " { " << indices[0];
     for (unsigned int i = 1; i < indices.size(); ++i) {
-        std::cout << ", " << indices[i];
+        lout << ", " << indices[i];
     }
-    std::cout << "}" << std::endl;
+    lout << "}" << std::endl;
 
 }
 
@@ -276,7 +276,7 @@ MeshHelper::ModelInfo MeshHelper::createHexagonPlane(int amount, float radius) {
             Vector<3, float> hexPos(center.data());
             Vector<3, float> cartPos = radius * (hexToCart * hexPos);
 
-            std::cout << hexPos << " -> " << cartPos << std::endl;
+            lout << hexPos << " -> " << cartPos << std::endl;
 
             ModelInfo tmp = createHexagonFromCenter(cartPos, Vector<3, float>(normal.data()), radius);
             mergeMeshData(data, tmp, 0.01);
@@ -288,7 +288,7 @@ MeshHelper::ModelInfo MeshHelper::createHexagonPlane(int amount, float radius) {
     removeDoubles(data, 0.001);
 
     printIndexVector(data.indices);
-    std::cout << data.verts.size() <<  " verts for " << (data.indices.size() / 18) << " hexagons (" << ((double)data.verts.size() / (double) (data.indices.size() / 18)) << " verts / hexagon)" << std::endl;
+    lout << data.verts.size() <<  " verts for " << (data.indices.size() / 18) << " hexagons (" << ((double)data.verts.size() / (double) (data.indices.size() / 18)) << " verts / hexagon)" << std::endl;
 
     applyNoise(data, noise);
 

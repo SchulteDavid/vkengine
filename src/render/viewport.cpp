@@ -38,7 +38,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
 
     this->frameIndex = 0;
 
-    logger(std::cout) << "Creating swapchain" << std::endl;
+    lout << "Creating swapchain" << std::endl;
 
     vkutil::SwapChain tmpChain = vkutil::createSwapchain(window->getPhysicalDevice(), state.device, window->getSurface(), window->getGlfwWindow());
 
@@ -47,7 +47,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(wind
     swapchain.format = tmpChain.format;
     swapchain.images = tmpChain.images;
 
-    logger(std::cout) << "setting up render pass" << std::endl;
+    lout << "setting up render pass" << std::endl;
 
     setupRenderPass();
 
@@ -114,7 +114,7 @@ void Viewport::createSyncObjects() {
             throw dbg::trace_exception("Unable to create semaphores");
         }
 
-        std::cout << "Creating fence for frame " << i << std::endl;
+        lout << "Creating fence for frame " << i << std::endl;
         if (vkCreateFence(state.device, &fenceInfo, nullptr, &this->inFlightFences[i]) != VK_SUCCESS)
             throw dbg::trace_exception("Unable to create fence");
         //vkResetFences(state.device, 1, &inFlightFences[i]);
@@ -175,11 +175,11 @@ void Viewport::manageMemoryTransfer() {
 
     if (this->hasPendingTransfer()) {
 
-        //std::cout << "Waiting for transfer fences" << std::endl;
+        //lout << "Waiting for transfer fences" << std::endl;
         vkWaitForFences(state.device, 1, &transferFence, VK_TRUE, std::numeric_limits<uint64_t>::max());
         vkResetFences(state.device, 1, &transferFence);
 
-        std::cout << "Recording transfer" << std::endl;
+        lout << "Recording transfer" << std::endl;
         this->recordTransfer(transferCmdBuffer);
 
         VkSubmitInfo transferSubmit = {};
@@ -212,12 +212,12 @@ void Viewport::drawFrame(bool updateElements) {
     VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
     /*secondaryBufferMutex.lock();
-    std::cout << "Reusing " << submittedBuffers[imageIndex] << std::endl;
+    lout << "Reusing " << submittedBuffers[imageIndex] << std::endl;
     if (submittedBuffers[imageIndex] && submittedBuffers[imageIndex] != bufferToSubmit)
         useableBuffers.push(submittedBuffers[imageIndex]);
     secondaryBufferMutex.unlock();*/
     if (bufferManager) {
-      //std::cout << "Releasing buffer" << std::endl;
+      //lout << "Releasing buffer" << std::endl;
       bufferManager->releaseRenderBuffer(releaseFrameIndex);
     }
 
@@ -232,15 +232,15 @@ void Viewport::drawFrame(bool updateElements) {
     //auto recordEndTime = std::chrono::high_resolution_clock::now();
 
     //double recordTime = std::chrono::duration<double, std::chrono::milliseconds::period>(recordEndTime - recordStartTime).count();
-    //std::cout << "Recording took " << recordTime << " ms" << std::endl;
+    //lout << "Recording took " << recordTime << " ms" << std::endl;
 
     switch(result) {
 
     case VK_SUBOPTIMAL_KHR:
     case VK_ERROR_OUT_OF_DATE_KHR:
-        std::cout << "destroying swapchain" << std::endl;
+        lout << "destroying swapchain" << std::endl;
         destroySwapChain();
-        std::cout << "Swap chains destroyed" << std::endl;
+        lout << "Swap chains destroyed" << std::endl;
         recreateSwapChain();
         framebufferResized = false;
         return;
@@ -286,15 +286,15 @@ void Viewport::drawFrame(bool updateElements) {
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr;
 
-    state.presentQueue.lock();
+    state.graphicsQueue.lock();
     vkQueuePresentKHR(state.presentQueue.q, &presentInfo);
-    state.presentQueue.unlock();
+    state.graphicsQueue.unlock();
 
     frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
     if (!frameIndex) {
         double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
-        logger(std::cout) << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
+        lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
     }
 
     startRenderTime = std::chrono::high_resolution_clock::now();
@@ -341,7 +341,7 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
     //auto currentTime = std::chrono::high_resolution_clock::now();
     //double time = std::chrono::duration<double, std::chrono::milliseconds::period>(currentTime - startTime).count();
-    //std::cout << "Uniform buffer update: " << time << "ms" << std::endl;
+    //lout << "Uniform buffer update: " << time << "ms" << std::endl;
 
 }
 
@@ -501,7 +501,7 @@ void Viewport::createPPObjects() {
     ppCameraBuffers.resize(swapchain.images.size());
     ppCameraBuffersMemory.resize(swapchain.images.size());
 
-    logger(std::cout) << "Images created" << std::endl;
+    lout << "Images created" << std::endl;
 
     for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
@@ -517,7 +517,7 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
-            logger(std::cout) << "Creating light Buffer" << std::endl;
+            lout << "Creating light Buffer" << std::endl;
 
             vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppLightBuffers[i], &ppLightBuffersMemory[i], &stagingBufferAllocInfo);
         }
@@ -533,7 +533,7 @@ void Viewport::createPPObjects() {
 
             VmaAllocationInfo stagingBufferAllocInfo = {};
 
-            logger(std::cout) << "Creating camera Buffer" << std::endl;
+            lout << "Creating camera Buffer" << std::endl;
 
             vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppCameraBuffers[i], &ppCameraBuffersMemory[i], &stagingBufferAllocInfo);
         }
@@ -579,7 +579,7 @@ void Viewport::setupPostProcessingPipeline() {
 
     /** shaders **/
 
-    logger(std::cout) << "Creating ppPipeline" << std::endl;
+    lout << "Creating ppPipeline" << std::endl;
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages(2);
 
@@ -936,7 +936,7 @@ void Viewport::setupFramebuffers() {
 
     swapchain.framebuffers.resize(swapchain.imageViews.size());
 
-    logger(std::cout) << "SwapChainSize " << swapchain.imageViews.size() << std::endl;
+    lout << "SwapChainSize " << swapchain.imageViews.size() << std::endl;
 
     for (unsigned int i = 0; i < swapchain.imageViews.size(); ++i) {
 
@@ -969,24 +969,24 @@ void Viewport::destroySwapChain() {
 
     destroyPPObjects();
 
-    std::cout << "PP Objects destroyed" << std::endl;
+    lout << "PP Objects destroyed" << std::endl;
 
     for (auto framebuffer : swapchain.framebuffers) {
         vkDestroyFramebuffer(state.device, framebuffer, nullptr);
     }
 
-    std::cout << "Destroyed framebuffers" << std::endl;
+    lout << "Destroyed framebuffers" << std::endl;
 
     vkFreeCommandBuffers(state.device, state.graphicsCommandPool, commandBuffers.size(), commandBuffers.data());
 
     vkDestroyRenderPass(state.device, renderPass, nullptr);
 
-    std::cout << "Destroyed renderpass" << std::endl;
+    lout << "Destroyed renderpass" << std::endl;
 
     vkDestroyImageView(state.device, depthImageView, nullptr);
     vmaDestroyImage(state.vmaAllocator, depthImage, depthImageMemory);
 
-    std::cout << "Destroyed depth image" << std::endl;
+    lout << "Destroyed depth image" << std::endl;
 
     for (const VkImageView & v : swapchain.imageViews) {
         vkDestroyImageView(state.device, v, nullptr);
@@ -996,7 +996,7 @@ void Viewport::destroySwapChain() {
         vkDestroyImage(state.device, i, nullptr);
     }
 
-    std::cout << "Destroyed images" << std::endl;
+    lout << "Destroyed images" << std::endl;
 
     destroyableSwapchains.push(swapchain);
 
@@ -1004,13 +1004,13 @@ void Viewport::destroySwapChain() {
         this->renderElements[i]->destroyUniformBuffers(swapchain);
     }
 
-    std::cout << "Destroyed uniform buffers" << std::endl;
+    lout << "Destroyed uniform buffers" << std::endl;
 
 }
 
 void Viewport::recreateSwapChain() {
 
-    std::cout << "Recreating swapchain" << std::endl;
+    lout << "Recreating swapchain" << std::endl;
 
     //state.graphicsQueueMutex.lock();
 
@@ -1026,17 +1026,17 @@ void Viewport::recreateSwapChain() {
     VkFormat depthFormat = VK_FORMAT_D32_SFLOAT; /// <- this can be chosen by a function later
 
     vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-    logger(std::cout) << "Creating depth image view" << std::endl;
+    lout << "Creating depth image view" << std::endl;
     depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
     vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
 
-    logger(std::cout) << "Creating PP objects" << std::endl;
+    lout << "Creating PP objects" << std::endl;
     createPPObjects();
 
     this->setupFramebuffers();
 
-    logger(std::cout) << "Done creating Framebuffers" << std::endl;
+    lout << "Done creating Framebuffers" << std::endl;
 
     for (unsigned int i = 0; i < renderElements.size(); ++i) {
         renderElements[i]->recreateResources(renderPass, swapchain.imageViews.size(), swapchain);
@@ -1125,7 +1125,7 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
     }*/
   /*secondaryBufferMutex.lock();
   if (bufferToSubmit != VK_NULL_HANDLE) {
-    std::cout << "Submitted buffer " << bufferToSubmit << std::endl;
+    lout << "Submitted buffer " << bufferToSubmit << std::endl;
     vkCmdExecuteCommands(buffer, 1, &bufferToSubmit);
     submittedBuffers[frameIndex] = bufferToSubmit;
     bufferToSubmit = 0;
@@ -1134,7 +1134,7 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   secondaryBufferMutex.unlock();*/
   if (bufferManager) {
     VkCommandBuffer secBuffer = bufferManager->getBufferForRender(frameIndex);
-    //std::cout << "Submitting buffer " << secBuffer << std::endl;
+    //lout << "Submitting buffer " << secBuffer << std::endl;
     if (secBuffer)
       vkCmdExecuteCommands(buffer, 1, &secBuffer);
   }
@@ -1203,7 +1203,7 @@ void Viewport::createSecondaryBuffers() {
   useableBuffers = std::queue<VkCommandBuffer>();
 
   for (VkCommandBuffer buffer : secondaryBuffers) {
-    std::cout << "Queueing " << buffer << std::endl;
+    lout << "Queueing " << buffer << std::endl;
     useableBuffers.push(buffer);
   }*/
 
@@ -1217,7 +1217,7 @@ void Viewport::renderIntoSecondary() {
 
   ThreadedBufferManager::BufferElement * bufferElem = bufferManager->getBufferForRecording();
 
-  //std::cout << "Buffer " << buffer << std::endl;
+  //lout << "Buffer " << buffer << std::endl;
 
   VkCommandBuffer buffer = bufferElem->buffer;
 
@@ -1290,7 +1290,7 @@ ThreadedBufferManager::ThreadedBufferManager(unsigned int bufferCount, unsigned 
 
   uint32_t i = 0;
   for (VkCommandBuffer buffer : commandBuffers) {
-    std::cout << "Queueing " << buffer << std::endl;
+    lout << "Queueing " << buffer << std::endl;
     //useableBuffers.push(buffer);
 
     BufferElement elem;
@@ -1313,11 +1313,11 @@ ThreadedBufferManager::ThreadedBufferManager(unsigned int bufferCount, unsigned 
 
 VkCommandBuffer ThreadedBufferManager::getBufferForRender(uint32_t frameIndex) {
 
-  //std::cout << "Getting buffer for render" << std::endl;
+  //lout << "Getting buffer for render" << std::endl;
 
 
   if (!activeBuffer) {
-    //std::cout << "No active buffer set" << std::endl;
+    //lout << "No active buffer set" << std::endl;
     if (nextBuffer) {
       activeBuffer = nextBuffer;
       //return nextBuffer->buffer;
@@ -1346,12 +1346,12 @@ void ThreadedBufferManager::releaseRenderBuffer(uint32_t frameIndex) {
 
   if (!buffer) {
     lock.unlock();
-    //std::cout << "Released buffer is NULL" << std::endl;
+    //lout << "Released buffer is NULL" << std::endl;
     return;
   }
 
   buffer->usageCount--;
-  //std::cout << "Releasing " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << std::endl;
+  //lout << "Releasing " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << std::endl;
 
   if (!buffer->usageCount) {
     useableBuffers.push(buffer);
@@ -1363,16 +1363,16 @@ void ThreadedBufferManager::releaseRenderBuffer(uint32_t frameIndex) {
 }
 
 ThreadedBufferManager::BufferElement * ThreadedBufferManager::getBufferForRecording() {
-  //std::cout << "Getting buffer for recording" << std::endl;
+  //lout << "Getting buffer for recording" << std::endl;
   lock.lock();
-  //std::cout << "Getting buffer for recording" << std::endl;
+  //lout << "Getting buffer for recording" << std::endl;
 
   if (useableBuffers.empty()) {
     lock.unlock();
 
-    std::cout << "Attached Buffers: " << attachedBuffers.size() << std::endl;
+    lout << "Attached Buffers: " << attachedBuffers.size() << std::endl;
     for (BufferElement & e : buffers) {
-      std::cout << "Buffer " << e.buffer << " : " << e.usageCount << std::endl;
+      lout << "Buffer " << e.buffer << " : " << e.usageCount << std::endl;
     }
 
     throw dbg::trace_exception("Empty buffer queue for recording");
@@ -1381,34 +1381,34 @@ ThreadedBufferManager::BufferElement * ThreadedBufferManager::getBufferForRecord
 
   BufferElement * buffer = useableBuffers.front();
   if (buffer->usageCount) {
-    std::cerr << buffer->buffer << " : " << buffer->usageCount << std::endl;
-    std::cerr << "Active: " << activeBuffer->buffer << std::endl;
+    lerr << buffer->buffer << " : " << buffer->usageCount << std::endl;
+    lerr << "Active: " << activeBuffer->buffer << std::endl;
     throw dbg::trace_exception("attached buffer in queue:");
   }
   useableBuffers.pop();
 
   lock.unlock();
 
-  //std::cout << "Returning " << buffer->buffer << " : " << buffer->usageCount << " for recording" << std::endl;
+  //lout << "Returning " << buffer->buffer << " : " << buffer->usageCount << " for recording" << std::endl;
 
   return buffer;
 }
 
 void ThreadedBufferManager::setActiveBuffer(BufferElement * buffer) {
 
-  //std::cout << "Setting active buffer " << buffer->buffer << std::endl;
+  //lout << "Setting active buffer " << buffer->buffer << std::endl;
 
   lock.lock();
   if (nextBuffer && nextBuffer->usageCount == 0) {
-    //std::cout << "Recycling buffer " << nextBuffer->buffer << std::endl;
+    //lout << "Recycling buffer " << nextBuffer->buffer << std::endl;
     useableBuffers.push(nextBuffer);
-    //std::cout << useableBuffers.size() << " buffers in queue" << std::endl;
+    //lout << useableBuffers.size() << " buffers in queue" << std::endl;
   }
 
   this->nextBuffer = buffer;
 
   lock.unlock();
 
-  //std::cout << "Next buffer set to " << nextBuffer->buffer << " : " << nextBuffer->usageCount << std::endl;
+  //lout << "Next buffer set to " << nextBuffer->buffer << " : " << nextBuffer->usageCount << std::endl;
 
 }

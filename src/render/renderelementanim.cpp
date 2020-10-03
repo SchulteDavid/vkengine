@@ -11,7 +11,7 @@ RenderElementAnim::~RenderElementAnim() {
 }
 
 std::vector<Shader::Binding> RenderElementAnim::getShaderBindings(std::shared_ptr<Material> material) {
-  
+
   std::vector<Shader::Binding> binds = material->getDefaultBindings();
 
     Shader::Binding boneDataBinding;
@@ -31,7 +31,7 @@ void RenderElementAnim::createUniformBuffers(int swapChainSize, std::vector<Shad
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
     VkDeviceSize animationSize = this->skin->getDataSize();
 
-    std::cout << "animationSize " << animationSize << " bufferSize " << bufferSize << std::endl;
+    lout << "animationSize " << animationSize << " bufferSize " << bufferSize << std::endl;
 
     uniformBuffers.resize(swapChainSize);
     uniformBuffersMemory.resize(swapChainSize);
@@ -70,7 +70,7 @@ void RenderElementAnim::createUniformBuffers(int swapChainSize, std::vector<Shad
     }
 
     bindings[0].uniformBuffers = uniformBuffers;
-    std::cout << "Setting animation Buffer" << std::endl;
+    lout << "Setting animation Buffer" << std::endl;
     bindings[bindings.size()-1].uniformBuffers = animationBuffers;
 
 }

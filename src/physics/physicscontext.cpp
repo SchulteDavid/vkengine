@@ -3,6 +3,8 @@
 #include <iostream>
 #include <mathutils/quaternion.h>
 
+#include "util/debug/logger.h"
+
 PhysicsContext::PhysicsContext() {
 
     this->collisionConfig = new btDefaultCollisionConfiguration();
@@ -49,7 +51,7 @@ void PhysicsContext::synchronize() {
 void PhysicsContext::addObject(std::shared_ptr<PhysicsObject> obj) {
 
     btCollisionShape * collisionShape = obj->getCollisionShape();
-    std::cout << "Collision Shape ok" << std::endl;
+    lout << "Collision Shape ok" << std::endl;
     this->collisionShapes.push_back(collisionShape);
 
     btTransform startTransform;

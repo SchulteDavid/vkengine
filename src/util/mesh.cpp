@@ -68,7 +68,7 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
 
   for (auto it : attributes) {
 
-    logger(std::cout) << it.first << " -> " << it.second.type << std::endl;
+    lout << it.first << " -> " << it.second.type << std::endl;
 
   }
 
@@ -170,7 +170,7 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint32_t> indices) {
 
   for (auto it : attributes) {
 
-    logger(std::cout) << it.first << " -> " << it.second.type << std::endl;
+    lout << it.first << " -> " << it.second.type << std::endl;
 
   }
 
@@ -545,7 +545,7 @@ std::vector<InterleaveElement> Mesh::compactStorage(const std::vector<InputDescr
 
 std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> elements, uint32_t stride) {
 
-  //std::cout << stride << " " << attributes["POSITION"].value.size() << std::endl;
+  //lout << stride << " " << attributes["POSITION"].value.size() << std::endl;
   if (!attributes["POSITION"].value.size()) {
     throw dbg::trace_exception("Creating mesh with no data");
   }
@@ -564,7 +564,7 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
 
     VertexAttribute attr = attributes[e.attributeName];
 
-    //std::cout << "Writing to buffer: " << e.attributeName << " : " << e.offset << " type = " << std::hex << attr.type << std::dec << std::endl;
+    //lout << "Writing to buffer: " << e.attributeName << " : " << e.offset << " type = " << std::hex << attr.type << std::dec << std::endl;
 
     switch (attr.type) {
 
@@ -673,7 +673,7 @@ std::vector<uint8_t> Mesh::getInterleavedData(std::vector<InterleaveElement> ele
 
   }
 
-  //std::cout << "dataSize: " << data.size() << " bytes" << std::endl;
+  //lout << "dataSize: " << data.size() << " bytes" << std::endl;
 
   return data;
 
@@ -748,7 +748,7 @@ std::shared_ptr<Mesh> Mesh::loadFromFile(std::string fname) {
   for (int i = 0; i < indexCount; ++i)
     indices[i] = indexData[i];
 
-  std::cout << "Loaded mesh has " << vertexCount << " vertices" << std::endl;;
+  lout << "Loaded mesh has " << vertexCount << " vertices" << std::endl;;
 
   return std::shared_ptr<Mesh>(new Mesh(vertices, indices));
 

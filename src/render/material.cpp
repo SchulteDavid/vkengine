@@ -48,7 +48,7 @@ std::vector<Shader::Binding> Material::getDefaultBindings() {
   uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
   binds.push_back(uniformBufferBinding);
 
-  std::cout << "Material has " << textures.size() << " textures" << std::endl;
+  lout << "Material has " << textures.size() << " textures" << std::endl;
 
   if (this->textures.size()) {
     Shader::Binding textureBinding;
@@ -152,12 +152,12 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
   using namespace config;
 
   std::string shaderFname(root->getNode<char>("shader")->getRawData());
-  std::cout << "Pushing " << shaderFname << " on the queue" << std::endl;
+  lout << "Pushing " << shaderFname << " on the queue" << std::endl;
   LoadingResource shaderRes = this->loadDependency(ResourceLocation("Shader", shaderFname));
 
   LoadingResource staticShaderRes = nullptr;
 
-  std::cout << "Dependency queued" << std::endl;
+  lout << "Dependency queued" << std::endl;
 
   if (root->hasChild("staticShader")) {
 
@@ -169,10 +169,10 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
   if (root->hasChild("textures")) {
 
     std::shared_ptr<Node<std::shared_ptr<NodeCompound>>> textureComps = root->getNode<std::shared_ptr<NodeCompound>>("textures");
-    std::cout << "Texture Array is ok" << std::endl;
+    lout << "Texture Array is ok" << std::endl;
     std::vector<LoadingResource> textureRes(textureComps->getElementCount());
 
-    std::cout << "Loading textures " << std::endl;
+    lout << "Loading textures " << std::endl;
 
     for (unsigned int i = 0; i < textureComps->getElementCount(); ++i) {
 
@@ -181,13 +181,13 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
       std::string tFname(texComp->getNode<char>("fname")->getRawData());
       int index = texComp->getNode<int>("index")->getElement(0);
 
-      std::cout << tFname << " -> " << index << " / " << textureComps->getElementCount() << std::endl;
+      lout << tFname << " -> " << index << " / " << textureComps->getElementCount() << std::endl;
 
       textureRes[index] = this->loadDependency(ResourceLocation("Texture", tFname));
 
     }
 
-    std::cout << "Textures Loaded" << std::endl;
+    lout << "Textures Loaded" << std::endl;
 
     return new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, staticShaderRes, textureRes);
 
@@ -203,7 +203,7 @@ std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::st
     //CompoundNode * root = ConfigLoader::loadFileTree(fname);
     std::shared_ptr<NodeCompound> root = config::parseFile(fname);
 
-    std::cout << "Loading material from compound " << root << std::endl;
+    lout << "Loading material from compound " << root << std::endl;
 
     return std::shared_ptr<MaterialUploader>((MaterialUploader *)buildResource(root));
 

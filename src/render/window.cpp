@@ -85,6 +85,7 @@ Window::Window(unsigned int width, unsigned int height) {
     state.vmaAllocator = vkutil::createAllocator(state.device, state.physicalDevice);
 
     state.graphicsCommandPool = vkutil::createGraphicsCommandPool(state.physicalDevice, state.device, state.surface);
+    state.loadingCommandPool = vkutil::createGraphicsCommandPool(state.physicalDevice, state.device, state.surface);
     state.transferCommandPool = vkutil::createTransferCommandPool(state.physicalDevice, state.device, state.surface);
 
 }
