@@ -4,12 +4,12 @@
 #include <string>
 
 #include "render/util/vkutil.h"
-#include "structure.h"
 #include "util/mesh.h"
 #include "util/meshhelper.h"
 #include <mathutils/vector.h>
 #include <mathutils/quaternion.h>
-
+#include "animation/skeletalrig.h"
+#include "animation/animation.h"
 #include "node/node.h"
 
 class GLTFNode {
@@ -53,20 +53,6 @@ private:
   std::shared_ptr<Mesh> mesh;
   std::shared_ptr<Skin> skin;
   std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
-
-};
-
-class GLTFLoader : public ResourceLoader<Structure> {
-
-public:
-  GLTFLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
-
-  std::shared_ptr<ResourceUploader<Structure>> loadResource(std::string fname);
-
-private:
-  vkutil::VulkanState & state;
-  const VkRenderPass & renderPass;
-  const VkExtent2D & swapChainExtent;
 
 };
 

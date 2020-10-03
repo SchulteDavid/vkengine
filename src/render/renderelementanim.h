@@ -7,13 +7,13 @@
 class RenderElementAnim : public RenderElement {
 
 public:
-  RenderElementAnim(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform);
+  RenderElementAnim(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform);
   virtual ~RenderElementAnim();
   
   void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings) override;
-  virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain);
+  virtual void destroyUniformBuffers(const vkutil::SwapChain & swapchain) override;
   
-  virtual void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex);
+  virtual void updateUniformBuffer(UniformBufferObject & obj, uint32_t frameIndex) override;
   
   void setSkin(std::shared_ptr<Skin> skin);
   

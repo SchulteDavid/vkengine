@@ -350,6 +350,12 @@ bool ResourceManager::isResourceInPipeline(LoadingResource res) {
 
 }
 
+void ResourceManager::dropResource(ResourceLocation location) {
+
+  this->registries[location.type]->drop(location);
+  
+}
+
 LoadingResource scheduleResourceLoad(ResourceManager * manager, ResourceLocation location) {
   return manager->loadResourceBg(location);
 }
@@ -375,6 +381,9 @@ LoadingResource scheduleSubresourceUpload(ResourceManager * manager, ResourceLoc
 ResourceLocation ResourceLocation::parse(std::string type, std::string data) {
 
   auto pos = data.find("::");
+  if (pos == std::string::npos) {
+    return ResourceLocation(type, data);
+  }
   std::string fname = data.substr(0, pos);
   std::string name = data.substr(pos+2, std::string::npos);
 

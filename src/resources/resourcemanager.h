@@ -46,6 +46,8 @@ public:
     return val;
   }
 
+  void dropResource(ResourceLocation location);
+
   bool isLoaded(ResourceLocation location);
   std::shared_ptr<Resource> registerResource(ResourceLocation location, std::shared_ptr<Resource> res);
 

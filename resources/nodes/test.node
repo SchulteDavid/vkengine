@@ -20,8 +20,8 @@ comp children = [
      	     float64 scale = [1,1,1]
 	}
 
-	string mesh = "fmesh.ply"
-	string matfile = "resources/materials/test.mat"
+	string mesh = "sheep.ply"
+	string material = "resources/materials/test.mat"
 	
      },
      {

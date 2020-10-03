@@ -129,9 +129,10 @@ std::shared_ptr<NodeUploader> strc::loadMeshNode(std::shared_ptr<config::NodeCom
     //mesh = context.loader->loadDependencyResource(ResourceLocation("Mesh", name));
   }
 
-  if (root->hasChild("matfile")) {
-    std::string name(root->getNode<char>("matfile")->getRawData());
-    material = context.loader->loadDependencyResource(ResourceLocation("Material", name));
+  if (root->hasChild("material")) {
+    std::string name(root->getNode<char>("material")->getRawData());
+    ResourceLocation location = ResourceLocation::parse("Material", name);
+    material = context.loader->loadDependencyResource(location);
   }
 
   return std::make_shared<MeshNodeUploader>(nodeName, mesh, material, context.transform);

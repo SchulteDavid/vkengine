@@ -13,7 +13,6 @@
 #include <mathutils/quaternion.h>
 #include "memorytransferhandler.h"
 #include "material.h"
-#include "structure/structure.h"
 
 #include "util/transform.h"
 
@@ -42,9 +41,7 @@ public:
   };
 
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform);
-  RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform);
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, std::vector<Shader::Binding> binds);
-  RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform, std::vector<Shader::Binding> binds);
   virtual ~RenderElement();
 
   glm::mat4 getTransformationMatrixGLM(Transform<float> & instance);
@@ -75,7 +72,6 @@ public:
 
   virtual void constructBuffers(int scSize);
 
-  static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform);
   static RenderElement * buildRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform);
 
 protected:

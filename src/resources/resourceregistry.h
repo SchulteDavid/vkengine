@@ -74,6 +74,12 @@ public:
     return objects.find(name) != objects.end();
   }
 
+  void drop(ResourceLocation location) {
+    if (this->objects.find(location) == objects.end())
+      return;
+    objects.erase(location);
+  }
+
   void printSummary() {
     for (auto const & o : objects) {
       lout << "\t" << o.first << std::endl;

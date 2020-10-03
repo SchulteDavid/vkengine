@@ -15,8 +15,6 @@
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> texture, int scSize, Transform<float> & initTransform) : state(view->getState()), MemoryTransferer(*view) {
 
-  //throw std::runtime_error("Created RenderElement with old constructor");
-
   std::vector<Shader::Binding> binds;
 
   Shader::Binding uniformBufferBinding;
@@ -39,24 +37,9 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   this->shader = shader;
   this->texture = texture;
 
-  /**/
-
   std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
 
   transform = initTransform;
-  //transforms[0] = initTransform;
-
-  //instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
-
-  //instanceCount = 1;
-
-  /*this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    this->createUniformBuffers(scSize, this->binds);
-
-    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
-    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, this->binds, texture, scSize);*/
-
-  //constructBuffers(scSize);
 
 }
 
@@ -85,31 +68,12 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   this->shader = mat->getShader();
   this->texture = mat->getTextures();
 
-  /*instanceTransforms = std::vector<glm::mat4>(1);
-  instances = std::unordered_map<uint32_t, InstanceInfo>(1);
-  transforms = std::vector<Transform<float>>(1);*/
-
-  //std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
-
-  /*transforms[0] = initTransform;
-
-  instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
-
-  instanceCount = 1;*/
-
   transform = initTransform;
 
   model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
 
   descSetLayout = mat->prepareDescriptors(this->binds);
   pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
-
-  /*this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    this->createUniformBuffers(scSize, this->binds);
-    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
-    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, this->binds, texture, scSize);*/
-
-  //constructBuffers(scSize);
 
 }
 
@@ -145,18 +109,6 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   }
   this->texture = mat->getTextures();
 
-  /*instanceTransforms = std::vector<glm::mat4>(1);
-  instances = std::unordered_map<uint32_t, InstanceInfo>(1);
-  transforms = std::vector<Transform<float>>(1);*/
-
-  //std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
-
-  /*transforms[0] = initTransform;
-
-  instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
-
-  instanceCount = 1;*/
-
   transform = initTransform;
 
   model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
@@ -168,19 +120,6 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
     pipeline = mat->setupStaticPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
   }
 
-  /*this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    this->createUniformBuffers(scSize, this->binds);
-    this->descPool = this->shader->setupDescriptorPool(scSize, binds);
-    this->descriptorSets = shader->createDescriptorSets(descPool, descSetLayout, this->binds, texture, scSize);*/
-
-  //constructBuffers(scSize);
-
-}
-
-RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform) : RenderElement(view, strc->getModel(view->getState()), strc->getMaterial(), view->getSwapchainSize(), initTransform) {
-
-
-
 }
 
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, std::vector<Shader::Binding> binds) : state(view->getState()), MemoryTransferer(*view) {
@@ -191,44 +130,22 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
   this->shader = mat->getShader();
   this->texture = mat->getTextures();
 
-  /*instanceTransforms = std::vector<glm::mat4>(1);
-  instances = std::unordered_map<uint32_t, InstanceInfo>(1);
-  transforms = std::vector<Transform<float>>(1);*/
-
-  //std::array<float, 3> rAxis = {0.0, 0.0, 1.0};
-
-  /*transforms[0] = initTransform;
-  instanceTransforms[0] = getTransformationMatrixGLM(transforms[0]);
-  instanceCount = 1;*/
-
   model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
 
   descSetLayout = mat->prepareDescriptors(this->binds);
   pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
-
-  //constructBuffers(scSize);
-
-}
-
-RenderElement::RenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTransform, std::vector<Shader::Binding> binds) :
-  RenderElement(view, strc->getModel(view->getState()), strc->getMaterial(), view->getSwapchainSize(), initTransform, binds) {
-
 
 
 }
 
 RenderElement::~RenderElement() {
 
-  //destroyUniformBuffers();
   vkDestroyDescriptorPool(state.device, descPool, nullptr);
-
-  //delete this->instanceBuffer;
 
 }
 
 void RenderElement::constructBuffers(int scSize) {
 
-  //this->instanceBuffer = new DynamicBuffer<glm::mat4>(state, instanceTransforms, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
   this->createUniformBuffers(scSize, this->binds);
 
   this->descPool = this->shader->setupDescriptorPool(scSize, binds);
@@ -256,7 +173,6 @@ glm::mat4 RenderElement::getTransformationMatrixGLM(Transform<float> & i) {
 }
 
 void RenderElement::markBufferDirty() {
-  //this->instanceBufferDirty = true;
   this->handler.signalTransfer(this);
 }
 
@@ -387,7 +303,6 @@ void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameInd
 
   model->bindForRender(buffer);
   VkDeviceSize offsets[] = {0};
-  //vkCmdBindVertexBuffers(buffer, 1, 1, &instanceBuffer->getBuffer(), offsets);
   vkCmdDrawIndexed(buffer, model->getIndexCount(), 1, 0, 0, 0);
 
 
@@ -399,29 +314,6 @@ std::vector<VkDescriptorSet> & RenderElement::getDescriptorSets() {
 
 std::vector<VmaAllocation> & RenderElement::getMemories() {
   return this->uniformBuffersMemory;
-}
-
-RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Structure> strc, Transform<float> & initTrans) {
-
-  if (strc->hasAnimations()) {
-
-    lout << "Element has animations" << std::endl;
-
-    if (!strc->getSkin())
-      throw dbg::trace_exception("Trying to create animated renderelement with no skin");
-    RenderElementAnim * rElem = new RenderElementAnim(view, strc, initTrans);
-
-    rElem->constructBuffers(view->getSwapchainSize());
-
-    return rElem;
-  }
-
-  {
-    RenderElement * rElem = new RenderElement(view, strc, initTrans);
-    rElem->constructBuffers(view->getSwapchainSize());
-    return rElem;
-  }
-
 }
 
 RenderElement * RenderElement::buildRenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform) {

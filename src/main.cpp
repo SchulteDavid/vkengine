@@ -9,22 +9,20 @@
 #include "resources/resourcemanager.h"
 #include "inputs/playercontroler.h"
 #include "util/debug/trace_exception.h"
-#include "structure/structure.h"
 #include "world/entity.h"
 #include "physics/physicscontext.h"
 #include "world/world.h"
 #include <execinfo.h>
 #include "structure/gltf.h"
-#include "structure/level.h"
 #include "util/debug/logger.h"
 #include "util/mesh.h"
 #include <mathutils/matrix.h>
 #include <exception>
 #include "util/mesh/marchingcubes.h"
 #include "util/transform.h"
-#include "structure/node/node.h"
-#include "structure/node/meshnode.h"
-#include "structure/node/nodeloader.h"
+#include "node/node.h"
+#include "node/meshnode.h"
+#include "node/nodeloader.h"
 #include "render/instancedrenderelement.h"
 
 static bool run = true;
@@ -75,8 +73,6 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
   resourceManager->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
   resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
   resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
-  //resourceManager->addRegistry("Structure", (ResourceRegistry<Resource>*) new ResourceRegistry<Structure>());
-  //resourceManager->addRegistry("Level", (ResourceRegistry<Resource> *) new ResourceRegistry<Level>());
   resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
 
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
@@ -84,10 +80,7 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
   resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
   resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-  //resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new StructureLoader(view->getState()));
-  //resourceManager->addLoader("Structure", (ResourceLoader<Resource> *) new GLTFLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
-  //resourceManager->addLoader("Level", (ResourceLoader<Resource> *) new LevelLoader());
   resourceManager->addLoader("Mesh", (ResourceLoader<Resource> *) new MeshLoader());
 
 
