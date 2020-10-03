@@ -86,8 +86,13 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
 
   strc::Node::registerLoaders();
 
-  resourceManager->addLoader("Node", (ResourceLoader<Resource> *) new GLTFNodeLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+  //resourceManager->addLoader("Node", (ResourceLoader<Resource> *) new GLTFNodeLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+  
   resourceManager->addLoader("Node", (ResourceLoader<Resource> *) new NodeLoader());
+
+  std::shared_ptr<ArchiveLoader> gltfLoader(new GLTFNodeLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+
+  resourceManager->attachArchiveType("glb", gltfLoader);
 
 }
 
@@ -150,8 +155,11 @@ int main(int argc, char ** argv) {
   window->addInputHandler(playerCtl);
 
   lout << "Start wait for node " << node << std::endl;
-  node->fut.wait();
-  node3->fut.wait();
+  //while(!node->status.isUseable) ;
+  //node3->fut.wait();
+  //while(!node3->status.isUseable);
+  node->wait();
+  node3->wait();
 
   lout << "All futures are ok" << std::endl;
 

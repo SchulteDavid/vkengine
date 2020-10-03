@@ -1020,7 +1020,7 @@ LoadingResource GLTFNodeLoader::loadTexture(gltf_file_data_t & fileData, const i
 
   std::string textureName = gltfSubresName(fname, image.name);
 
-  return this->scheduleSubresource(ResourceLocation("Texture", fname, image.name), upldr);
+  return uploadResource(ResourceLocation("Texture", fname, image.name), upldr);
 
 }
 
@@ -1040,7 +1040,7 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
   std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shader, staticShader, textures));
 
 
-  return scheduleSubresource(ResourceLocation("Material", fname, material.name), upldr);
+  return uploadResource(ResourceLocation("Material", fname, material.name), upldr);
 
 }
 
@@ -1070,7 +1070,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
     std::shared_ptr<Mesh> mesh = gltfLoadMesh(gltfMesh, fileData.accessors, fileData.bufferViews, fileData.binaryBuffer);
     std::string meshName = gltfSubresName(filename, gltfMesh.name);
-    LoadingResource meshRes = this->scheduleSubresource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
+    LoadingResource meshRes = this->uploadResource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
     lout << "MeshRes " << meshRes << std::endl;
 
     int materialIndex = gltfMesh.primitives[0].material;
@@ -1080,13 +1080,13 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
       LoadingResource matRes = this->loadMaterial(fileData, materialIndex, filename);
       uploader = std::shared_ptr<NodeUploader>(new MeshNodeUploader(node.name, meshRes, matRes, trans));
-      scheduleSubresourceUpload(resourceManager, ResourceLocation("Node",filename, node.name) , uploader);
+      uploadResource(ResourceLocation("Node",filename, node.name) , uploader);
 
     } else {
 
       LoadingResource matRes = this->loadDependency(ResourceLocation("Material", "resources/materials/gltf_default.mat"));
       uploader = std::make_shared<MeshNodeUploader>(node.name, meshRes, matRes, trans);
-      scheduleSubresource(ResourceLocation("Node",filename, node.name), uploader);
+      uploadResource(ResourceLocation("Node",filename, node.name), uploader);
 
     }
 
@@ -1100,7 +1100,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
   for (const int id : node.children) {
 
     std::shared_ptr<NodeUploader> childUploader = loadNodeGLTF(fileData, id, filename);
-    LoadingResource child = scheduleSubresource(ResourceLocation("Node", filename, childUploader->getNodeName()), childUploader);
+    LoadingResource child = uploadResource(ResourceLocation("Node", filename, childUploader->getNodeName()), childUploader);
     uploader->addChild(child);
 
   }
@@ -1109,7 +1109,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
 }
 
-std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::string fname) {
+/*std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::string fname) {
 
   lout << "Loading gltf-data as Node" << std::endl;
 
@@ -1135,6 +1135,41 @@ std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::
 
   return sceneUploader;
 
+  }*/
+
+bool GLTFNodeLoader::canLoad(ResourceLocation location) {
+
+  /// Assume file is correct.
+  return true;
+  
+}
+
+LoadingResource GLTFNodeLoader::load(ResourceLocation location) {
+
+  lout << "Loading gltf-data as Node" << std::endl;
+
+  gltf_file_data_t fileData;
+  std::vector<std::shared_ptr<GLTFNode>> nodes = gltfLoadFile(location.filename, &fileData);
+
+  lout << "GLTF-Data is loaded" << std::endl;
+
+  gltf_scene_t scene = fileData.scenes[fileData.rootScene];
+  std::shared_ptr<strc::Node> sceneNode(new strc::Node(""));
+
+  std::shared_ptr<NodeUploader> sceneUploader = std::make_shared<NodeUploader>(sceneNode);
+
+  for (int nodeId : scene.nodes) {
+
+    std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, location.filename);
+    LoadingResource res = uploadResource(ResourceLocation("Node", location.filename, child->getNodeName()), child);
+    sceneUploader->addChild(res);
+
+  }
+
+  lout << "Loaded GLTF-Node successfully" << std::endl;
+
+  return uploadResource(ResourceLocation(location.type, location.filename), sceneUploader);
+  
 }
 
 using namespace Math;

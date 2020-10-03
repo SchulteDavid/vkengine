@@ -72,6 +72,44 @@ void ResourceManager::submitUpload(LoadingResource resource) {
 
 }
 
+bool ResourceManager::tryArchiveLoad(LoadingResource fres) {
+
+  auto loc = fres->name.filename.find('.');
+  std::string ending = fres->name.filename.substr(loc+1, std::string::npos);
+  std::transform(ending.begin(), ending.end(), ending.begin(), [](unsigned char c){ return std::tolower(c); });
+
+  std::cout << "Checking if ending " << ending << " has ArchiveLoaders" << std::endl;
+  
+  if (archiveLoader.find(ending) != archiveLoader.end()) {
+    
+    try {
+
+      std::shared_ptr<ArchiveLoader> loader = archiveLoader[ending];
+      if (!loader->canLoad(fres->name))
+	return false;
+      
+      LoadingResource res = loader->load(fres->name);
+      fres->uploader = res->uploader;
+      //fres->cond = res->cond;
+      //*fres = *res;
+
+      return true;
+      
+    } catch (std::exception & e) {
+      lerr << e.what() << std::endl;
+      return false;
+    }
+  }
+  return false;
+  
+}
+
+void ResourceManager::attachArchiveType(std::string fileEnding, std::shared_ptr<ArchiveLoader> loader) {
+  std::transform(fileEnding.begin(), fileEnding.end(), fileEnding.begin(), [](unsigned char c){ return std::tolower(c); });
+  archiveLoader[fileEnding] = loader;
+  loader->setCurrentManager(this);
+}
+
 #define dbg_log (lout << "[ " << __FILE__ << " : " << __PRETTY_FUNCTION__ << " ] ")
 
 void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
@@ -92,7 +130,9 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
         fres->status.isLoaded = true;
         fres->status.isUploaded = true;
         fres->status.isUseable = true;
-        fres->prom.set_value();
+	fres->cond.notify_all();
+        //fres->prom.set_value();
+	//fres->fut.
 
         continue;
 
@@ -111,12 +151,16 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
       resourceManager->markResourceInPipeline(fres);
 
-      std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->name);
-      if (!uploader)
-        throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name.filename));
-      fres->uploader = uploader;
+      if (!resourceManager->tryArchiveLoad(fres)) {
 
-      lout << fres->name << " : " << uploader << std::endl;
+	std::shared_ptr<ResourceUploader<Resource>> uploader = resourceManager->loadResource<Resource>(fres->name);
+	if (!uploader)
+	  throw dbg::trace_exception(std::string("No Correct loader for ").append(fres->name.filename));
+	fres->uploader = uploader;
+
+	lout << fres->name << " : " << uploader << std::endl;
+
+      }
 
       fres->status.isLoaded = true;
 
@@ -172,7 +216,8 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
       fres->status.isLoaded = true;
       fres->status.isUploaded = true;
       fres->status.isUseable = true;
-      fres->prom.set_value();
+      fres->cond.notify_all();
+      //fres->prom.set_value();
 
       continue;
 
@@ -205,7 +250,8 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
     fres->status.isUploaded = true;
     fres->status.isUseable  = true;
 
-    fres->prom.set_value();
+    fres->cond.notify_all();
+    //fres->prom.set_value();
 
     resourceManager->unmarkResourceInPipeline(fres);
 
@@ -221,14 +267,14 @@ LoadingResource ResourceManager::getNextResource() {
 
   loadingCV.wait(lock, [&] {return !loadingQueue.empty() || !keepThreadsRunning;});
 
-  if (loadingQueue.empty()) {
+  /*if (loadingQueue.empty()) {
 
 
     resource = std::shared_ptr<FutureResource>(new FutureResource());
 
     resource->isPresent = false;
     return resource;
-  }
+    }*/
 
   resource = loadingQueue.front();
   loadingQueue.pop();
@@ -245,12 +291,12 @@ LoadingResource ResourceManager::getNextUploadingResource() {
 
   uploadingCV.wait(lock, [&] {return !uploadingQueue.empty() || !keepThreadsRunning;});
 
-  if (uploadingQueue.empty()) {
+  /*if (uploadingQueue.empty()) {
 
     resource = std::shared_ptr<FutureResource>(new FutureResource());
     resource->isPresent = false;
     return resource;
-  }
+    }*/
 
   resource = uploadingQueue.front();
   uploadingQueue.pop();
@@ -270,7 +316,7 @@ LoadingResource ResourceManager::loadResourceBg(ResourceLocation location) {
   std::shared_ptr<FutureResource> res(new FutureResource(location));
   res->isPresent = true;
   res->status = status;
-  res->fut = res->prom.get_future();
+  //res->fut = std::shared_future<void>(res->prom.get_future());
 
   {
     std::lock_guard<std::mutex> guard(loadingQueueMutex);
@@ -389,4 +435,12 @@ ResourceLocation ResourceLocation::parse(std::string type, std::string data) {
 
   return ResourceLocation(type, fname, name);
 
+}
+
+void FutureResource::wait() {
+  std::unique_lock<std::mutex> lock(mut);
+
+  std::cout << "Waiting for " << this << std::endl;
+  
+  cond.wait(lock, [&] {return status.isUseable;});
 }

@@ -58,15 +58,18 @@ private:
 
 struct gltf_file_data_t;
 
+#include "resources/archiveloader.h"
 #include "node/nodeloader.h"
 
-class GLTFNodeLoader : public ResourceLoader<strc::Node> {
+class GLTFNodeLoader : public ArchiveLoader {
 
 public:
 
   GLTFNodeLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
   
-  std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname);
+  //std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname);
+  bool canLoad(ResourceLocation location);
+  LoadingResource load(ResourceLocation location);
   std::shared_ptr<NodeUploader> loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string fname);
 
   LoadingResource loadMaterial(gltf_file_data_t & fileData, const int materialId, const std::string fname);

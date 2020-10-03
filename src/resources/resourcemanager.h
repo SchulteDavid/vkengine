@@ -9,6 +9,7 @@
 #include "resource.h"
 #include "resourceloader.h"
 #include "resourceregistry.h"
+#include "resources/archiveloader.h"
 
 class ResourceManager {
 
@@ -59,11 +60,16 @@ public:
 
   void printSummary();
 
+  /// Tries to load location as an archive, returns true if possible
+  bool tryArchiveLoad(LoadingResource fres);
+  void attachArchiveType(std::string fileEnding, std::shared_ptr<ArchiveLoader> loader);
+
 protected:
 
 private:
 
   std::unordered_map<std::string, ResourceRegistry<Resource> *> registries;
+  std::unordered_map<std::string, std::shared_ptr<ArchiveLoader>> archiveLoader;
 
   std::mutex loadingQueueMutex;
   std::condition_variable loadingCV;

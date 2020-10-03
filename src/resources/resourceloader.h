@@ -32,14 +32,14 @@ struct ResourceLocation {
   }
 
   /// Registry in which this should be saved
-  const std::string type;
+  std::string type;
 
   /// File in which this resource can be found
-  const std::string filename;
+  std::string filename;
 
   /// Name of the resource in the file, can be empty if
   /// it does not apply.
-  const std::string name;
+  std::string name;
 
   static ResourceLocation parse(std::string type, std::string name);
 
@@ -57,8 +57,13 @@ struct FutureResource {
   std::shared_ptr<void> uploader;
   std::shared_ptr<Resource> location;
 
-  std::future<void> fut;
-  std::promise<void> prom;
+  /*std::shared_future<void> fut;
+    std::promise<void> prom;*/
+
+  std::mutex mut;
+  std::condition_variable cond;
+
+  void wait();
 
   LoadingStatus status;
 
