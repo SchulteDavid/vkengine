@@ -52,8 +52,10 @@ public:
 
   bool uploadReady() override;
 
-  std::shared_ptr<strc::Node> uploadResource() override;
   std::string getNodeName() override;
+
+protected:
+  std::shared_ptr<strc::Node> constructNode() override;
 
 private:
 

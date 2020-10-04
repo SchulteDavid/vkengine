@@ -137,4 +137,8 @@ void Node::registerLoaders() {
   NodeLoader::registerNodeLoader("LightNode", strc::loadLightNode);
   NodeLoader::registerNodeLoader("PhysicsNode", strc::loadPhysicsNode);
 
+  /// Register EventHandlers
+
+  registerEventHandlerType("EventHandler", [] {return new EventHandler();});
+  
 }

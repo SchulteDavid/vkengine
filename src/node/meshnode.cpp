@@ -99,15 +99,13 @@ std::string MeshNodeUploader::getNodeName() {
   return nodeName;
 }
 
-std::shared_ptr<strc::Node> MeshNodeUploader::uploadResource() {
+std::shared_ptr<strc::Node> MeshNodeUploader::constructNode() {
 
   std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(meshRes->location);
   lout << "material location " << meshRes->location << std::endl;
   std::shared_ptr<Material> mat = std::dynamic_pointer_cast<Material>(materialRes->location);
 
   std::shared_ptr<strc::Node> node = std::make_shared<strc::MeshNode>(nodeName, mesh, mat, transform);
-
-  populateChildren(node);
 
   return node;
 }

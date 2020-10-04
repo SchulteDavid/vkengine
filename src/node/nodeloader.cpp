@@ -2,13 +2,16 @@
 #include "util/transform.h"
 
 #include "meshnode.h"
+#include "node/event.h"
 
 NodeUploader::NodeUploader() {
   this->rootNode = nullptr;
+  this->eventHandler = nullptr;
 }
 
 NodeUploader::NodeUploader(std::shared_ptr<strc::Node> node) {
     this->rootNode = node;
+    this->eventHandler = nullptr;
 }
 
 bool NodeUploader::uploadReady()  {
@@ -26,14 +29,28 @@ bool NodeUploader::childrenReady() {
 
 std::shared_ptr<strc::Node> NodeUploader::uploadResource() {
 
-  populateChildren(rootNode);
+  std::shared_ptr<strc::Node> node = constructNode();
 
+  std::cout << "Got Node " << node << std::endl;
+  
+  populateChildren(node);
+  std::cout << "Children ok" << std::endl;
+  populateEventHandler(node);
+
+  return node;
+
+}
+
+std::shared_ptr<strc::Node> NodeUploader::constructNode() {
   return rootNode;
-
 }
 
 void NodeUploader::addChild(LoadingResource child) {
   children.push_back(child);
+}
+
+void NodeUploader::addEventHandler(std::shared_ptr<strc::EventHandler> handler) {
+  eventHandler = handler;
 }
 
 void NodeUploader::populateChildren(std::shared_ptr<strc::Node> node) {
@@ -47,6 +64,13 @@ void NodeUploader::populateChildren(std::shared_ptr<strc::Node> node) {
 
   }
 
+}
+
+void NodeUploader::populateEventHandler(std::shared_ptr<strc::Node> node) {
+  if (eventHandler)
+    node->attachEventHandler(eventHandler);
+  else
+    node->attachEventHandler(std::make_shared<strc::EventHandler>());
 }
 
 std::string NodeUploader::getNodeName() {
@@ -150,6 +174,12 @@ std::shared_ptr<NodeUploader> NodeLoader::loadNodeFromCompound(std::shared_ptr<c
 
     }
 
+  }
+
+  if (comp->hasChild("eventHandler")) {
+    std::string handlerName(comp->getNode<char>("EventHandler")->getRawData());
+    std::shared_ptr<strc::EventHandler> handler = strc::constructEventHandler(handlerName);
+    node->addEventHandler(handler);
   }
 
   return node;

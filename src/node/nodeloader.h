@@ -16,6 +16,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
   bool uploadReady() override;
 
   void addChild(LoadingResource child);
+  void addEventHandler(std::shared_ptr<strc::EventHandler> handler);
 
   virtual std::string getNodeName();
 
@@ -23,11 +24,15 @@ class NodeUploader : public ResourceUploader<strc::Node> {
 
   NodeUploader();
   void populateChildren(std::shared_ptr<strc::Node> node);
+  void populateEventHandler(std::shared_ptr<strc::Node> node);
   bool childrenReady();
+
+  virtual std::shared_ptr<strc::Node> constructNode();
 
  private:
   std::shared_ptr<strc::Node> rootNode;
   std::vector<LoadingResource> children;
+  std::shared_ptr<strc::EventHandler> eventHandler;
 
 };
 
