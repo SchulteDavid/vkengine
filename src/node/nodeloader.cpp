@@ -177,7 +177,7 @@ std::shared_ptr<NodeUploader> NodeLoader::loadNodeFromCompound(std::shared_ptr<c
   }
 
   if (comp->hasChild("eventHandler")) {
-    std::string handlerName(comp->getNode<char>("EventHandler")->getRawData());
+    std::string handlerName(comp->getNode<char>("eventHandler")->getRawData());
     std::shared_ptr<strc::EventHandler> handler = strc::constructEventHandler(handlerName);
     node->addEventHandler(handler);
   }
