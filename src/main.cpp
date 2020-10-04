@@ -147,7 +147,7 @@ int main(int argc, char ** argv) {
   //LoadingResource treeStruct = resourceManager->loadResourceBg("Structure", "tree.glb");
   //LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
   LoadingResource node = resourceManager->loadResourceBg(ResourceLocation("Node", "exports.glb"));
-  LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "tree.glb"));
+  LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "platform.glb"));
   LoadingResource node3 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/test.node"));
 
 
@@ -174,20 +174,22 @@ int main(int argc, char ** argv) {
 
   //return 0;
 
-  view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
-  view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
-  view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
+  //view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
+  //view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
+  //view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
 
   std::shared_ptr<World> world(new World());
 
   lout << "Adding baseNode to Viewport" << std::endl;
   std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "exports.glb"));
-  baseNode->viewportAdd(view);
+  baseNode->viewportAdd(view, baseNode);
+  baseNode->worldAdd(world, baseNode);
   lout << "Done Node " << baseNode << std::endl;
 
   lout << "Adding other Node" << std::endl;
-  std::shared_ptr<strc::Node> n3 = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/test.node", "Mesh.001"));
-  n3->viewportAdd(view);
+  std::shared_ptr<strc::Node> n3 = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/test.node"));
+  n3->viewportAdd(view, n3);
+  n3->worldAdd(world, n3);
   lout << "Done adding other node" << std::endl;
 
 
@@ -231,7 +233,6 @@ int main(int argc, char ** argv) {
 
   lerr << "Rotate Thread: " << &rotateThread << std::endl;
 
-  //LoadingResource testRes = resourceManager->loadResourceBg(ResourceLocation("Node", "sheep_.glb"));
   bool isInViewport = false;
 
   while (!glfwWindowShouldClose(window->getGlfwWindow())) {
@@ -241,24 +242,16 @@ int main(int argc, char ** argv) {
     view->drawFrame();
     wait = false;
 
-    /*if (testRes->status.isUseable && !isInViewport) {
-
-      std::shared_ptr<strc::Node> strcNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "sheep_.glb"));
-      strcNode->viewportAdd(view);
-      isInViewport = true;
-
-    }*/
-
-
   }
 
   run = false;
   wait = false;
 
-  resourceManager->joinLoadingThreads();
+  lout << "End of mainloop" << std::endl;
+
+  lout << "Joining Threads" << std::endl;
   rotateThread.join();
 
-  lout << "End of mainloop" << std::endl;
 
   lout << "Final resources" << std::endl;
 

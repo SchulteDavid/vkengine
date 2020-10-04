@@ -12,6 +12,12 @@ template <typename T = float> struct Transform {
     scale = Math::Vector<3, T>({1,1,1});
   };
 
+  Transform(Math::Vector<3, T> pos, Math::Quaternion<T> rot) {
+    position = pos;
+    rotation = rot;
+    scale = Math::Vector<3, T>({1,1,1});
+  }
+
   Math::Vector<3, T> position;
   Math::Quaternion<T> rotation;
   Math::Vector<3, T> scale;
@@ -51,7 +57,7 @@ template <typename T> std::ostream & operator<<(std::ostream & stream, Transform
 template <typename T> inline Transform<T> operator*(const Transform<T> & t1, const Transform<T> & t2) {
 
   Transform<T> res;
-  res.position = t1.position + t2.position;
+  res.position = t1.position + t1.rotation.toRotationMatrix() * t2.position;
   res.rotation = t2.rotation * t1.rotation;
   res.scale = Math::compMultiply(t1.scale, t2.scale);
 

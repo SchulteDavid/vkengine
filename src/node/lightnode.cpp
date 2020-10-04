@@ -9,15 +9,32 @@ using namespace strc;
 LightNode::LightNode(std::string name, LightType type, float power, Transform<double> transform) : Node(name, transform) {
   this->type = type;
   this->power = power;
+  this->view = nullptr;
 }
 
-void LightNode::addToViewport(Viewport * view) {
+void LightNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 
-  glm::vec4 pos(transform.position[0], transform.position[1], transform.position[2], (float) type);
+  Transform<double> trans = getGlobalTransform();
+  glm::vec4 pos(trans.position[0], trans.position[1], trans.position[2], (float) type);
   glm::vec4 color(power, power, power, 1.0);
 
-  view->addLight(pos, color);
+  this->light = view->addLight(pos, color);
 
+  this->view = view;
+  
+
+}
+
+void LightNode::onTransformUpdate() {
+  
+  if (!view) return;
+
+  Transform<double> trans = getGlobalTransform();
+  glm::vec4 pos(trans.position[0], trans.position[1], trans.position[2], (float) type);
+  glm::vec4 color(power, power, power, 1.0);
+  
+  this->view->updateLight(light, pos, color);
+  
 }
 
 std::shared_ptr<NodeUploader> strc::loadLightNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {

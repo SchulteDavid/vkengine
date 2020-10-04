@@ -28,7 +28,7 @@ MeshNode::~MeshNode() {
 
 }
 
-void MeshNode::addToWorld(std::shared_ptr<World> world) {
+void MeshNode::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
 
 }
 
@@ -63,11 +63,11 @@ std::shared_ptr<Mesh> MeshNode::getMesh() {
   return mesh;
 }
 
-void MeshNode::addToViewport(Viewport * view) {
+void MeshNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 
   lout << "Adding MeshNode to Viewport" << std::endl;
 
-  Transform<float> vTransform = convertTransform<double, float>(transform);
+  Transform<float> vTransform = convertTransform<double, float>(getGlobalTransform());
   lout << "Building RenderElement at position " << vTransform << std::endl;
 
   if (!this->renderElement) {

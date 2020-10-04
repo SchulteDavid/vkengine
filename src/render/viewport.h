@@ -73,7 +73,8 @@ public:
 
   void addRenderElement(std::shared_ptr<RenderElement> rElem);
 
-  void addLight(glm::vec4 pos, glm::vec4 color);
+  uint32_t addLight(glm::vec4 pos, glm::vec4 color);
+  void updateLight(uint32_t index, glm::vec4 pos, glm::vec4 color);
 
   void manageMemoryTransfer();
 

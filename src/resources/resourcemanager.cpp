@@ -363,10 +363,15 @@ void ResourceManager::joinLoadingThreads() {
 
   this->keepThreadsRunning = false;
 
+  lout << "Notifying conditions" << std::endl;
+  
   loadingCV.notify_all();
   uploadingCV.notify_all();
 
+  lout << "Joining Threads" << std::endl;
+
   for (std::thread * th : loadingThreads) {
+    lout << th << std::endl;
     th->join();
   }
 

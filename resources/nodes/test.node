@@ -1,39 +1,94 @@
-string type = "Node"
+comp children = [
+  {
+	string type = "PhysicsNode"
 
-string name = "Level1"
+	string name = "Level1"
+
+	comp physics = {
+	     float64 mass = 10.0
+	     string shapeName = "box"
+
+	     float64 boxSize = [1,1,1]
+	}
+
+	comp transform = {
+	     float64 position = [0,0,0]
+     	     float64 rotation = [1,0,0,0]
+	     float64 scale = [1,1,1]
+	}
+
+	comp children = [
+
+     	     {
+		string type = "MeshNode"
+		string name = "Mesh.001"
+
+		comp transform = {
+	     	     float64 position = [0,0,0]
+	     	     float64 rotation = [1,0,0,0]
+		     float64 scale = [1,1,1]
+		}
+
+		string mesh = "exports.glb::Cube"
+     		string material = "resources/materials/test.mat"
+	
+	    },
+     	    {
+		string type = "LightNode"
+		string name = "Light.001"
+		comp transform = {
+	     	     float64 position = [0,0,1.2]
+	     	     float64 rotation = [1,0,0,0]
+     	     	     float64 scale = [1,1,1]
+		}
+		int32 lighttype = 1
+		float32 power = 300.0
+     	     }
+
+	 ]
+
+  },
+  {
+	string type = "PhysicsNode"
+	string name = "Platform"
+
+	comp physics = {
+	     float64 mass = 0.0
+	     string shapeName = "box"
+
+	     float64 boxSize = [20.9196,20.9196,0.29299]
+	}
+	comp transform = {
+	     float64 position = [0,0,-4]
+     	     float64 rotation = [0.979925,0.199368,0,0]
+	     float64 scale = [1.0,1.0,1.0]
+	}
+
+	comp children = [
+
+     	     {
+		string type = "MeshNode"
+		string name = "PlatformMesh"
+
+		comp transform = {
+	     	     float64 position = [0,0,0]
+	     	     float64 rotation = [1,0,0,0]
+		     float64 scale = [1,1,1]
+		}
+
+		string mesh = "platform.glb::Platform"
+     		string material = "platform.glb::Material.001"
+	
+	    }
+	 ]
+  }
+]
+
+string type = "Node"
+string name = "Level"
 
 comp transform = {
      float64 position = [0,0,0]
      float64 rotation = [1,0,0,0]
      float64 scale = [1,1,1]
 }
-
-comp children = [
-
-     {
-	string type = "MeshNode"
-	string name = "Mesh.001"
-
-	comp transform = {
-	     float64 position = [0,12,0]
-	     float64 rotation = [1,0,0,0]
-     	     float64 scale = [1,1,1]
-	}
-
-	string mesh = "sheep.ply"
-	string material = "resources/materials/test.mat"
-	
-     },
-     {
-	string type = "LightNode"
-	string name = "Light.001"
-	comp transform = {
-	     float64 position = [0,11,0]
-	     float64 rotation = [1,0,0,0]
-     	     float64 scale = [1,1,1]
-	}
-	int32 lighttype = 1
-	float32 power = 3.0
-     }
-
-]

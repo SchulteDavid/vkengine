@@ -2,26 +2,27 @@
 
 using namespace Math;
 
-PhysicsObject::PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot) {
-
-    this->mass = mass;
-    this->collisionShape = new btBoxShape(btVector3(1,1,1));
-    this->angularFactor = 1.0;
-    this->position = pos;
-    this->rotation = rot;
-    this->rigidBody = nullptr;
+PhysicsObject::PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot) : PhysicsObject(mass, Transform<double>(pos, rot)) {
 
 }
 
-PhysicsObject::PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot, btCollisionShape * collisionShape) {
+PhysicsObject::PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot, btCollisionShape * collisionShape)
+  : PhysicsObject(mass, Transform<double>(pos, rot), collisionShape) {
 
-    this->mass = mass;
-    this->collisionShape = collisionShape;
-    this->angularFactor = 1.0;
-    this->position = pos;
-    this->rotation = rot;
-    this->rigidBody = nullptr;
+}
 
+PhysicsObject::PhysicsObject(double mass, Transform<double> transform) : PhysicsObject(mass, transform, new btBoxShape(btVector3(1,1,1))) {
+
+}
+
+PhysicsObject::PhysicsObject(double mass, Transform<double> transform, btCollisionShape * collisionShape) {
+
+  this->mass = mass;
+  this->transform = transform;
+  this->collisionShape = collisionShape;
+  this->angularFactor = 1.0;
+  this->rigidBody = nullptr;
+  
 }
 
 PhysicsObject::~PhysicsObject()
@@ -38,11 +39,11 @@ btCollisionShape * PhysicsObject::getCollisionShape() {
 }
 
 Math::Quaternion<double> PhysicsObject::getRotation() {
-    return rotation;
+    return transform.rotation;
 }
 
 Math::Vector<3, double> PhysicsObject::getPosition() {
-    return position;
+    return transform.position;
 }
 
 double PhysicsObject::getAngularFactor() {
@@ -55,6 +56,12 @@ void PhysicsObject::setRigidBody(btRigidBody * body) {
 
 }
 
+Transform<double> PhysicsObject::getTransform() {
+
+  return transform;
+  
+}
+
 void PhysicsObject::synchronize() {
 
     if (!this->rigidBody || !this->rigidBody->getMotionState())
@@ -62,8 +69,8 @@ void PhysicsObject::synchronize() {
 
     btTransform trans = rigidBody->getCenterOfMassTransform();
     double tmp[3] = {trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()};
-    this->position = Vector<3,double>(tmp);
-    this->rotation = Quaternion<double>(trans.getRotation().getW(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ());
+    transform.position = Vector<3,double>(tmp);
+    transform.rotation = Quaternion<double>(trans.getRotation().getW(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ());
 
 }
 

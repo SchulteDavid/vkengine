@@ -6,40 +6,45 @@
 #include <mathutils/quaternion.h>
 #include <mathutils/vector.h>
 
+#include "util/transform.h"
+
 class PhysicsObject {
 
-    public:
+public:
 
-        Math::Quaternion<double> rotation;
-        Math::Vector<3, double>  position;
+  Transform<double> transform;
 
-        PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot);
-        PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot, btCollisionShape * collisionShape);
-        virtual ~PhysicsObject();
+  PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot);
+  PhysicsObject(double mass, Math::Vector<3,double> pos, Math::Quaternion<double> rot, btCollisionShape * collisionShape);
+  PhysicsObject(double mass, Transform<double> transform);
+  PhysicsObject(double mass, Transform<double> transform, btCollisionShape * collisionShape);
+  virtual ~PhysicsObject();
 
-        double getMass();
-        double getAngularFactor();
-        void setAngularFactor(double f);
-        btCollisionShape * getCollisionShape();
+  double getMass();
+  double getAngularFactor();
+  void setAngularFactor(double f);
+  btCollisionShape * getCollisionShape();
 
-        Math::Quaternion<double> getRotation();
-        Math::Vector<3, double> getPosition();
+  Math::Quaternion<double> getRotation();
+  Math::Vector<3, double> getPosition();
 
-        void setRigidBody(btRigidBody * body);
+  Transform<double> getTransform();
 
-        void applyImpulse(Math::Vector<3, double> impulse);
-        void applyForce(Math::Vector<3, double> force, Math::Vector<3, double> pos);
+  void setRigidBody(btRigidBody * body);
 
-        void synchronize();
+  void applyImpulse(Math::Vector<3, double> impulse);
+  void applyForce(Math::Vector<3, double> force, Math::Vector<3, double> pos);
 
-    protected:
+  void synchronize();
 
-    private:
+protected:
 
-        double mass;
-        double angularFactor;
-        btCollisionShape * collisionShape;
-        btRigidBody * rigidBody;
+private:
+
+  double mass;
+  double angularFactor;
+  btCollisionShape * collisionShape;
+  btRigidBody * rigidBody;
 
 
 };

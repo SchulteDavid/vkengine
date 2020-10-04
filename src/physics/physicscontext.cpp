@@ -4,6 +4,7 @@
 #include <mathutils/quaternion.h>
 
 #include "util/debug/logger.h"
+#include "util/debug/trace_exception.h"
 
 PhysicsContext::PhysicsContext() {
 
@@ -14,6 +15,7 @@ PhysicsContext::PhysicsContext() {
 
     this->dynamicsWorld = new btDiscreteDynamicsWorld(collisionDispacher, broadphaseInterface, solver, collisionConfig);
     this->dynamicsWorld->setGravity(btVector3(0, 0, -9.81));
+    //this->dynamicsWorld->setGravity(btVector3(0, 0, -0.9));
 
 }
 
@@ -64,7 +66,7 @@ void PhysicsContext::addObject(std::shared_ptr<PhysicsObject> obj) {
 
     Math::Quaternion<double> rotation = obj->getRotation();
     startTransform.setRotation(btQuaternion(rotation.b, rotation.c, rotation.d, rotation.a));
-    startTransform.setOrigin(btVector3(obj->position[0],obj->position[1],obj->position[2]));
+    startTransform.setOrigin(btVector3(obj->transform.position[0],obj->transform.position[1],obj->transform.position[2]));
 
     btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
     btRigidBody::btRigidBodyConstructionInfo rbInfo(obj->getMass(),myMotionState,collisionShape,localInertia);
@@ -86,4 +88,32 @@ void PhysicsContext::addObject(std::shared_ptr<PhysicsObject> obj) {
 
     this->objects.push_back(obj);
 
+}
+
+std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform) {
+
+  using namespace config;
+  using namespace physutil;
+
+  double mass = data->getNode<double>("mass")->getElement(0);
+
+  std::string shapeName(data->getNode<char>("shapeName")->getRawData());
+
+  btCollisionShape * shape = nullptr;
+  
+  if (shapeName == "box") {
+
+    std::cout << "Loading BoxShape " << std::endl;
+    double * s = data->getNode<double>("boxSize")->getRawData().get();
+    Math::Vector<3, double> svec(s);
+    svec = Math::compMultiply(svec, transform.scale);
+    shape = new btBoxShape(btVector3(svec[0], svec[1], svec[2]));
+    
+  }
+
+  if (!shape)
+    throw dbg::trace_exception("Unknown collision shape");
+    
+  return std::make_shared<PhysicsObject>(mass, transform, shape);
+  
 }

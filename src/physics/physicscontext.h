@@ -5,6 +5,7 @@
 #include <vector>
 #include <bullet/btBulletDynamicsCommon.h>
 #include <mutex>
+#include <configloading.h>
 
 #include "physicsobject.h"
 
@@ -35,6 +36,12 @@ class PhysicsContext {
 
         std::vector<std::shared_ptr<PhysicsObject>> objects;
 
+};
+
+namespace physutil {
+
+  std::shared_ptr<PhysicsObject> loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform);
+  
 };
 
 #endif // PHYSICSCONTEXT_H

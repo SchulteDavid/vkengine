@@ -687,7 +687,15 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
   mmesh->setMaterialIndex(mesh.primitives[0].material);
 
-  return mmesh;
+  float zupData[16] = {
+		       1, 0, 0, 0,
+		       0, 0, -1, 0,
+		       0, 1, 0, 0,
+		       0, 0, 0, 1
+  };
+  Math::Matrix<4, 4, float> zupMatrix(zupData);
+
+  return zupMatrix * mmesh;
 
 }
 
@@ -1069,7 +1077,6 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     gltf_mesh_t gltfMesh = fileData.meshes[node.mesh];
 
     std::shared_ptr<Mesh> mesh = gltfLoadMesh(gltfMesh, fileData.accessors, fileData.bufferViews, fileData.binaryBuffer);
-    std::string meshName = gltfSubresName(filename, gltfMesh.name);
     LoadingResource meshRes = this->uploadResource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
     lout << "MeshRes " << meshRes << std::endl;
 

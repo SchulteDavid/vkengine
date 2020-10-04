@@ -18,10 +18,15 @@ namespace strc {
 
     LightNode(std::string name, LightType type, float power, Transform<double> transform);
 
-    void addToViewport(Viewport * view) override;
+  protected:
+    void addToViewport(Viewport * view, std::shared_ptr<Node> self) override;
+    void onTransformUpdate() override;
 
   private:
 
+    Viewport * view;
+    uint32_t light;
+    
     LightType type;
     float power;
 

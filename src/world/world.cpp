@@ -40,6 +40,8 @@ void World::update(double dt) {
 
 void World::synchronize() {
 
+  physicsContext->synchronize();
+  
     for (std::shared_ptr<Entity> e : entities) {
         e->synchronize();
     }
