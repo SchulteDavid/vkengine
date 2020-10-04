@@ -32,10 +32,34 @@ PhysicsContext::~PhysicsContext() {
 
 }
 
-void PhysicsContext::simulateStep(double dt) {
+void PhysicsContext::simulateStep(double dt, CollisionHandler * handler) {
 
     this->simulationLock.lock();
     this->dynamicsWorld->stepSimulation(dt);
+
+    btDispatcher * dispatcher = dynamicsWorld->getDispatcher();
+    const int manifoldCount = dispatcher->getNumManifolds();
+
+    for (int i = 0; i < manifoldCount; ++i) {
+
+      btPersistentManifold * manifold = dispatcher->getManifoldByIndexInternal(i);
+
+      const btRigidBody * objectA = static_cast<const btRigidBody*>(manifold->getBody0());
+      const btRigidBody * objectB = static_cast<const btRigidBody*>(manifold->getBody1());
+
+      double impulse = 0.0;
+      int contacts = manifold->getNumContacts();
+      for (int j = 0; j < contacts; ++j) {
+	impulse += manifold->getContactPoint(j).m_appliedImpulse;
+      }
+
+      PhysicsObject * oa = (PhysicsObject *) objectA->getUserPointer();
+      PhysicsObject * ob = (PhysicsObject *) objectB->getUserPointer();
+
+      handler->signalCollision(oa, ob, impulse);
+
+    }
+    
     this->simulationLock.unlock();
 
 }
@@ -108,6 +132,27 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
     Math::Vector<3, double> svec(s);
     svec = Math::compMultiply(svec, transform.scale);
     shape = new btBoxShape(btVector3(svec[0], svec[1], svec[2]));
+    
+  } else if (shapeName == "sphere") {
+
+    double radius = data->getNode<double>("radius")->getElement(0);
+    shape = new btSphereShape(radius);
+    
+  } else if (shapeName == "capsule") {
+
+    double radius = data->getNode<double>("radius")->getElement(0);
+    double height = data->getNode<double>("height")->getElement(0);
+    
+    shape = new btCapsuleShapeZ(radius, height);
+    
+  } else if (shapeName == "cylinder") {
+
+    double radius = data->getNode<double>("radius")->getElement(0);
+    double height = data->getNode<double>("height")->getElement(0);
+
+    btVector3 vec(radius, radius, height/2);
+    
+    shape = new btCylinderShapeZ(vec);
     
   }
 

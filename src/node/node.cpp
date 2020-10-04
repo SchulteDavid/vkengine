@@ -2,6 +2,7 @@
 
 #include <functional>
 #include "nodeloader.h"
+#include "node/event.h"
 
 using namespace Math;
 using namespace strc;
@@ -15,10 +16,17 @@ Node::Node(std::string name, Transform<double> transform) : name(name) {
   this->transform = transform;
   this->globalTransform = transform;
 
+  this->eventHandler = std::make_shared<EventHandler>();
+
 }
 
 Node::~Node() {
 
+}
+
+void Node::attachEventHandler(std::shared_ptr<EventHandler> handler) {
+  this->eventHandler = handler;
+  eventHandler->bindToParent(this);
 }
 
 void Node::addChild(std::shared_ptr<Node> child) {

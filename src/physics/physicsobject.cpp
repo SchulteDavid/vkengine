@@ -53,6 +53,7 @@ double PhysicsObject::getAngularFactor() {
 void PhysicsObject::setRigidBody(btRigidBody * body) {
 
     this->rigidBody = body;
+    this->rigidBody->setUserPointer(this);
 
 }
 

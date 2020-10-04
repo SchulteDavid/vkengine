@@ -2,6 +2,8 @@
 
 #include "util/transform.h"
 
+#include "node/event.h"
+
 std::unordered_map<std::string, EntityBuilder> Entity::builders;
 
 using namespace Math;
@@ -66,8 +68,8 @@ void Entity::registerDefaultEntityTypes() {
 
 }
 
-void Entity::onCollision(Entity * entity) {
-
+void Entity::onCollision(std::shared_ptr<Entity> entity, double impulse) {
+  this->node->eventHandler->onCollision(entity->node, impulse);
 }
 
 void Entity::onUpdate(const double dt) {

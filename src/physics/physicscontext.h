@@ -9,32 +9,40 @@
 
 #include "physicsobject.h"
 
+class CollisionHandler {
+
+public:
+
+  virtual void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse) = 0;
+  
+};
+
 class PhysicsContext {
-    public:
-        PhysicsContext();
-        virtual ~PhysicsContext();
+public:
+  PhysicsContext();
+  virtual ~PhysicsContext();
 
-        void simulateStep(double dt);
-        void synchronize();
+  void simulateStep(double dt, CollisionHandler * handler);
+  void synchronize();
 
-        void addObject(std::shared_ptr<PhysicsObject> obj);
+  void addObject(std::shared_ptr<PhysicsObject> obj);
 
-    protected:
+protected:
 
-    private:
+private:
 
-        btDefaultCollisionConfiguration * collisionConfig;
-        btCollisionDispatcher * collisionDispacher;
-        btBroadphaseInterface * broadphaseInterface;
-        btSequentialImpulseConstraintSolver * solver;
+  btDefaultCollisionConfiguration * collisionConfig;
+  btCollisionDispatcher * collisionDispacher;
+  btBroadphaseInterface * broadphaseInterface;
+  btSequentialImpulseConstraintSolver * solver;
 
-        btDiscreteDynamicsWorld * dynamicsWorld;
+  btDiscreteDynamicsWorld * dynamicsWorld;
 
-        btAlignedObjectArray<btCollisionShape *> collisionShapes;
+  btAlignedObjectArray<btCollisionShape *> collisionShapes;
 
-        std::mutex simulationLock;
+  std::mutex simulationLock;
 
-        std::vector<std::shared_ptr<PhysicsObject>> objects;
+  std::vector<std::shared_ptr<PhysicsObject>> objects;
 
 };
 

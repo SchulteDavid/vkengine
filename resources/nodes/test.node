@@ -9,6 +9,7 @@ comp children = [
 	     string shapeName = "box"
 
 	     float64 boxSize = [1,1,1]
+	     float64 radius = 1.0
 	}
 
 	comp transform = {

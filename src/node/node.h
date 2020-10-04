@@ -15,6 +15,8 @@ class World;
 
 namespace strc {
 
+  class EventHandler;
+  
   class Node : public Resource {
 
   public:
@@ -37,6 +39,9 @@ namespace strc {
     static void registerLoaders();
 
     const std::string getName();
+
+    void attachEventHandler(std::shared_ptr<EventHandler> handler);
+    std::shared_ptr<EventHandler> eventHandler;
 
   protected:
     /// This is the transform relative to

@@ -51,11 +51,6 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
 
     view->manageMemoryTransfer();
 
-    Transform<double> trans;
-    trans.position = Math::Vector<3, double>({10*cos(time), 10*sin(time), 0});
-
-    baseNode->setTransform(trans);
-
     view->renderIntoSecondary();
 
     //while (wait)
@@ -175,7 +170,7 @@ int main(int argc, char ** argv) {
   //return 0;
 
   //view->addLight(glm::vec4(0, 10, 3, 1.0), glm::vec4(3, 3, 3, 0));
-  //view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
+  view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
   //view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
 
   std::shared_ptr<World> world(new World());
@@ -191,43 +186,6 @@ int main(int argc, char ** argv) {
   n3->viewportAdd(view, n3);
   n3->worldAdd(world, n3);
   lout << "Done adding other node" << std::endl;
-
-
-  {
-    std::shared_ptr<strc::MeshNode> meshNode = std::dynamic_pointer_cast<strc::MeshNode>(baseNode->getChildren()[0]);
-
-    std::shared_ptr<Mesh> mesh = meshNode->getMesh();
-    std::shared_ptr<Material> material = meshNode->getMaterial();
-
-    lout << "Shader " << material->getShader() << " static: " << material->getStaticShader() << std::endl;
-
-    unsigned int stride;
-    const std::vector<InputDescription> & elements = material->getShader()->getInputs();
-
-    std::vector<InterleaveElement> iData = mesh->compactStorage(elements, &stride);
-
-
-    std::shared_ptr<Model> model = std::shared_ptr<Model>(new Model(view->getState(), mesh, iData, stride, true));
-
-    //RenderElement::buildRenderElement(view, meshNode->buildModel(view->getState()), meshNode->getMaterial(), trans)
-    lout << "Building Instanced element" << std::endl;
-    std::shared_ptr<RenderElement> rElem(new InstancedRenderElement(view, model, material, view->getSwapchainSize()));
-    lout << "Constructing buffers" << std::endl;
-    rElem->constructBuffers(view->getSwapchainSize());
-    lout << "Adding to viewport" << std::endl;
-    view->addRenderElement(rElem);
-
-    lout << "Instanced element is built" << std::endl;
-
-    for (unsigned int i = 0; i < 1024; ++i) {
-
-      Transform<float> trans;
-      trans.position = Math::Vector<3, float>((i/32) * 3, (i % 32) * 3, 0);
-
-      rElem->addInstance(trans);
-
-    }
-  }
 
   std::thread rotateThread(rotateFunc, world, view, baseNode);
 

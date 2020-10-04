@@ -6,25 +6,29 @@
 
 class Entity;
 
-class World {
+class World : public CollisionHandler {
 
-    public:
-        World();
-        virtual ~World();
+public:
+  World();
+  virtual ~World();
 
-        void addEntity(std::shared_ptr<Entity> entity);
+  void addEntity(std::shared_ptr<Entity> entity);
 
-        void simulateStep(double dt);
-        void synchronize();
+  void simulateStep(double dt);
+  void synchronize();
 
-        void update(double dt);
+  void update(double dt);
 
-    protected:
+  void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse);
 
-    private:
+protected:
 
-        std::vector<std::shared_ptr<Entity>> entities;
-        PhysicsContext * physicsContext;
+private:
+
+  std::vector<std::shared_ptr<Entity>> entities;
+  PhysicsContext * physicsContext;
+
+  std::unordered_map<PhysicsObject *, std::shared_ptr<Entity>> entitiesByPhysicsObject;
 
 };
 
