@@ -13,6 +13,8 @@ namespace strc {
     PhysicsNode(std::string name, Transform<double> transform, std::shared_ptr<PhysicsObject> physObject);
     virtual ~PhysicsNode();
 
+    void applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position);
+
   protected:
 
     void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) override;

@@ -40,7 +40,7 @@ namespace strc {
 
     const std::string getName();
 
-    void attachEventHandler(std::shared_ptr<EventHandler> handler);
+    void attachEventHandler(std::shared_ptr<EventHandler> handler, std::shared_ptr<Node> self);
     std::shared_ptr<EventHandler> eventHandler;
 
   protected:

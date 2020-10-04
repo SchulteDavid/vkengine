@@ -11,13 +11,14 @@ namespace strc {
 
   public:
 
-    void bindToParent(Node * p);
+    void bindToParent(std::shared_ptr<Node> p);
+    std::shared_ptr<Node> getParent();
 
     virtual void onCollision(std::shared_ptr<Node> other, double impulse, double force);
 
-  private:
+  protected:
 
-    Node * parent;
+    std::shared_ptr<Node> parent;
   
   };
 

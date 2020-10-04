@@ -24,9 +24,9 @@ Node::~Node() {
 
 }
 
-void Node::attachEventHandler(std::shared_ptr<EventHandler> handler) {
+void Node::attachEventHandler(std::shared_ptr<EventHandler> handler, std::shared_ptr<Node> self) {
   this->eventHandler = handler;
-  eventHandler->bindToParent(this);
+  eventHandler->bindToParent(self);
 }
 
 void Node::addChild(std::shared_ptr<Node> child) {

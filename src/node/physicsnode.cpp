@@ -29,6 +29,10 @@ std::shared_ptr<NodeUploader> strc::loadPhysicsNode(std::shared_ptr<config::Node
   
 }
 
+void PhysicsNode::applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position) {
+  this->physObject->applyImpulse(impulse);
+}
+
 void PhysicsNode::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
 
   std::shared_ptr<Entity> ent = Entity::buildEntityFromType("Entity", self, physObject);

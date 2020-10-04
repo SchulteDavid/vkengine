@@ -6,7 +6,7 @@ namespace strc {
 
 using namespace strc;
 
-void EventHandler::bindToParent(Node *p) {
+void EventHandler::bindToParent(std::shared_ptr<Node> p) {
   this->parent = p;
 }
 
@@ -20,8 +20,14 @@ void strc::registerEventHandlerType(std::string type, std::function<EventHandler
   
 }
 
+std::shared_ptr<Node> strc::EventHandler::getParent() {
+  return parent;
+}
+
 std::shared_ptr<EventHandler> strc::constructEventHandler(std::string type) {
 
+  std::cout << "Creating event handler of type " << type << std::endl;
+  
   if (eventHandlerBuilders.find(type) == eventHandlerBuilders.end()) {
     return std::make_shared<EventHandler>();
   }

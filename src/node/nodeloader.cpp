@@ -68,9 +68,9 @@ void NodeUploader::populateChildren(std::shared_ptr<strc::Node> node) {
 
 void NodeUploader::populateEventHandler(std::shared_ptr<strc::Node> node) {
   if (eventHandler)
-    node->attachEventHandler(eventHandler);
+    node->attachEventHandler(eventHandler, node);
   else
-    node->attachEventHandler(std::make_shared<strc::EventHandler>());
+    node->attachEventHandler(std::make_shared<strc::EventHandler>(), node);
 }
 
 std::string NodeUploader::getNodeName() {
