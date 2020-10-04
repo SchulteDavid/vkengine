@@ -13,7 +13,7 @@ namespace strc {
 
     void bindToParent(Node * p);
 
-    virtual void onCollision(std::shared_ptr<Node> other, double impulse);
+    virtual void onCollision(std::shared_ptr<Node> other, double impulse, double force);
 
   private:
 

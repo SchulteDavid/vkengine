@@ -19,7 +19,7 @@ public:
 
   void update(double dt);
 
-  void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse);
+  void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse, double force);
 
 protected:
 

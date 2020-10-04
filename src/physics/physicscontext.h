@@ -13,7 +13,7 @@ class CollisionHandler {
 
 public:
 
-  virtual void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse) = 0;
+  virtual void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse, double force) = 0;
   
 };
 

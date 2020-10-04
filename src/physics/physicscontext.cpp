@@ -8,109 +8,111 @@
 
 PhysicsContext::PhysicsContext() {
 
-    this->collisionConfig = new btDefaultCollisionConfiguration();
-    this->collisionDispacher = new btCollisionDispatcher(collisionConfig);
-    this->broadphaseInterface = new btDbvtBroadphase();
-    this->solver = new btSequentialImpulseConstraintSolver();
+  this->collisionConfig = new btDefaultCollisionConfiguration();
+  this->collisionDispacher = new btCollisionDispatcher(collisionConfig);
+  this->broadphaseInterface = new btDbvtBroadphase();
+  this->solver = new btSequentialImpulseConstraintSolver();
 
-    this->dynamicsWorld = new btDiscreteDynamicsWorld(collisionDispacher, broadphaseInterface, solver, collisionConfig);
-    this->dynamicsWorld->setGravity(btVector3(0, 0, -9.81));
-    //this->dynamicsWorld->setGravity(btVector3(0, 0, -0.9));
+  this->dynamicsWorld = new btDiscreteDynamicsWorld(collisionDispacher, broadphaseInterface, solver, collisionConfig);
+  this->dynamicsWorld->setGravity(btVector3(0, 0, -9.81));
+  //this->dynamicsWorld->setGravity(btVector3(0, 0, -0.9));
 
 }
 
 PhysicsContext::~PhysicsContext() {
 
-    this->simulationLock.lock();
-    delete this->dynamicsWorld;
-    delete this->broadphaseInterface;
-    delete this->collisionConfig;
-    delete this->collisionDispacher;
-    delete this->solver;
-    this->simulationLock.unlock();
+  this->simulationLock.lock();
+  delete this->dynamicsWorld;
+  delete this->broadphaseInterface;
+  delete this->collisionConfig;
+  delete this->collisionDispacher;
+  delete this->solver;
+  this->simulationLock.unlock();
 
 
 }
 
 void PhysicsContext::simulateStep(double dt, CollisionHandler * handler) {
 
-    this->simulationLock.lock();
-    this->dynamicsWorld->stepSimulation(dt);
+  this->simulationLock.lock();
+  this->dynamicsWorld->stepSimulation(dt);
 
-    btDispatcher * dispatcher = dynamicsWorld->getDispatcher();
-    const int manifoldCount = dispatcher->getNumManifolds();
+  btDispatcher * dispatcher = dynamicsWorld->getDispatcher();
+  const int manifoldCount = dispatcher->getNumManifolds();
 
-    for (int i = 0; i < manifoldCount; ++i) {
+  for (int i = 0; i < manifoldCount; ++i) {
 
-      btPersistentManifold * manifold = dispatcher->getManifoldByIndexInternal(i);
+    btPersistentManifold * manifold = dispatcher->getManifoldByIndexInternal(i);
 
-      const btRigidBody * objectA = static_cast<const btRigidBody*>(manifold->getBody0());
-      const btRigidBody * objectB = static_cast<const btRigidBody*>(manifold->getBody1());
+    const btRigidBody * objectA = static_cast<const btRigidBody*>(manifold->getBody0());
+    const btRigidBody * objectB = static_cast<const btRigidBody*>(manifold->getBody1());
 
-      double impulse = 0.0;
-      int contacts = manifold->getNumContacts();
-      for (int j = 0; j < contacts; ++j) {
-	impulse += manifold->getContactPoint(j).m_appliedImpulse;
-      }
-
-      PhysicsObject * oa = (PhysicsObject *) objectA->getUserPointer();
-      PhysicsObject * ob = (PhysicsObject *) objectB->getUserPointer();
-
-      handler->signalCollision(oa, ob, impulse);
-
+    double impulse = 0.0;
+    int contacts = manifold->getNumContacts();
+    for (int j = 0; j < contacts; ++j) {
+      impulse += manifold->getContactPoint(j).m_appliedImpulse;
     }
+
+    double force = impulse / dt;
+
+    PhysicsObject * oa = (PhysicsObject *) objectA->getUserPointer();
+    PhysicsObject * ob = (PhysicsObject *) objectB->getUserPointer();
+
+    handler->signalCollision(oa, ob, impulse, force);
+
+  }
     
-    this->simulationLock.unlock();
+  this->simulationLock.unlock();
 
 }
 
 void PhysicsContext::synchronize() {
 
-    simulationLock.lock();
-    for (std::shared_ptr<PhysicsObject> obj : objects) {
-        obj->synchronize();
-    }
-    simulationLock.unlock();
+  simulationLock.lock();
+  for (std::shared_ptr<PhysicsObject> obj : objects) {
+    obj->synchronize();
+  }
+  simulationLock.unlock();
 
 }
 
 void PhysicsContext::addObject(std::shared_ptr<PhysicsObject> obj) {
 
-    btCollisionShape * collisionShape = obj->getCollisionShape();
-    lout << "Collision Shape ok" << std::endl;
-    this->collisionShapes.push_back(collisionShape);
+  btCollisionShape * collisionShape = obj->getCollisionShape();
+  lout << "Collision Shape ok" << std::endl;
+  this->collisionShapes.push_back(collisionShape);
 
-    btTransform startTransform;
-    startTransform.setIdentity();
+  btTransform startTransform;
+  startTransform.setIdentity();
 
-    bool isDynamic = (obj->getMass() != 0.0);
+  bool isDynamic = (obj->getMass() != 0.0);
 
-    btVector3 localInertia(0,0,0);
-    if (isDynamic) collisionShape->calculateLocalInertia(obj->getMass(), localInertia);
+  btVector3 localInertia(0,0,0);
+  if (isDynamic) collisionShape->calculateLocalInertia(obj->getMass(), localInertia);
 
-    Math::Quaternion<double> rotation = obj->getRotation();
-    startTransform.setRotation(btQuaternion(rotation.b, rotation.c, rotation.d, rotation.a));
-    startTransform.setOrigin(btVector3(obj->transform.position[0],obj->transform.position[1],obj->transform.position[2]));
+  Math::Quaternion<double> rotation = obj->getRotation();
+  startTransform.setRotation(btQuaternion(rotation.b, rotation.c, rotation.d, rotation.a));
+  startTransform.setOrigin(btVector3(obj->transform.position[0],obj->transform.position[1],obj->transform.position[2]));
 
-    btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(obj->getMass(),myMotionState,collisionShape,localInertia);
-	btRigidBody* body = new btRigidBody(rbInfo);
+  btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+  btRigidBody::btRigidBodyConstructionInfo rbInfo(obj->getMass(),myMotionState,collisionShape,localInertia);
+  btRigidBody* body = new btRigidBody(rbInfo);
 
-	body->setLinearVelocity(btVector3(0,0,0));
-	body->setAngularVelocity(btVector3(0,0,0));
-	body->setFriction(1.0);
+  body->setLinearVelocity(btVector3(0,0,0));
+  body->setAngularVelocity(btVector3(0,0,0));
+  body->setFriction(1.0);
 
-	body->setRestitution(0.1);
+  body->setRestitution(0.1);
 
-	body->setAngularFactor(obj->getAngularFactor());
+  body->setAngularFactor(obj->getAngularFactor());
 
-	body->activate(true);
-	//body->setLinearFactor(btVector3(1,1,1));
+  body->activate(true);
+  //body->setLinearFactor(btVector3(1,1,1));
 
-    dynamicsWorld->addRigidBody(body);
-    obj->setRigidBody(body);
+  dynamicsWorld->addRigidBody(body);
+  obj->setRigidBody(body);
 
-    this->objects.push_back(obj);
+  this->objects.push_back(obj);
 
 }
 

@@ -21,13 +21,13 @@ void World::addEntity(std::shared_ptr<Entity> entity) {
 
 }
 
-void World::signalCollision(PhysicsObject *a, PhysicsObject *b, double impulse) {
+void World::signalCollision(PhysicsObject *a, PhysicsObject *b, double impulse, double force) {
 
   std::shared_ptr<Entity> entityA = entitiesByPhysicsObject[a];
   std::shared_ptr<Entity> entityB = entitiesByPhysicsObject[b];
 
-  entityA->onCollision(entityB, impulse);
-  entityB->onCollision(entityA, impulse);
+  entityA->onCollision(entityB, impulse, force);
+  entityB->onCollision(entityA, impulse, force);
   
 }
 

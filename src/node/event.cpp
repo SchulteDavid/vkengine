@@ -10,7 +10,7 @@ void EventHandler::bindToParent(Node *p) {
   this->parent = p;
 }
 
-void EventHandler::onCollision(std::shared_ptr<Node> other, double impulse) {
+void EventHandler::onCollision(std::shared_ptr<Node> other, double impulse, double force) {
 
 }
 

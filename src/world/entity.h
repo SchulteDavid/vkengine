@@ -19,7 +19,7 @@ public:
   //Entity(std::shared_ptr<RenderElement> renderElement, RenderElement::Instance * instance, std::shared_ptr<PhysicsObject> physObject);
   virtual ~Entity();
 
-  virtual void onCollision(std::shared_ptr<Entity> entity, double impulse);
+  virtual void onCollision(std::shared_ptr<Entity> entity, double impulse, double force);
   virtual void onUpdate(const double dt);
   void synchronize();
 

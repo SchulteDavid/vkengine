@@ -68,8 +68,8 @@ void Entity::registerDefaultEntityTypes() {
 
 }
 
-void Entity::onCollision(std::shared_ptr<Entity> entity, double impulse) {
-  this->node->eventHandler->onCollision(entity->node, impulse);
+void Entity::onCollision(std::shared_ptr<Entity> entity, double impulse, double force) {
+  this->node->eventHandler->onCollision(entity->node, impulse, force);
 }
 
 void Entity::onUpdate(const double dt) {
