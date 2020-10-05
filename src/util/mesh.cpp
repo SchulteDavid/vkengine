@@ -689,7 +689,7 @@ void Mesh::saveAsPLY(std::string fname) {
 
   fprintf(f, "ply\nformat ascii 1.0\n");
 
-  fprintf(f, "element vertex %d\n", attributes["POSITION"].value.size());
+  fprintf(f, "element vertex %ld\n", attributes["POSITION"].value.size());
   fprintf(f, "property float x\n");
   fprintf(f, "property float y\n");
   fprintf(f, "property float z\n");
@@ -701,7 +701,7 @@ void Mesh::saveAsPLY(std::string fname) {
   fprintf(f, "property float s\n");
   fprintf(f, "property float t\n");
 
-  fprintf(f, "element face %d\n", indices.size()/3);
+  fprintf(f, "element face %ld\n", indices.size()/3);
   fprintf(f, "property list uchar uint vertex_indices\nend_header\n");
 
   for (unsigned int i = 0; i < attributes["POSITION"].value.size(); ++i) {

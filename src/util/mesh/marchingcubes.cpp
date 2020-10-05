@@ -344,9 +344,9 @@ class Octree {
             for (unsigned int i = 0; i < 8; ++i) {
 
                 float tmpPos[3] = {
-                    center[0] + (i & 0x1 ? extend[0] / 4.0 : -extend[0] / 4.0),
-                    center[1] + (i & 0x2 ? extend[1] / 4.0 : -extend[1] / 4.0),
-                    center[2] + (i & 0x4 ? extend[2] / 4.0 : -extend[2] / 4.0),
+				   (float) (center[0] + (i & 0x1 ? extend[0] / 4.0 : -extend[0] / 4.0)),
+				   (float) (center[1] + (i & 0x2 ? extend[1] / 4.0 : -extend[1] / 4.0)),
+				   (float) (center[2] + (i & 0x4 ? extend[2] / 4.0 : -extend[2] / 4.0)),
                 };
 
                 Vector<3, float> pos(tmpPos);
@@ -407,9 +407,9 @@ class Octree {
             for (unsigned int i = 0; i < 8; ++i) {
 
                 float tmpPos[3] = {
-                    center[0] + (i & 0x1 ? extend[0] / 4.0 : -extend[0] / 4.0),
-                    center[1] + (i & 0x2 ? extend[1] / 4.0 : -extend[1] / 4.0),
-                    center[2] + (i & 0x4 ? extend[2] / 4.0 : -extend[2] / 4.0),
+				   (float) (center[0] + (i & 0x1 ? extend[0] / 4.0 : -extend[0] / 4.0)),
+				   (float) (center[1] + (i & 0x2 ? extend[1] / 4.0 : -extend[1] / 4.0)),
+				   (float) (center[2] + (i & 0x4 ? extend[2] / 4.0 : -extend[2] / 4.0)),
                 };
 
                 Vector<3, float> pos(tmpPos);

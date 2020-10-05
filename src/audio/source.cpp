@@ -16,6 +16,10 @@ Source::~Source() {
 
 void Source::play(std::shared_ptr<Sound> sound) {
   alSourceQueueBuffers(sourceId, 1, &sound->buffer);
+  ALenum sourceState;
+  alGetSourcei(sourceId, AL_SOURCE_STATE, &sourceState);
+  if (sourceState == AL_STOPPED || sourceState == AL_INITIAL)
+    alSourcePlay(sourceId);
 }
 
 void Source::setTransform(Transform<double> transform) {
