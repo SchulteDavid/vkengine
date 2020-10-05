@@ -220,5 +220,7 @@ int main(int argc, char ** argv) {
 
   resourceManager->printSummary();
 
+  lout << n3->getResource<Mesh>("TestResource") << std::endl;
+
   return 0;
 }

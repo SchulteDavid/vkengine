@@ -29,6 +29,17 @@ void Node::attachEventHandler(std::shared_ptr<EventHandler> handler, std::shared
   eventHandler->bindToParent(self);
 }
 
+void Node::attachResource(std::string name, std::shared_ptr<Resource> resource) {
+  attachedResources[name] = resource;
+}
+
+std::shared_ptr<Resource> Node::getAttachedResource(std::string name) {
+  if (attachedResources.find(name) == attachedResources.end()) {
+    throw dbg::trace_exception(std::string("No such attached Resource ").append(name));
+  }
+  return attachedResources[name];
+}
+
 void Node::addChild(std::shared_ptr<Node> child) {
  
   std::cout << "Adding child to node " << this->name << " : " << child->name << std::endl;

@@ -94,3 +94,11 @@ comp transform = {
      float64 rotation = [1,0,0,0]
      float64 scale = [1,1,1]
 }
+
+comp attachedResources = [
+     {
+	string type = "Mesh"
+	string name = "TestResource"
+	string location = "platform.glb::Platform"
+     }
+]

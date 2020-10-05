@@ -24,6 +24,9 @@ bool NodeUploader::childrenReady() {
   for (const LoadingResource & res : children)
     isReady &= res->status.isUseable;
 
+  for (auto it : resourcesToAttach)
+    isReady &= it.second->status.isUseable;
+
   return isReady;
 }
 
@@ -34,8 +37,8 @@ std::shared_ptr<strc::Node> NodeUploader::uploadResource() {
   std::cout << "Got Node " << node << std::endl;
   
   populateChildren(node);
-  std::cout << "Children ok" << std::endl;
   populateEventHandler(node);
+  populateResources(node);
 
   return node;
 
@@ -53,6 +56,10 @@ void NodeUploader::addEventHandler(std::shared_ptr<strc::EventHandler> handler) 
   eventHandler = handler;
 }
 
+void NodeUploader::addAttachedResource(std::string name, LoadingResource res) {
+  resourcesToAttach[name] = res;
+}
+
 void NodeUploader::populateChildren(std::shared_ptr<strc::Node> node) {
 
   for (const LoadingResource & res : children) {
@@ -64,6 +71,14 @@ void NodeUploader::populateChildren(std::shared_ptr<strc::Node> node) {
 
   }
 
+}
+
+void NodeUploader::populateResources(std::shared_ptr<strc::Node> node) {
+
+  for (auto it : resourcesToAttach) {
+    node->attachResource(it.first, it.second->location);
+  }
+  
 }
 
 void NodeUploader::populateEventHandler(std::shared_ptr<strc::Node> node) {
@@ -180,6 +195,28 @@ std::shared_ptr<NodeUploader> NodeLoader::loadNodeFromCompound(std::shared_ptr<c
     std::string handlerName(comp->getNode<char>("eventHandler")->getRawData());
     std::shared_ptr<strc::EventHandler> handler = strc::constructEventHandler(handlerName);
     node->addEventHandler(handler);
+  }
+
+  if (comp->hasChild("attachedResources")) {
+
+    std::shared_ptr<config::Node<std::shared_ptr<config::NodeCompound>>> resources = comp->getNode<std::shared_ptr<config::NodeCompound>>("attachedResources");
+
+    for (unsigned int i = 0; i < resources->getElementCount(); ++i) {
+
+      std::shared_ptr<config::NodeCompound> resComp = resources->getElement(i);
+
+      std::string name(resComp->getNode<char>("name")->getRawData());
+      std::string type(resComp->getNode<char>("type")->getRawData());
+
+      std::string resLoc(resComp->getNode<char>("location")->getRawData());
+      ResourceLocation location = ResourceLocation::parse(type, resLoc);
+
+      LoadingResource res = loadDependencyResource(location);
+
+      node->addAttachedResource(name, res);
+      
+    }
+    
   }
 
   return node;

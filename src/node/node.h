@@ -43,6 +43,21 @@ namespace strc {
     void attachEventHandler(std::shared_ptr<EventHandler> handler, std::shared_ptr<Node> self);
     std::shared_ptr<EventHandler> eventHandler;
 
+    void attachResource(std::string name, std::shared_ptr<Resource> resource);
+
+    std::shared_ptr<Resource> getAttachedResource(std::string name);
+    
+    template <typename T> std::shared_ptr<T> getResource(std::string name) {
+      if (attachedResources.find(name) == attachedResources.end()) {
+	throw dbg::trace_exception(std::string("No such attached Resource ").append(name));
+      }
+      std::shared_ptr<T> res = std::dynamic_pointer_cast<T>(attachedResources[name]);
+      if (!res) {
+	throw dbg::trace_exception(std::string("Wrong resource type for ").append(name));
+      }
+      return res;
+    }
+
   protected:
     /// This is the transform relative to
     /// the parent node.
@@ -61,6 +76,8 @@ namespace strc {
 
   private:
     std::vector<std::shared_ptr<Node>> children;
+    std::unordered_map<std::string, std::shared_ptr<Resource>> attachedResources;
+    
   };
 
 } // namespace strc
