@@ -49,6 +49,9 @@ void PhysicsContext::simulateStep(double dt, CollisionHandler * handler) {
 
     double impulse = 0.0;
     int contacts = manifold->getNumContacts();
+
+    if (!contacts) continue;
+    
     for (int j = 0; j < contacts; ++j) {
       impulse += manifold->getContactPoint(j).m_appliedImpulse;
     }
