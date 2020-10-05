@@ -25,7 +25,7 @@ namespace strc {
     virtual ~Node();
 
     void addChild(std::shared_ptr<Node> child);
-    const std::vector<std::shared_ptr<Node>> & getChildren();
+    std::shared_ptr<Node> getChild(std::string name);
 
     void viewportAdd(Viewport * view, std::shared_ptr<Node> self);
     void worldAdd(std::shared_ptr<World> world, std::shared_ptr<Node> self);
@@ -75,7 +75,7 @@ namespace strc {
     const std::string name;
 
   private:
-    std::vector<std::shared_ptr<Node>> children;
+    std::unordered_map<std::string, std::shared_ptr<Node>> children;
     std::unordered_map<std::string, std::shared_ptr<Resource>> attachedResources;
     
   };

@@ -47,7 +47,7 @@ void Node::addChild(std::shared_ptr<Node> child) {
   if (!child) {
     throw dbg::trace_exception("Trying to add null-child to node");
   }
-  this->children.push_back(child);
+  this->children[child->getName()] = child;
   std::cout << "Child in vector" << std::endl;
 
   child->setTransform(child->getTransform(), globalTransform);
@@ -56,16 +56,19 @@ void Node::addChild(std::shared_ptr<Node> child) {
   
 }
 
-const std::vector<std::shared_ptr<Node>> & Node::getChildren() {
-  return children;
+std::shared_ptr<Node> Node::getChild(std::string name) {
+  if (children.find(name) == children.end()) {
+    throw dbg::trace_exception(std::string("No child named ").append(name));
+  }
+  return children[name];
 }
 
 void Node::viewportAdd(Viewport * view, std::shared_ptr<Node> self) {
 
   this->addToViewport(view, self);
 
-  for (std::shared_ptr<Node> n : this->children) {
-    n->viewportAdd(view, n);
+  for (auto n : this->children) {
+    n.second->viewportAdd(view, n.second);
   }
 
 }
@@ -74,8 +77,8 @@ void Node::worldAdd(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
 
   this->addToWorld(world, self);
 
-  for (std::shared_ptr<Node> n : children) {
-    n->worldAdd(world, n);
+  for (auto n : children) {
+    n.second->worldAdd(world, n.second);
   }
   
 }
@@ -103,8 +106,8 @@ void Node::setTransform(Transform<double> trans) {
 
   this->onTransformUpdate();
 
-  for (std::shared_ptr<Node> child : children) {
-    child->setTransform(child->getTransform(), globalTransform);
+  for (auto child : children) {
+    child.second->setTransform(child.second->getTransform(), globalTransform);
   }
 
 }
@@ -115,8 +118,8 @@ void Node::setTransform(Transform<double> trans, Transform<double> ptrans) {
 
   this->onTransformUpdate();
 
-  for (std::shared_ptr<Node> child : children) {
-    child->setTransform(child->getTransform(), globalTransform);
+  for (auto child : children) {
+    child.second->setTransform(child.second->getTransform(), globalTransform);
   }
 
 }
