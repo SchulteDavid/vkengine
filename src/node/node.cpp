@@ -129,6 +129,7 @@ const std::string Node::getName() {
 #include "meshnode.h"
 #include "lightnode.h"
 #include "physicsnode.h"
+#include "audiosourcenode.h"
 
 void Node::registerLoaders() {
 
@@ -136,6 +137,7 @@ void Node::registerLoaders() {
   NodeLoader::registerNodeLoader("MeshNode", strc::loadMeshNode);
   NodeLoader::registerNodeLoader("LightNode", strc::loadLightNode);
   NodeLoader::registerNodeLoader("PhysicsNode", strc::loadPhysicsNode);
+  NodeLoader::registerNodeLoader("AudioSourceNode", strc::loadAudioSourceNode);
 
   /// Register EventHandlers
 
