@@ -4,7 +4,7 @@ CXXFLAGS := -std=c++17 -fopenmp
 PROGNAME :=VkEngine
 
 SRC_LIBS := config
-LIBS := glfw vulkan ply tga pthread z BulletDynamics BulletCollision LinearMath
+LIBS := glfw vulkan ply tga pthread z BulletDynamics BulletCollision LinearMath openal
 
 # Finding source files
 C_FILES := $(shell find src/ -name "*.cpp" -or -name "*.cc" -or -name "*.c" -and -not -name "*_flymake.cpp")# | sed ':a;N;$!ba;s/\n/ /g')

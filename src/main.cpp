@@ -24,6 +24,8 @@
 #include "node/meshnode.h"
 #include "node/nodeloader.h"
 #include "render/instancedrenderelement.h"
+#include "audio/audiocontext.h"
+#include "audio/sound.h"
 
 static bool run = true;
 static bool wait;
@@ -69,14 +71,15 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
   resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
   resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
   resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
-
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
+  resourceManager->addRegistry("Sound", (ResourceRegistry<Resource> *) new ResourceRegistry<audio::Sound>());
 
   resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
   resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
   resourceManager->addLoader("Mesh", (ResourceLoader<Resource> *) new MeshLoader());
+  resourceManager->addLoader("Sound", (ResourceLoader<Resource> *) new audio::SoundLoader());
 
 
   strc::Node::registerLoaders();
@@ -130,6 +133,8 @@ int main(int argc, char ** argv) {
 
   Viewport * view = new Viewport(window, cam);
   window->setActiveViewport(view);
+
+  std::shared_ptr<audio::AudioContext> context(new audio::AudioContext());
 
   lout << "Viewport OK" << std::endl;
 
