@@ -10,7 +10,7 @@ InstancedRenderElement::InstancedRenderElement(Viewport * view, std::shared_ptr<
 
   transforms[0] = Transform<float>();
 
-  instanceTransforms[0] = toGLMMatrx(getTransformationMatrix(transforms[0]));
+  instanceTransforms[0] = toGLMMatrix(getTransformationMatrix(transforms[0]));
 
   instanceCount = 1;
 
@@ -45,7 +45,7 @@ RenderElement::Instance InstancedRenderElement::addInstance(Transform<float> & t
   uint32_t index = this->transforms.size();
 
   transforms.push_back(trans);
-  instanceTransforms.push_back(toGLMMatrx(getTransformationMatrix(trans)));
+  instanceTransforms.push_back(toGLMMatrix(getTransformationMatrix(trans)));
 
   instances[index] = (InstanceInfo){index, index};
   this->markBufferDirty();
@@ -69,7 +69,7 @@ void InstancedRenderElement::updateInstance(Instance &instance, Transform<float>
   transformBufferMutex.lock();
 
   this->transforms[info.pos] = trans;
-  this->instanceTransforms[info.pos] = toGLMMatrx(getTransformationMatrix(trans));
+  this->instanceTransforms[info.pos] = toGLMMatrix(getTransformationMatrix(trans));
 
   transformBufferMutex.unlock();
 

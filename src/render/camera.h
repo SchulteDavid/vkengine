@@ -4,52 +4,49 @@
 #include <glm/mat4x4.hpp>
 #include <mathutils/quaternion.h>
 
-class Camera
-{
-    public:
-        Camera(float fov, float near, float far, float aspect, glm::vec3 pos, Math::Quaternion<float> rotation = Math::Quaternion<float>(1,0,0,0));
-        virtual ~Camera();
+#include "util/transform.h"
 
-        void updateProjection(float nFov, float nNear, float nFar, float nAspect);
+class Camera {
+ public:
+  Camera(float fov, float near, float far, float aspect, glm::vec3 pos, Math::Quaternion<float> rotation = Math::Quaternion<float>(1,0,0,0));
+  virtual ~Camera();
 
-        glm::mat4 getProjection();
-        glm::mat4 getView();
+  void updateProjection(float nFov, float nNear, float nFar, float nAspect);
 
-        void move(float dx, float dy, float dz);
-        void move(glm::vec3 d);
+  glm::mat4 getProjection();
+  glm::mat4 getView();
 
-        void setPosition(float x, float y, float z);
+  void move(float dx, float dy, float dz);
+  void move(Math::Vector<3, float> d);
 
-        void rotate(Math::Quaternion<float> dr);
-        void rotate(float dPitch, float dYaw);
+  void setPosition(float x, float y, float z);
 
-        void setRotation(Math::Quaternion<float> r);
+  void rotate(Math::Quaternion<float> dr);
 
-        glm::vec3 position;
+  void setRotation(Math::Quaternion<float> r);
 
-        glm::vec3 getFacing();
-        Math::Quaternion<float> getRotation();
+  glm::vec3 getFacing();
+  Math::Quaternion<float> getRotation();
+  Math::Vector<3, float> getPosition();
 
 
-    protected:
+ protected:
 
-        virtual void updateView();
+  virtual void updateView();
+  
+ private:
+  
+  float fov;
+  float near;
+  float far;
+  float aspect;
 
-    private:
+  glm::vec3 facing;
 
-        float fov;
-        float near;
-        float far;
-        float aspect;
+  Transform<float> transform;
 
-        float pitch;
-        float yaw;
-
-        glm::vec3 facing;
-        Math::Quaternion<float> rotation;
-
-        glm::mat4 projection;
-        glm::mat4 view;
+  glm::mat4 projection;
+  glm::mat4 view;
 
 };
 

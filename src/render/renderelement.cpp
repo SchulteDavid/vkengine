@@ -154,7 +154,7 @@ void RenderElement::constructBuffers(int scSize) {
 
 }
 
-glm::mat4 RenderElement::toGLMMatrx(Math::Matrix<4,4,float> m) {
+glm::mat4 toGLMMatrix(Math::Matrix<4,4,float> m) {
 
   glm::mat4 mat = glm::mat4(1.0);
   mat[0] = glm::vec4(m(0,0), m(1,0), m(2,0), m(3,0));
@@ -168,7 +168,7 @@ glm::mat4 RenderElement::toGLMMatrx(Math::Matrix<4,4,float> m) {
 
 glm::mat4 RenderElement::getTransformationMatrixGLM(Transform<float> & i) {
 
-  return toGLMMatrx(getTransformationMatrix(i));
+  return toGLMMatrix(getTransformationMatrix(i));
 
 }
 
@@ -279,7 +279,7 @@ void RenderElement::render(VkCommandBuffer & cmdBuffer, uint32_t frameIndex) {
   vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
   vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-  glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
+  glm::mat4 data = toGLMMatrix(getTransformationMatrix(transform));
 
   vkCmdPushConstants(cmdBuffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
 
@@ -297,7 +297,7 @@ void RenderElement::renderShaderless(VkCommandBuffer & buffer, uint32_t frameInd
 
   lout << "Updating push constants " << this << " " << model->getBindingDescription().size() << std::endl;
 
-  glm::mat4 data = toGLMMatrx(getTransformationMatrix(transform));
+  glm::mat4 data = toGLMMatrix(getTransformationMatrix(transform));
 
   vkCmdPushConstants(buffer, shader->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), &data);
 

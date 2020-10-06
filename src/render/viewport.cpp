@@ -284,7 +284,7 @@ void Viewport::drawFrame(bool updateElements) {
 
   if (!frameIndex) {
     double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
-    lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
+    //lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
   }
 
   startRenderTime = std::chrono::high_resolution_clock::now();
@@ -329,7 +329,8 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
   vmaMapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex], &data);
   CameraData * camData = (CameraData *) data;
-  camData->position = camera->position;
+  Math::Vector<3, float> camPos = camera->getPosition();
+  camData->position = glm::vec3(camPos[0], camPos[1], camPos[2]);
   vmaUnmapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex]);
 
   //auto currentTime = std::chrono::high_resolution_clock::now();

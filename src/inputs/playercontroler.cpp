@@ -7,8 +7,10 @@ PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state) 
     this->hasCursor = true;
 
     this->radius = 10.0;
-    this->theta = asin(camera->position.z / radius);
-    this->phi = atan2(camera->position.x, camera->position.y);
+    this->theta = asin(camera->getPosition()[2] / radius);
+    this->phi = atan2(camera->getPosition()[0], camera->getPosition()[1]);
+
+    updateCamera();
 
 }
 
@@ -17,6 +19,23 @@ PlayerControler::~PlayerControler() {
 }
 
 float zAxis[3] = {0, 0, 1};
+
+void PlayerControler::updateCamera() {
+  double ctheta = cos(theta);
+  std::array<float,3> posArray = {(float) (radius * cos(phi) * ctheta),
+				  (float) (radius * sin(phi) * ctheta),
+				  (float) (radius * sin(theta))};
+
+  Math::Vector<3, float> pos(posArray.data());
+  this->camera->setPosition(pos[0], pos[1], pos[2]);
+
+  Math::Quaternion<float> zrot = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(0,0,1), phi + M_PI/2);
+  Math::Quaternion<float> xrot = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(1,0,0), M_PI/2 - theta);
+
+  Math::Quaternion<float> outRot = xrot * zrot;
+	
+  this->camera->setRotation(outRot);
+}
 
 void PlayerControler::onMouseMotion(double xpos, double ypos, double dx, double dy) {
 
@@ -32,28 +51,7 @@ void PlayerControler::onMouseMotion(double xpos, double ypos, double dx, double 
 
         phi -= 0.0025 * dx;
 
-        double ctheta = cos(theta);
-
-        std::array<float,3> yAxisArray = {0, 1, 0};
-        std::array<float,3> posArray = {(float) (radius * cos(phi) * ctheta),
-                                        (float) (radius * sin(phi) * ctheta),
-                                        (float) (radius * sin(theta))};
-
-        Math::Vector<3, float> pos(posArray.data());
-        Math::Vector<3, float> yAxis(yAxisArray.data());
-        Math::Vector<3, float> axis = Math::cross(yAxis, -1.0f * pos);
-
-        double s = axis.length() / pos.length();
-        double c = (yAxis * (-1.0f * pos)) / pos.length();
-
-        double alpha = atan2(c, s);
-
-        axis = axis / axis.length();
-
-        Math::Quaternion<float> r = Math::Quaternion<float>::fromAxisAngle(axis, alpha);
-
-        this->camera->setPosition(pos[0], pos[1], pos[2]);
-        this->camera->setRotation(r);
+	updateCamera();
 
     }
 
@@ -97,37 +95,17 @@ void PlayerControler::onMouseButton(int button, int action, int mods) {
 
 void PlayerControler::onScroll(double dx, double dy) {
 
-    lout << "Scroll " << dx << " " << dy << std::endl;
+  lout << "Scroll " << dx << " " << dy << std::endl;
 
-    this->radius -= dy * 0.05 * radius;
+  this->radius -= dy * 0.05 * radius;
 
-    if (this->radius < 0.5)
-        radius = 0.5;
+  if (this->radius < 0.5)
+    radius = 0.5;
 
-    else if (radius > 100)
-        radius = 100;
+  else if (radius > 100)
+    radius = 100;
 
-    double ctheta = cos(theta);
+  updateCamera();
 
-        std::array<float,3> yAxisArray = {0, 1, 0};
-        std::array<float,3> posArray = {(float) (radius * cos(phi) * ctheta),
-                                        (float) (radius * sin(phi) * ctheta),
-                                        (float) (radius * sin(theta))};
-
-        Math::Vector<3, float> pos(posArray.data());
-        Math::Vector<3, float> yAxis(yAxisArray.data());
-        Math::Vector<3, float> axis = Math::cross(yAxis, -1.0f * pos);
-
-        double s = axis.length() / pos.length();
-        double c = (yAxis * (-1.0f * pos)) / pos.length();
-
-        double alpha = atan2(c, s);
-
-        axis = axis / axis.length();
-
-        Math::Quaternion<float> r = Math::Quaternion<float>::fromAxisAngle(axis, alpha);
-
-        this->camera->setPosition(pos[0], pos[1], pos[2]);
-        this->camera->setRotation(r);
 
 }

@@ -6,27 +6,31 @@
 #include "render/util/vkutil.h"
 
 class PlayerControler : public InputHandler {
-    public:
-        PlayerControler(Camera * camera, const vkutil::VulkanState & state);
-        virtual ~PlayerControler();
+public:
+  PlayerControler(Camera * camera, const vkutil::VulkanState & state);
+  virtual ~PlayerControler();
 
-        void onMouseMotion(double xpos, double ypos, double dx, double dy);
-        void onKeyboard(int key, int scancode, int action, int mods);
-        void onMouseButton(int button, int action, int mods);
-        void onScroll(double dx, double dy);
+  void onMouseMotion(double xpos, double ypos, double dx, double dy);
+  void onKeyboard(int key, int scancode, int action, int mods);
+  void onMouseButton(int button, int action, int mods);
+  void onScroll(double dx, double dy);
 
-    protected:
+protected:
 
-    private:
+private:
 
-        const vkutil::VulkanState & state;
+  
 
-        Camera * camera;
-        bool hasCursor;
+  const vkutil::VulkanState & state;
 
-        double phi;
-        double theta;
-        double radius;
+  Camera * camera;
+  bool hasCursor;
+
+  double phi;
+  double theta;
+  double radius;
+
+  void updateCamera();
 
 };
 

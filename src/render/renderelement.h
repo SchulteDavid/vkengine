@@ -78,8 +78,6 @@ protected:
 
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, bool useStaticShader);
 
-  static glm::mat4 toGLMMatrx(Math::Matrix<4,4,float> mat);
-
   const vkutil::VulkanState & state;
 
   VkDescriptorSetLayout descSetLayout;
@@ -106,5 +104,7 @@ private:
 
 
 };
+
+glm::mat4 toGLMMatrix(Math::Matrix<4,4,float> mat);
 
 #endif // RENDERELEMENT_H
