@@ -25,23 +25,14 @@ float ramp(float x, float zVal, float oVal) {
 
 void main() {
 
-    //outColor = texture(tex, uvPos);
     outColor = texture(textures[3 * matIndex], uvPos);
-    //outColor = vec4(matIndex);
     if (outColor.a <= 0.01) discard;
 
     outPosition = position;
-    //float roughness = texture(specularMap, uvPos).g;
     float roughness = texture(textures[3 * matIndex + 2], uvPos).g;
-    //outNormal = vec4(toTangentMat * normalize(texture(normalMap, uvPos).xyz * 2.0 - 1.0), roughness);
     outNormal = vec4(toTangentMat * normalize(texture(textures[3 * matIndex + 1], uvPos).xyz * 2.0 - 1.0), roughness);
-    //outColor = mix(texture(tex, uvPos), texture(tex2, uvPos), ramp(abs(dot(vec3(0, 0, 1), normalize(normal.xyz))), 0.3, 0.6));
+        outColor.a = texture(textures[3 * matIndex + 2], uvPos).b;
 
-    //outColor.a = texture(specularMap, uvPos).r;
-    outColor.a = texture(textures[3 * matIndex + 2], uvPos).b;
-
-
-    //outColor = vec4(1);
 
 }
 

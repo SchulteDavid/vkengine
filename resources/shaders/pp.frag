@@ -151,7 +151,7 @@ vec4 getGColor(float shadow) {
         vec3 L = normalize(reflect(-V, N));
 
         vec3 H = normalize(V + L);
-        vec3 radiance = skyColor;// * texture(skybox, L).rgb;
+        vec3 radiance = vec3(0.1);// * texture(skybox, L).rgb;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G   = GeometrySmith(N, V, L, roughness);
