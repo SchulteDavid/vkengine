@@ -6,9 +6,9 @@ PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state) 
     this->camera = c;
     this->hasCursor = true;
 
-    this->radius = 10.0;
+    this->radius = camera->getPosition().length();
     this->theta = asin(camera->getPosition()[2] / radius);
-    this->phi = atan2(camera->getPosition()[0], camera->getPosition()[1]);
+    this->phi = atan2(camera->getPosition()[1], camera->getPosition()[0]);
 
     updateCamera();
 
@@ -41,8 +41,6 @@ void PlayerControler::onMouseMotion(double xpos, double ypos, double dx, double 
 
     if (!hasCursor) {
 
-        //this->camera->rotate(-0.01 * dy, -0.01 * dx);
-        //if ((theta < M_PI / 2.1 && dx >= 0) || (theta > -M_PI / 2.1 && dx <= 0))
         theta += 0.0025 * dy;
         if (theta >= M_PI / 2)
             theta = M_PI / 2;
@@ -94,8 +92,6 @@ void PlayerControler::onMouseButton(int button, int action, int mods) {
 }
 
 void PlayerControler::onScroll(double dx, double dy) {
-
-  lout << "Scroll " << dx << " " << dy << std::endl;
 
   this->radius -= dy * 0.05 * radius;
 
