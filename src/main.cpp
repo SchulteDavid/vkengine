@@ -151,7 +151,7 @@ int main(int argc, char ** argv) {
   LoadingResource node3 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/test.node"));
 
 
-  std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState()));
+  std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState(), context));
   window->addInputHandler(playerCtl);
 
   lout << "Start wait for node " << node << std::endl;

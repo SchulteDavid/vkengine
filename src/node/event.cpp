@@ -14,6 +14,10 @@ void EventHandler::onCollision(std::shared_ptr<Node> other, double impulse, doub
 
 }
 
+void EventHandler::onUpdate(double dt) {
+
+}
+
 void strc::registerEventHandlerType(std::string type, std::function<EventHandler *()> builder) {
 
   eventHandlerBuilders[type] = builder;

@@ -1,14 +1,17 @@
 #include "playercontroler.h"
 
 #include "util/debug/logger.h"
+#include "audio/audiocontext.h"
 
-PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state) : state(state) {
+PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContex) : state(state) {
     this->camera = c;
     this->hasCursor = true;
 
     this->radius = camera->getPosition().length();
     this->theta = asin(camera->getPosition()[2] / radius);
     this->phi = atan2(camera->getPosition()[1], camera->getPosition()[0]);
+
+    this->audioContext = audioContex;
 
     updateCamera();
 
@@ -21,20 +24,28 @@ PlayerControler::~PlayerControler() {
 float zAxis[3] = {0, 0, 1};
 
 void PlayerControler::updateCamera() {
+
+  using namespace Math;
+  
   double ctheta = cos(theta);
   std::array<float,3> posArray = {(float) (radius * cos(phi) * ctheta),
 				  (float) (radius * sin(phi) * ctheta),
 				  (float) (radius * sin(theta))};
 
-  Math::Vector<3, float> pos(posArray.data());
+  Vector<3, float> pos(posArray.data());
   this->camera->setPosition(pos[0], pos[1], pos[2]);
 
-  Math::Quaternion<float> zrot = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(0,0,1), phi + M_PI/2);
-  Math::Quaternion<float> xrot = Math::Quaternion<float>::fromAxisAngle(Math::Vector<3, float>(1,0,0), M_PI/2 - theta);
+  Quaternion<float> zrot = Quaternion<float>::fromAxisAngle(Vector<3, float>(0,0,1), phi + M_PI/2);
+  Quaternion<float> xrot = Quaternion<float>::fromAxisAngle(Vector<3, float>(1,0,0), M_PI/2 - theta);
 
-  Math::Quaternion<float> outRot = xrot * zrot;
-	
+  Quaternion<float> outRot = xrot * zrot;
+  
   this->camera->setRotation(outRot);
+
+  Transform<float> cameraTransform(pos, outRot);
+
+  audioContext->setListenerTransform(convertTransform<float, double>(cameraTransform));
+  
 }
 
 void PlayerControler::onMouseMotion(double xpos, double ypos, double dx, double dy) {
