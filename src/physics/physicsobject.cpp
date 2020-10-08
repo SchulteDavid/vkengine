@@ -75,6 +75,19 @@ void PhysicsObject::synchronize() {
 
 }
 
+void PhysicsObject::setTransform(Transform<double> trans) {
+  transform = trans;
+
+  if (this->rigidBody && this->rigidBody->getMotionState()) {
+    btTransform t;
+    btQuaternion r(trans.rotation.a, trans.rotation.b, trans.rotation.c, trans.rotation.d);
+    t.setOrigin(btVector3(trans.position[0], trans.position[1], trans.position[2]));
+    t.setRotation(r);
+    rigidBody->setCenterOfMassTransform(t);
+  }
+  
+}
+
 void PhysicsObject::applyForce(Vector<3> force, Vector<3> pos) {
 
     this->rigidBody->activate(true);

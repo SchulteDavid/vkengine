@@ -173,11 +173,11 @@ std::shared_ptr<NodeUploader> NodeLoader::loadNodeFromCompound(std::shared_ptr<c
 
       std::shared_ptr<config::NodeCompound> childComp = children->getElement(i);
       LoadingResource child;
-      if (childComp->getChild("type")) {
+      if (childComp->hasChild("type")) {
         std::shared_ptr<NodeUploader> uploader = this->loadNodeFromCompound(childComp, context);
         std::string childName(childComp->getNode<char>("name")->getRawData());
         child = scheduleSubresource(ResourceLocation("Node", context.fname, childName), uploader);
-      } else if (childComp->getChild("location")) {
+      } else if (childComp->hasChild("location")) {
         ResourceLocation location = ResourceLocation::parse("Node", std::string(childComp->getNode<char>("location")->getRawData()));
         child = loadDependency(location);
       } else {

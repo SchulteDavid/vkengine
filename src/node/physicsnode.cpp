@@ -8,6 +8,7 @@ using namespace strc;
 PhysicsNode::PhysicsNode(std::string name, Transform<double> trans, std::shared_ptr<PhysicsObject> obj) : Node(name, trans) {
 
   this->physObject = obj;
+  isInSimulation = false;
 
 }
 
@@ -29,6 +30,17 @@ std::shared_ptr<NodeUploader> strc::loadPhysicsNode(std::shared_ptr<config::Node
   
 }
 
+std::shared_ptr<Node> PhysicsNode::duplicate(std::string name) {
+  std::shared_ptr<PhysicsObject> nObject(new PhysicsObject(this->physObject->getMass(), transform, this->physObject->getCollisionShape()));
+  std::shared_ptr<PhysicsNode> res = std::make_shared<PhysicsNode>(name, transform, nObject);
+  return res;
+}
+
+void PhysicsNode::onTransformUpdate() {
+  if (!isInSimulation)
+    this->physObject->setTransform(getGlobalTransform());
+}
+
 void PhysicsNode::applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position) {
   this->physObject->applyImpulse(impulse);
 }
@@ -36,7 +48,8 @@ void PhysicsNode::applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position
 void PhysicsNode::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
 
   std::shared_ptr<Entity> ent = Entity::buildEntityFromType("Entity", self, physObject);
-  std::cout << "Adding entity to world" << ent << std::endl;
   world->addEntity(ent);
+
+  isInSimulation = true;
   
 }

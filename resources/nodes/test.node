@@ -2,7 +2,7 @@ comp children = [
   {
 	string type = "PhysicsNode"
 
-	string name = "Level1"
+	string name = "FallingBox"
 
 	comp physics = {
 	     float64 mass = 10.0
@@ -21,21 +21,10 @@ comp children = [
 
 	comp children = [
 
-     	     {
-		string type = "MeshNode"
-		string name = "Mesh.001"
-
-		comp transform = {
-	     	     float64 position = [0,0,0]
-	     	     float64 rotation = [1,0,0,0]
-		     float64 scale = [1,1,1]
-		}
-
-		string mesh = "exports.glb::Cube"
-     		string material = "resources/materials/test.mat"
-	
-	    },
-     	    {
+	     {
+		string location = "exports.glb::Cube"
+	     },
+	     {
 		string type = "LightNode"
 		string name = "Light.001"
 		comp transform = {
@@ -62,7 +51,7 @@ comp children = [
 	}
 	comp transform = {
 	     float64 position = [0,0,-4]
-     	     float64 rotation = [0.979925,0.199368,0,0]
+     	     float64 rotation = [1,0,0,0]
 	     float64 scale = [1.0,1.0,1.0]
 	}
 
@@ -81,6 +70,9 @@ comp children = [
 		string mesh = "platform.glb::Platform"
      		string material = "platform.glb::Material.001"
 	
+	    },
+	    {
+		string location = "axe.glb"
 	    }
 	 ]
   }

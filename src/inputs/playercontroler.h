@@ -8,10 +8,11 @@
 #include "render/util/vkutil.h"
 
 #include "audio/audiocontext.h"
+#include "node/node.h"
 
 class PlayerControler : public InputHandler {
 public:
-  PlayerControler(Camera * camera, const vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext>);
+  PlayerControler(Camera * camera, vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContext, std::shared_ptr<strc::Node> node);
   virtual ~PlayerControler();
 
   void onMouseMotion(double xpos, double ypos, double dx, double dy);
@@ -19,11 +20,14 @@ public:
   void onMouseButton(int button, int action, int mods);
   void onScroll(double dx, double dy);
 
+  Viewport * viewport;
+  std::shared_ptr<World> world;
+
 protected:
 
 private:
 
-  const vkutil::VulkanState & state;
+  vkutil::VulkanState & state;
 
   Camera * camera;
   bool hasCursor;
@@ -33,6 +37,8 @@ private:
   double radius;
 
   std::shared_ptr<audio::AudioContext> audioContext;
+
+  std::shared_ptr<strc::Node> throwNode;
 
   void updateCamera();
 

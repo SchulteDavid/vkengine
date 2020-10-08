@@ -42,17 +42,13 @@ std::shared_ptr<Resource> Node::getAttachedResource(std::string name) {
 
 void Node::addChild(std::shared_ptr<Node> child) {
  
-  std::cout << "Adding child to node " << this->name << " : " << child->name << std::endl;
   
   if (!child) {
     throw dbg::trace_exception("Trying to add null-child to node");
   }
   this->children[child->getName()] = child;
-  std::cout << "Child in vector" << std::endl;
 
   child->setTransform(child->getTransform(), globalTransform);
-
-  std::cout << "Child added and transform set" << std::endl;
   
 }
 
@@ -157,4 +153,26 @@ void Node::registerLoaders() {
 
   registerEventHandlerType("EventHandler", [] {return new EventHandler();});
   
+}
+
+std::shared_ptr<Node> Node::duplicate(std::string name) {
+  return std::make_shared<Node>(name, transform);
+}
+
+std::shared_ptr<Node> Node::createDuplicate(std::string name) {
+
+  std::shared_ptr<Node> res = duplicate(name);
+
+  for (auto c : children) {
+    std::shared_ptr<Node> nChild(c.second->duplicate(c.first));
+    res->addChild(nChild);
+  }
+
+  for (auto it : attachedResources) {
+    res->attachResource(it.first, it.second);
+  }
+
+  res->attachEventHandler(eventHandler, res);
+
+  return res;
 }

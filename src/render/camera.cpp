@@ -42,6 +42,10 @@ void Camera::move(float dx, float dy, float dz) {
 
 }
 
+Transform<float> Camera::getTransform() {
+  return transform;
+}
+
 void Camera::move(Math::Vector<3, float> d) {
     transform.position = transform.position + d;
     updateView();

@@ -17,6 +17,8 @@ namespace strc {
   protected:
     void onTransformUpdate() override;
 
+    std::shared_ptr<Node> duplicate(std::string name) override;
+    
   private:
 
     std::shared_ptr<audio::Source> source;

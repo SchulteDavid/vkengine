@@ -32,6 +32,10 @@ void MeshNode::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> se
 
 }
 
+std::shared_ptr<Node> MeshNode::duplicate(std::string name) {
+  return std::make_shared<MeshNode>(name, mesh, material, transform);
+}
+
 std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
 
   if (this->model){
@@ -39,16 +43,10 @@ std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
   }
 
   unsigned int stride;
-  lout << "Getting input elements" << std::endl;
   const std::vector<InputDescription> & elements = material->getShader()->getInputs();
 
-  lout << "getting interleave data" << std::endl;
   std::vector<InterleaveElement> iData = mesh->compactStorage(elements, &stride);
 
-  lout << "Saving mesh" << std::endl;
-  mesh->saveAsPLY("structure.ply");
-
-  lout << "contructing Model" << std::endl;
   this->model = std::shared_ptr<Model>(new Model(state, mesh, iData, stride));
 
   return model;
@@ -65,10 +63,7 @@ std::shared_ptr<Mesh> MeshNode::getMesh() {
 
 void MeshNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 
-  lout << "Adding MeshNode to Viewport" << std::endl;
-
   Transform<float> vTransform = convertTransform<double, float>(getGlobalTransform());
-  lout << "Building RenderElement at position " << vTransform << std::endl;
 
   if (!this->renderElement) {
     std::shared_ptr<Model> tmpModel = buildModel(view->getState());
@@ -102,7 +97,6 @@ std::string MeshNodeUploader::getNodeName() {
 std::shared_ptr<strc::Node> MeshNodeUploader::constructNode() {
 
   std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(meshRes->location);
-  lout << "material location " << meshRes->location << std::endl;
   std::shared_ptr<Material> mat = std::dynamic_pointer_cast<Material>(materialRes->location);
 
   std::shared_ptr<strc::Node> node = std::make_shared<strc::MeshNode>(nodeName, mesh, mat, transform);

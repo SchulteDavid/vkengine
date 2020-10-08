@@ -3,7 +3,9 @@
 #include "util/debug/logger.h"
 #include "audio/audiocontext.h"
 
-PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContex) : state(state) {
+using namespace strc;
+
+PlayerControler::PlayerControler(Camera * c, vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContex, std::shared_ptr<Node> node) : state(state) {
     this->camera = c;
     this->hasCursor = true;
 
@@ -12,6 +14,7 @@ PlayerControler::PlayerControler(Camera * c, const vkutil::VulkanState & state, 
     this->phi = atan2(camera->getPosition()[1], camera->getPosition()[0]);
 
     this->audioContext = audioContex;
+    this->throwNode = node;
 
     updateCamera();
 
@@ -86,19 +89,21 @@ void PlayerControler::onKeyboard(int key, int scancode, int action, int mods) {
 
 void PlayerControler::onMouseButton(int button, int action, int mods) {
 
-    switch (button) {
+  static uint32_t boxCount = 0;
+  
+  switch (button) {
 
-        case GLFW_MOUSE_BUTTON_LEFT:
-        case GLFW_MOUSE_BUTTON_RIGHT:
-        case GLFW_MOUSE_BUTTON_MIDDLE:
-            if (action == GLFW_PRESS) {
-                hasCursor = false;
-            } else if (action == GLFW_RELEASE) {
-                hasCursor = true;
-            }
-            break;
-
+  case GLFW_MOUSE_BUTTON_LEFT:
+  case GLFW_MOUSE_BUTTON_RIGHT:
+  case GLFW_MOUSE_BUTTON_MIDDLE:
+    if (action == GLFW_PRESS) {
+      hasCursor = false;
+    } else if (action == GLFW_RELEASE) {
+      hasCursor = true;
     }
+    break;
+
+  }
 
 }
 

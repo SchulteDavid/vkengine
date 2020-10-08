@@ -29,6 +29,7 @@ class Camera {
   Math::Quaternion<float> getRotation();
   Math::Vector<3, float> getPosition();
 
+  Transform<float> getTransform();
 
  protected:
 

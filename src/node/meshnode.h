@@ -30,6 +30,8 @@ namespace strc {
 
     void onTransformUpdate() override;
 
+    std::shared_ptr<Node> duplicate(std::string name) override;
+
   private:
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Model> model;

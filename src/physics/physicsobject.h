@@ -30,6 +30,8 @@ public:
 
   Transform<double> getTransform();
 
+  void setTransform(Transform<double> trans);
+  
   void setRigidBody(btRigidBody * body);
 
   void applyImpulse(Math::Vector<3, double> impulse);

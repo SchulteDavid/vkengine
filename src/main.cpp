@@ -36,6 +36,8 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
   auto initTime = std::chrono::high_resolution_clock::now();
 
   Transform<double> originTrans;
+  uint32_t nCount = 0;
+  uint32_t loopCount = 0;
 
   view->createSecondaryBuffers();
 
@@ -45,7 +47,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
     startRenderTime = now;
 
     double time = std::chrono::duration<double, std::chrono::seconds::period>(now - initTime).count();
-
+    
     world->simulateStep(dt);
 
     world->synchronize();
@@ -54,6 +56,22 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
     view->manageMemoryTransfer();
 
     view->renderIntoSecondary();
+
+    if (loopCount % 100 == 0) {
+      Transform<double> trans;
+      trans.position = Math::Vector<3>({0.0, 0.0, 30.0});
+
+      std::string name("TestNode_");
+      name.append(std::to_string(nCount++));
+      std::shared_ptr<strc::Node> node = baseNode->createDuplicate(name);
+
+      node->setTransform(trans);
+
+      node->viewportAdd(view, node);
+      node->worldAdd(world, node);
+    }
+
+    loopCount++;
 
     //while (wait)
     //lout << "Waiting" << std::endl;
@@ -150,16 +168,20 @@ int main(int argc, char ** argv) {
   LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "platform.glb"));
   LoadingResource node3 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/test.node"));
 
-
-  std::shared_ptr<InputHandler> playerCtl(new PlayerControler(cam, window->getState(), context));
-  window->addInputHandler(playerCtl);
-
   lout << "Start wait for node " << node << std::endl;
   //while(!node->status.isUseable) ;
   //node3->fut.wait();
   //while(!node3->status.isUseable);
   node->wait();
   node3->wait();
+
+  std::shared_ptr<World> world(new World());
+
+  std::shared_ptr<strc::Node> boxNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/test.node", "FallingBox"));
+  std::shared_ptr<PlayerControler> playerCtl(new PlayerControler(cam, window->getState(), context, boxNode));
+  playerCtl->viewport = view;
+  playerCtl->world = world;
+  window->addInputHandler(playerCtl);
 
   lout << "All futures are ok" << std::endl;
 
@@ -178,8 +200,6 @@ int main(int argc, char ** argv) {
   view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
   //view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
 
-  std::shared_ptr<World> world(new World());
-
   lout << "Adding baseNode to Viewport" << std::endl;
   std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "exports.glb"));
   baseNode->viewportAdd(view, baseNode);
@@ -192,7 +212,7 @@ int main(int argc, char ** argv) {
   n3->worldAdd(world, n3);
   lout << "Done adding other node" << std::endl;
 
-  std::thread rotateThread(rotateFunc, world, view, baseNode);
+  std::thread rotateThread(rotateFunc, world, view, n3->getChild("FallingBox"));
 
   lerr << "Rotate Thread: " << &rotateThread << std::endl;
 

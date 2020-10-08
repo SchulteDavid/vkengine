@@ -25,6 +25,10 @@ void LightNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 
 }
 
+std::shared_ptr<Node> LightNode::duplicate(std::string name) {
+  return std::make_shared<LightNode>(name, type, power, transform);
+}
+
 void LightNode::onTransformUpdate() {
   
   if (!view) return;

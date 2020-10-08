@@ -22,6 +22,8 @@ namespace strc {
     void addToViewport(Viewport * view, std::shared_ptr<Node> self) override;
     void onTransformUpdate() override;
 
+    std::shared_ptr<Node> duplicate(std::string name) override;
+
   private:
 
     Viewport * view;

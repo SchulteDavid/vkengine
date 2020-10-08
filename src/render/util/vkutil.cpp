@@ -573,6 +573,7 @@ void vkutil::createImage(const VmaAllocator & allocator, VkDevice device, int wi
 
 }
 
+
 VkImageView vkutil::createImageView(const VkDevice & device, const VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels) {
 
     VkImageViewCreateInfo viewInfo = {};

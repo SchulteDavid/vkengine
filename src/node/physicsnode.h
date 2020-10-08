@@ -18,9 +18,13 @@ namespace strc {
   protected:
 
     void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) override;
+    std::shared_ptr<Node> duplicate(std::string name) override;
+    void onTransformUpdate() override;
 
   private:
     std::shared_ptr<PhysicsObject> physObject;
+
+    bool isInSimulation;
 
   };
 

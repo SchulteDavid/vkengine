@@ -228,9 +228,7 @@ void Viewport::drawFrame(bool updateElements) {
 
   case VK_SUBOPTIMAL_KHR:
   case VK_ERROR_OUT_OF_DATE_KHR:
-    lout << "destroying swapchain" << std::endl;
     destroySwapChain();
-    lout << "Swap chains destroyed" << std::endl;
     recreateSwapChain();
     framebufferResized = false;
     return;
@@ -284,7 +282,7 @@ void Viewport::drawFrame(bool updateElements) {
 
   if (!frameIndex) {
     double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
-    //lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
+    lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
   }
 
   startRenderTime = std::chrono::high_resolution_clock::now();
@@ -297,7 +295,6 @@ Camera * Viewport::getCamera() {
 
 bool Viewport::isLightDataModified(uint32_t imageIndex) {
   return true;
-  //return this->lightDataModified & (0x1 << imageIndex);
 }
 
 void Viewport::markLightDataCorrect(uint32_t imageIndex) {
@@ -1137,7 +1134,8 @@ void Viewport::recordCommandBuffers() {
 
 uint32_t Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
-  if (lightIndex > 31) throw dbg::trace_exception("To many lights in viewport");
+  //if (lightIndex > 31) throw dbg::trace_exception("To many lights in viewport");
+  if (lightIndex > 31) return 0xffffffff;
 
   this->lights.position[lightIndex] = pos;
   this->lights.color[lightIndex] = color;
@@ -1155,6 +1153,8 @@ uint32_t Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
 void Viewport::updateLight(uint32_t index, glm::vec4 pos, glm::vec4 color) {
 
+  if (index == 0xffffffff) return;
+  
   lights.position[index] = pos;
   lights.color[index] = color;
 

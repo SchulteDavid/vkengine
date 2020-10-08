@@ -12,6 +12,7 @@
 
 class Viewport;
 class World;
+class Entity;
 
 namespace strc {
 
@@ -58,7 +59,10 @@ namespace strc {
       return res;
     }
 
+    std::shared_ptr<Node> createDuplicate(std::string newName);
+    
   protected:
+    friend Entity;
     /// This is the transform relative to
     /// the parent node.
     Transform<double> transform;
@@ -71,6 +75,8 @@ namespace strc {
     virtual void addToViewport(Viewport * view, std::shared_ptr<Node> self);
 
     virtual void onTransformUpdate();
+
+    virtual std::shared_ptr<Node> duplicate(std::string name);
 
     const std::string name;
 

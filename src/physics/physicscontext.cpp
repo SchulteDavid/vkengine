@@ -82,7 +82,6 @@ void PhysicsContext::synchronize() {
 void PhysicsContext::addObject(std::shared_ptr<PhysicsObject> obj) {
 
   btCollisionShape * collisionShape = obj->getCollisionShape();
-  lout << "Collision Shape ok" << std::endl;
   this->collisionShapes.push_back(collisionShape);
 
   btTransform startTransform;
