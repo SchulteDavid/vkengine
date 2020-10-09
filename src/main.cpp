@@ -155,7 +155,8 @@ int main(int argc, char ** argv) {
 
   Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
-  Viewport * view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location));
+  Viewport *view = new Viewport(
+      window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {});
   window->setActiveViewport(view);
 
   std::shared_ptr<audio::AudioContext> context(new audio::AudioContext());

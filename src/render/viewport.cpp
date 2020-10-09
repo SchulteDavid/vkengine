@@ -29,14 +29,13 @@ std::vector<uint16_t> viewModelIndices = {
 					  0, 2, 3,
 };
 
-Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> ppShader) : state(window->getState()) {
+Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects) : state(window->getState()) {
 
   bufferManager = nullptr;
 
   this->camera = camera;
   this->lightIndex = 0;
-  this->ppShader = ppShader;
-  //camera->move(0,0,1);
+  this->defferedShader = defferedShader;
 
   this->frameIndex = 0;
 
@@ -61,13 +60,18 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
 
   swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, state.device);
 
-  createPpDescriptorSetLayout();
-  createPPObjects();
+  createDefferedDescriptorSetLayout();
+  createDefferedObjects();
   setupPostProcessingPipeline();
 
+  for (uint32_t i = 0; i < effects.size(); ++i) {
+    // subpass has to be offset by 2 for object-pass and deffered-lighting
+    effects[i]->setupPipeline(state, swapchain, renderPass, i+2);
+  }
+
   setupFramebuffers();
-  createPpDescriptorPool();
-  createPPDescriptorSets();
+  createDefferedDescriptorPool();
+  createDefferedDescriptorSets();
 
   setupCommandBuffers();
 
@@ -319,18 +323,18 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
   void * data;
   if (isLightDataModified(imageIndex)) {
     LightData * lData;
-    vmaMapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex], (void **)&lData);
+    vmaMapMemory(state.vmaAllocator, defferedLightBuffersMemory[imageIndex], (void **)&lData);
     //memcpy(data, &lights, sizeof(LightData));
     *lData = lights;
-    vmaUnmapMemory(state.vmaAllocator, ppLightBuffersMemory[imageIndex]);
+    vmaUnmapMemory(state.vmaAllocator, defferedLightBuffersMemory[imageIndex]);
     //markLightDataCorrect(imageIndex);
   }
 
-  vmaMapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex], &data);
+  vmaMapMemory(state.vmaAllocator, defferedCameraBuffersMemory[imageIndex], &data);
   CameraData * camData = (CameraData *) data;
   Math::Vector<3, float> camPos = camera->getPosition();
   camData->position = glm::vec3(camPos[0], camPos[1], camPos[2]);
-  vmaUnmapMemory(state.vmaAllocator, ppCameraBuffersMemory[imageIndex]);
+  vmaUnmapMemory(state.vmaAllocator, defferedCameraBuffersMemory[imageIndex]);
 
   //auto currentTime = std::chrono::high_resolution_clock::now();
   //double time = std::chrono::duration<double, std::chrono::milliseconds::period>(currentTime - startTime).count();
@@ -474,7 +478,7 @@ void Viewport::setupRenderPass() {
 
 }
 
-void Viewport::createPPObjects() {
+void Viewport::createDefferedObjects() {
 
   vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImage, gBufferImageMemory);
   gBufferImageView = vkutil::createImageView(state.device, gBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -488,11 +492,11 @@ void Viewport::createPPObjects() {
   VkDeviceSize lightSize = sizeof(LightData);
   VkDeviceSize cameraSize = sizeof(CameraData);
 
-  ppLightBuffers.resize(swapchain.images.size());
-  ppLightBuffersMemory.resize(swapchain.images.size());
+  defferedLightBuffers.resize(swapchain.images.size());
+  defferedLightBuffersMemory.resize(swapchain.images.size());
 
-  ppCameraBuffers.resize(swapchain.images.size());
-  ppCameraBuffersMemory.resize(swapchain.images.size());
+  defferedCameraBuffers.resize(swapchain.images.size());
+  defferedCameraBuffersMemory.resize(swapchain.images.size());
 
   lout << "Images created" << std::endl;
 
@@ -512,7 +516,7 @@ void Viewport::createPPObjects() {
 
       lout << "Creating light Buffer" << std::endl;
 
-      vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppLightBuffers[i], &ppLightBuffersMemory[i], &stagingBufferAllocInfo);
+      vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &defferedLightBuffers[i], &defferedLightBuffersMemory[i], &stagingBufferAllocInfo);
     }
     {
       VkBufferCreateInfo stBufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -528,7 +532,7 @@ void Viewport::createPPObjects() {
 
       lout << "Creating camera Buffer" << std::endl;
 
-      vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &ppCameraBuffers[i], &ppCameraBuffersMemory[i], &stagingBufferAllocInfo);
+      vmaCreateBuffer(state.vmaAllocator, &stBufferCreateInfo, &stAllocCreateInfo, &defferedCameraBuffers[i], &defferedCameraBuffersMemory[i], &stagingBufferAllocInfo);
     }
     //StorageBuffer::createBuffer(vmaAllocator, cameraSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, ppCameraBuffers[i], ppCameraBuffersMemory[i]);
 
@@ -536,7 +540,7 @@ void Viewport::createPPObjects() {
 
 }
 
-void Viewport::destroyPPObjects() {
+void Viewport::destroyDefferedObjects() {
 
   vmaDestroyImage(state.vmaAllocator, gBufferImage, gBufferImageMemory);
   vkDestroyImageView(state.device, gBufferImageView, nullptr);
@@ -549,8 +553,8 @@ void Viewport::destroyPPObjects() {
 
   for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
-    vmaDestroyBuffer(state.vmaAllocator, ppLightBuffers[i], ppLightBuffersMemory[i]);
-    vmaDestroyBuffer(state.vmaAllocator, ppCameraBuffers[i], ppCameraBuffersMemory[i]);
+    vmaDestroyBuffer(state.vmaAllocator, defferedLightBuffers[i], defferedLightBuffersMemory[i]);
+    vmaDestroyBuffer(state.vmaAllocator, defferedCameraBuffers[i], defferedCameraBuffersMemory[i]);
 
   }
 
@@ -574,8 +578,8 @@ void Viewport::setupPostProcessingPipeline() {
 
   lout << "Creating ppPipeline" << std::endl;
 
-  std::vector<vkutil::ShaderInputDescription> shaders = ppShader->getShaderInputDescriptions();
-  
+  std::vector<vkutil::ShaderInputDescription> shaders = defferedShader->getShaderInputDescriptions();
+
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages(shaders.size());
     for (unsigned int i = 0; i < shaders.size(); ++i) {
 
@@ -716,15 +720,15 @@ void Viewport::setupPostProcessingPipeline() {
 
   /* Uniform layout */
 
-  
+
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = &ppDescLayout; ///Get from Shader object
+  pipelineLayoutInfo.pSetLayouts = &defferedDescLayout; ///Get from Shader object
   pipelineLayoutInfo.pushConstantRangeCount = 0;
   pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-  if (vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &ppPipelineLayout) != VK_SUCCESS)
+  if (vkCreatePipelineLayout(state.device, &pipelineLayoutInfo, nullptr, &defferedPipelineLayout) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to create pipeline layout");
 
 
@@ -742,18 +746,18 @@ void Viewport::setupPostProcessingPipeline() {
   pipelineInfo.pDepthStencilState = &depthStencil;
   pipelineInfo.pColorBlendState = &colorBlending;
   pipelineInfo.pDynamicState = nullptr; // change for dynamic state
-  pipelineInfo.layout = ppPipelineLayout;
+  pipelineInfo.layout = defferedPipelineLayout;
   pipelineInfo.renderPass = renderPass;
   pipelineInfo.subpass = 1;
   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
   pipelineInfo.basePipelineIndex = -1;
 
-  if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &ppPipeline) != VK_SUCCESS)
+  if (vkCreateGraphicsPipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &defferedPipeline) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to create pipeline");
 
 }
 
-void Viewport::createPpDescriptorSetLayout() {
+void Viewport::createDefferedDescriptorSetLayout() {
 
   std::array<VkDescriptorSetLayoutBinding, 5> bindings;
   bindings[0].binding = 0;
@@ -786,12 +790,12 @@ void Viewport::createPpDescriptorSetLayout() {
   layoutInfo.pBindings = bindings.data();
   layoutInfo.bindingCount = bindings.size();
 
-  if (vkCreateDescriptorSetLayout(state.device, &layoutInfo, nullptr, &ppDescLayout) != VK_SUCCESS)
+  if (vkCreateDescriptorSetLayout(state.device, &layoutInfo, nullptr, &defferedDescLayout) != VK_SUCCESS)
     throw dbg::trace_exception("could not create descriptor set layout.");
 
 }
 
-void Viewport::createPpDescriptorPool() {
+void Viewport::createDefferedDescriptorPool() {
 
   VkDescriptorPoolSize samplerSize = {};
   samplerSize.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -813,23 +817,23 @@ void Viewport::createPpDescriptorPool() {
   poolInfo.pPoolSizes = sizes;
   poolInfo.maxSets = swapchain.images.size();
 
-  if (vkCreateDescriptorPool(state.device, &poolInfo, nullptr, &ppDescPool) != VK_SUCCESS)
+  if (vkCreateDescriptorPool(state.device, &poolInfo, nullptr, &defferedDescPool) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to create descriptor pool");
 
 }
 
-void Viewport::createPPDescriptorSets() {
+void Viewport::createDefferedDescriptorSets() {
 
-  std::vector<VkDescriptorSetLayout> layouts(swapchain.images.size(), ppDescLayout);
-  this->ppDescSets.resize(swapchain.images.size());
+  std::vector<VkDescriptorSetLayout> layouts(swapchain.images.size(), defferedDescLayout);
+  this->defferedDescSets.resize(swapchain.images.size());
 
   VkDescriptorSetAllocateInfo allocInfo = {};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  allocInfo.descriptorPool = ppDescPool;
+  allocInfo.descriptorPool = defferedDescPool;
   allocInfo.descriptorSetCount = swapchain.images.size();
   allocInfo.pSetLayouts = layouts.data();
 
-  if (vkAllocateDescriptorSets(state.device, &allocInfo, ppDescSets.data()) != VK_SUCCESS)
+  if (vkAllocateDescriptorSets(state.device, &allocInfo, defferedDescSets.data()) != VK_SUCCESS)
     throw dbg::trace_exception("Unable to allocate descriptor sets");
 
   for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
@@ -842,7 +846,7 @@ void Viewport::createPPDescriptorSets() {
     gInfo.sampler = VK_NULL_HANDLE;
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = ppDescSets[i];
+    descriptorWrites[0].dstSet = defferedDescSets[i];
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -857,7 +861,7 @@ void Viewport::createPPDescriptorSets() {
     nInfo.sampler = VK_NULL_HANDLE;
 
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = ppDescSets[i];
+    descriptorWrites[1].dstSet = defferedDescSets[i];
     descriptorWrites[1].dstBinding = 1;
     descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -872,7 +876,7 @@ void Viewport::createPPDescriptorSets() {
     aInfo.sampler = VK_NULL_HANDLE;
 
     descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[2].dstSet = ppDescSets[i];
+    descriptorWrites[2].dstSet = defferedDescSets[i];
     descriptorWrites[2].dstBinding = 2;
     descriptorWrites[2].dstArrayElement = 0;
     descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -882,12 +886,12 @@ void Viewport::createPPDescriptorSets() {
     descriptorWrites[2].pTexelBufferView = nullptr;
 
     VkDescriptorBufferInfo lightInfo = {};
-    lightInfo.buffer = this->ppLightBuffers[i];
+    lightInfo.buffer = this->defferedLightBuffers[i];
     lightInfo.offset = 0;
     lightInfo.range = sizeof(LightData);
 
     descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[3].dstSet = ppDescSets[i];
+    descriptorWrites[3].dstSet = defferedDescSets[i];
     descriptorWrites[3].dstBinding = 3;
     descriptorWrites[3].dstArrayElement = 0;
     descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -897,12 +901,12 @@ void Viewport::createPPDescriptorSets() {
     descriptorWrites[3].pTexelBufferView = nullptr;
 
     VkDescriptorBufferInfo cameraInfo = {};
-    cameraInfo.buffer = this->ppCameraBuffers[i];
+    cameraInfo.buffer = this->defferedCameraBuffers[i];
     cameraInfo.offset = 0;
     cameraInfo.range = sizeof(CameraData);
 
     descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[4].dstSet = ppDescSets[i];
+    descriptorWrites[4].dstSet = defferedDescSets[i];
     descriptorWrites[4].dstBinding = 4;
     descriptorWrites[4].dstArrayElement = 0;
     descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -964,7 +968,7 @@ void Viewport::destroySwapChain() {
   vkQueueWaitIdle(state.graphicsQueue.q);
   state.graphicsQueue.unlock();
 
-  destroyPPObjects();
+  destroyDefferedObjects();
 
   lout << "PP Objects destroyed" << std::endl;
 
@@ -1029,7 +1033,7 @@ void Viewport::recreateSwapChain() {
   vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
 
   lout << "Creating PP objects" << std::endl;
-  createPPObjects();
+  createDefferedObjects();
 
   this->setupFramebuffers();
 
@@ -1040,8 +1044,8 @@ void Viewport::recreateSwapChain() {
   }
 
   this->setupPostProcessingPipeline();
-  this->createPpDescriptorPool();
-  this->createPPDescriptorSets();
+  this->createDefferedDescriptorPool();
+  this->createDefferedDescriptorSets();
 
   this->setupCommandBuffers();
   this->recordCommandBuffers();
@@ -1100,7 +1104,7 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
 
   vkCmdBeginRenderPass(buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
- 
+
   if (bufferManager) {
     VkCommandBuffer secBuffer = bufferManager->getBufferForRender(frameIndex);
     //lout << "Submitting buffer " << secBuffer << std::endl;
@@ -1110,11 +1114,11 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
 
   vkCmdNextSubpass(buffer, VK_SUBPASS_CONTENTS_INLINE);
 
-  vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipeline);
+  vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, defferedPipeline);
 
   ppBufferModel->bindForRender(buffer);
 
-  vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ppPipelineLayout, 0, 1, &ppDescSets[frameIndex], 0, nullptr);
+  vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, defferedPipelineLayout, 0, 1, &defferedDescSets[frameIndex], 0, nullptr);
 
   vkCmdDrawIndexed(buffer, ppBufferModel->getIndexCount(), 1, 0, 0, 0);
 
@@ -1158,12 +1162,12 @@ uint32_t Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 void Viewport::updateLight(uint32_t index, glm::vec4 pos, glm::vec4 color) {
 
   if (index == 0xffffffff) return;
-  
+
   lights.position[index] = pos;
   lights.color[index] = color;
 
   lightDataModified = 0xffffffff;
-  
+
 }
 
 void Viewport::createSecondaryBuffers() {
