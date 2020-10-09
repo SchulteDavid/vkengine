@@ -30,7 +30,7 @@ bool NodeUploader::childrenReady() {
   return isReady;
 }
 
-std::shared_ptr<strc::Node> NodeUploader::uploadResource() {
+std::shared_ptr<strc::Node> NodeUploader::uploadResource(vkutil::VulkanState & state) {
 
   std::shared_ptr<strc::Node> node = constructNode();
 

@@ -56,7 +56,7 @@ class Texture : public Resource
 template <typename T> class TextureUploader : public ResourceUploader<Texture> {
 
     public:
-        TextureUploader(vkutil::VulkanState & state, std::vector<T> data, int width, int height, int depth) : state(state) {
+        TextureUploader(std::vector<T> data, int width, int height, int depth) {
 
             this->data = data;
             this->width = width;
@@ -69,13 +69,12 @@ template <typename T> class TextureUploader : public ResourceUploader<Texture> {
             return true;
         }
 
-        std::shared_ptr<Texture> uploadResource() {
+        std::shared_ptr<Texture> uploadResource(vkutil::VulkanState & state) {
             return std::shared_ptr<Texture>(new Texture(state, data, width, height, depth));
         }
 
     private:
 
-        vkutil::VulkanState & state;
         std::vector<T> data;
         int width;
         int height;
@@ -86,19 +85,17 @@ template <typename T> class TextureUploader : public ResourceUploader<Texture> {
 class TextureLoader : public ResourceLoader<Texture> {
 
     public:
-        TextureLoader(vkutil::VulkanState & state);
+        TextureLoader();
 
         std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
-    protected:
-        vkutil::VulkanState & state;
 
 };
 
 class PNGLoader : public TextureLoader {
 
     public:
-        PNGLoader(vkutil::VulkanState & state);
+        PNGLoader();
         std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string fname);
 
 };

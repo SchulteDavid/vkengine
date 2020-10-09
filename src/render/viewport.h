@@ -51,7 +51,7 @@ class ThreadedBufferManager {
 
 class Viewport : public MemoryTransferHandler {
 public:
-  Viewport(std::shared_ptr<Window> window, Camera * camera);
+  Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> ppShader);
   virtual ~Viewport();
 
   struct LightData {
@@ -153,6 +153,8 @@ private:
   VkDescriptorSetLayout ppDescLayout;
   VkDescriptorPool ppDescPool;
   std::vector<VkDescriptorSet> ppDescSets;
+
+  std::shared_ptr<Shader> ppShader;
 
   VkPipelineLayout ppPipelineLayout;
   VkPipeline ppPipeline;

@@ -65,7 +65,7 @@ class GLTFNodeLoader : public ArchiveLoader {
 
 public:
 
-  GLTFNodeLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
+  GLTFNodeLoader();
   
   //std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname);
   bool canLoad(ResourceLocation location);
@@ -75,10 +75,7 @@ public:
   LoadingResource loadMaterial(gltf_file_data_t & fileData, const int materialId, const std::string fname);
   LoadingResource loadTexture(gltf_file_data_t & fileData, const int textureId, const std::string fname);
 
-private:
-  vkutil::VulkanState & state;
-  const VkRenderPass & renderPass;
-  const VkExtent2D & swapChainExtent;
+
   
 };
 

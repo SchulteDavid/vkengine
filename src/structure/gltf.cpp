@@ -1005,8 +1005,7 @@ struct gltf_anim_vertex {
 #include "node/nodeloader.h"
 #include "node/meshnode.h"
 
-GLTFNodeLoader::GLTFNodeLoader(vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent)
-  : state(state), renderPass(renderPass), swapChainExtent(swapChainExtent) {
+GLTFNodeLoader::GLTFNodeLoader() {
 
 }
 
@@ -1024,7 +1023,7 @@ LoadingResource GLTFNodeLoader::loadTexture(gltf_file_data_t & fileData, const i
   uint32_t width, height;
   std::vector<uint8_t> imageData = gltfLoadPackedImage(fileData.binaryBuffer, fileData.bufferViews[image.bufferView], &width, &height);
 
-  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(state, imageData, width, height, 1));
+  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new TextureUploader<uint8_t>(imageData, width, height, 1));
 
   std::string textureName = gltfSubresName(fname, image.name);
 
@@ -1045,7 +1044,7 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
 
   std::vector<LoadingResource> textures = {colorImg, normalImg, metalImg};
 
-  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(state, renderPass, swapChainExtent, shader, staticShader, textures));
+  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(shader, staticShader, textures));
 
 
   return uploadResource(ResourceLocation("Material", fname, material.name), upldr);

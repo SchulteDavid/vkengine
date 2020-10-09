@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "resource.h"
+#include "render/util/vkutil.h"
 
 template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::value>::type* = nullptr> class ResourceUploader {
 
@@ -18,7 +19,7 @@ template <typename T, typename std::enable_if<std::is_base_of<Resource, T>::valu
 
         }
 
-        virtual std::shared_ptr<T> uploadResource() = 0;
+        virtual std::shared_ptr<T> uploadResource(vkutil::VulkanState & state) = 0;
         virtual bool uploadReady() = 0;
 
     protected:

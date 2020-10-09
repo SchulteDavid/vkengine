@@ -24,7 +24,7 @@ public:
 
   };
 
-  ResourceManager(unsigned int regTypes);
+  ResourceManager(vkutil::VulkanState & state);
   virtual ~ResourceManager();
 
   void addRegistry(std::string name, ResourceRegistry<Resource> * registry);
@@ -85,6 +85,8 @@ private:
   std::vector<std::thread *> loadingThreads;
 
   bool keepThreadsRunning;
+
+  vkutil::VulkanState & vulkanState;
 
   static void threadLoadingFunction(ResourceManager * resourceManager);
   static void threadUploadingFunction(ResourceManager * resourceManager);

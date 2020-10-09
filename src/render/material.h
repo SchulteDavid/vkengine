@@ -48,16 +48,16 @@ class MaterialUploader : public ResourceUploader<Material> {
 
 public:
 
-  MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, std::vector<LoadingResource> textures);
-  MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, LoadingResource staticShader, std::vector<LoadingResource> textures);
-  std::shared_ptr<Material> uploadResource();
+  MaterialUploader(LoadingResource shader, std::vector<LoadingResource> textures);
+  MaterialUploader(LoadingResource shader, LoadingResource staticShader, std::vector<LoadingResource> textures);
+  std::shared_ptr<Material> uploadResource(vkutil::VulkanState & state);
   bool uploadReady();
 
 private:
 
-  const vkutil::VulkanState & state;
-  const VkRenderPass & renderPass;
-  const VkExtent2D & swapChainExtent;
+  //const vkutil::VulkanState & state;
+  //const VkRenderPass & renderPass;
+  //const VkExtent2D & swapChainExtent;
   LoadingResource shader;
   LoadingResource staticShader;
   std::vector<LoadingResource> textures;
@@ -68,16 +68,16 @@ class MaterialLoader : public ResourceLoader<Material> {
 
 public:
 
-  MaterialLoader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent);
+  MaterialLoader();
   std::shared_ptr<ResourceUploader<Material>> loadResource(std::string fname);
   ResourceUploader<Material> * buildResource(std::shared_ptr<config::NodeCompound> root);
 
 
 private:
 
-  const vkutil::VulkanState & state;
+  /*const vkutil::VulkanState & state;
   const VkRenderPass & renderPass;
-  const VkExtent2D & swapChainExtent;
+  const VkExtent2D & swapChainExtent;*/
 
 
 };

@@ -8,15 +8,9 @@
 #include "util/debug/trace_exception.h"
 #include "util/debug/logger.h"
 
-ResourceManager::ResourceManager(unsigned int regTypes) {
+ResourceManager::ResourceManager(vkutil::VulkanState & state) : vulkanState(state) {
 
-  /*if (regTypes & RESOURCE_MODEL) {
-    this->addRegistry("Model", (ResourceRegistry<Resource> *) new ResourceRegistry<Model>());
-    }
-
-    if (regTypes & RESOURCE_SHADER) {
-    this->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
-    }*/
+  
 
 }
 
@@ -240,7 +234,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
     lout << "Uploading " << fres->name << std::endl;
 
-    std::shared_ptr<Resource> tmpResource = tmpUploader->uploadResource();
+    std::shared_ptr<Resource> tmpResource = tmpUploader->uploadResource(resourceManager->vulkanState);
     if (!tmpResource) {
       lerr << "Resource " << fres->name << " is empty pointer" << std::endl;
       throw dbg::trace_exception("Null pointer for uploaded resource");

@@ -443,7 +443,7 @@ Texture * Texture::createTexture(vkutil::VulkanState & state, std::string fname)
 
 }
 
-TextureLoader::TextureLoader(vkutil::VulkanState & state) : state(state) {
+TextureLoader::TextureLoader() {
 
 
 
@@ -463,11 +463,11 @@ std::shared_ptr<ResourceUploader<Texture>> TextureLoader::loadResource(std::stri
     free(rawData);
     tgaClose(tgaImage);
 
-    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<float>(state, imageData, width, height, 1));
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<float>(imageData, width, height, 1));
 
 }
 
-PNGLoader::PNGLoader(vkutil::VulkanState & state) : TextureLoader(state) {
+PNGLoader::PNGLoader() {
 
 }
 
@@ -519,6 +519,6 @@ std::shared_ptr<ResourceUploader<Texture>> PNGLoader::loadResource(std::string f
 
     free(data);
 
-    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<uint8_t>(state, fData, width, height, 1));
+    return std::shared_ptr<ResourceUploader<Texture>>(new TextureUploader<uint8_t>(fData, width, height, 1));
 
 }

@@ -180,7 +180,7 @@ namespace audio {
       sound = s;
     }
 
-    std::shared_ptr<Sound> uploadResource() {
+    std::shared_ptr<Sound> uploadResource(vkutil::VulkanState & state) override {
       return sound;
     }
 

@@ -7,6 +7,7 @@
 
 #include "util/debug/trace_exception.h"
 #include "util/debug/logger.h"
+#include "util/vk_trace_exception.h"
 
 struct Viewport::CameraData {
 
@@ -28,12 +29,13 @@ std::vector<uint16_t> viewModelIndices = {
 					  0, 2, 3,
 };
 
-Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera) : state(window->getState()) {
+Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> ppShader) : state(window->getState()) {
 
   bufferManager = nullptr;
 
   this->camera = camera;
   this->lightIndex = 0;
+  this->ppShader = ppShader;
   //camera->move(0,0,1);
 
   this->frameIndex = 0;
@@ -260,8 +262,8 @@ void Viewport::drawFrame(bool updateElements) {
   vkResetFences(state.device, 1, &inFlightFences[frameIndex]);
 
   state.graphicsQueue.lock();
-  if (vkQueueSubmit(state.graphicsQueue.q, 1, &submitInfo, inFlightFences[frameIndex]) != VK_SUCCESS)
-    throw dbg::trace_exception("Unable to submit command buffer");
+  if (VkResult res = vkQueueSubmit(state.graphicsQueue.q, 1, &submitInfo, inFlightFences[frameIndex]))
+    throw vkutil::vk_trace_exception("Unable to submit command buffer", res);
   state.graphicsQueue.unlock();
 
   VkPresentInfoKHR presentInfo = {};
@@ -572,18 +574,17 @@ void Viewport::setupPostProcessingPipeline() {
 
   lout << "Creating ppPipeline" << std::endl;
 
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStages(2);
+  std::vector<vkutil::ShaderInputDescription> shaders = ppShader->getShaderInputDescriptions();
+  
+  std::vector<VkPipelineShaderStageCreateInfo> shaderStages(shaders.size());
+    for (unsigned int i = 0; i < shaders.size(); ++i) {
 
-  shaderStages[0].module = vkutil::createShaderModule(readFile("resources/shaders/id.vert.spirv"), state.device);
-  shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-  shaderStages[0].pName = "main";
+        shaderStages[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStages[i].module = shaders[i].module;
+        shaderStages[i].stage = shaders[i].usage;
+        shaderStages[i].pName = shaders[i].entryName;
 
-
-  shaderStages[1].module = vkutil::createShaderModule(readFile("resources/shaders/pp.frag.spirv"), state.device);
-  shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  shaderStages[1].pName = "main";
+    }
 
   /** fixed function **/
 
@@ -616,6 +617,10 @@ void Viewport::setupPostProcessingPipeline() {
   vertexInputInfo.pVertexBindingDescriptions = &description;
   vertexInputInfo.vertexAttributeDescriptionCount = descriptions.size();
   vertexInputInfo.pVertexAttributeDescriptions = descriptions.data();
+
+  vkutil::VertexInputDescriptions inputDescriptions;
+  inputDescriptions.binding = {description};
+  inputDescriptions.attributes = descriptions;
 
   VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
   inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -711,6 +716,7 @@ void Viewport::setupPostProcessingPipeline() {
 
   /* Uniform layout */
 
+  
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = 1;
@@ -1063,12 +1069,10 @@ vkutil::VulkanState & Viewport::getState() {
   return state;
 }
 
+
 void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIndex) {
 
   vkResetCommandBuffer(buffer, 0);
-
-  /// TODO: move to another thread.
-  //renderIntoSecondary();
 
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1116,8 +1120,8 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
 
   vkCmdEndRenderPass(buffer);
 
-  if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
-    throw dbg::trace_exception("Unable to record command buffer");
+  if (VkResult res = vkEndCommandBuffer(buffer))
+    throw vkutil::vk_trace_exception("Unable to record command buffer", res);
 
 
 }
@@ -1161,8 +1165,6 @@ void Viewport::updateLight(uint32_t index, glm::vec4 pos, glm::vec4 color) {
   lightDataModified = 0xffffffff;
   
 }
-
-#include "util/vk_trace_exception.h"
 
 void Viewport::createSecondaryBuffers() {
 
