@@ -11,11 +11,107 @@ PPEffect::~PPEffect() {
 
 }
 
+void PPEffect::createDescriptorSetLayout(const vkutil::VulkanState & state) {
+
+  std::array<VkDescriptorSetLayoutBinding, 2> bindings;
+
+  bindings[0].binding = 0;
+  bindings[0].descriptorCount = 1;
+  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+  bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  bindings[1].binding = 1;
+  bindings[1].descriptorCount = 1;
+  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+  layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layoutInfo.pBindings = bindings.data();
+  layoutInfo.bindingCount = bindings.size();
+
+  if (VkResult res = vkCreateDescriptorSetLayout(state.device, &layoutInfo, nullptr, &descriptorLayout))
+    throw vkutil::vk_trace_exception("Could not create descriptor set layout", res);
+  
+}
+
 void PPEffect::bindForRender(VkCommandBuffer &buffer) {
 
   vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
   /// TODO push descriptors if any are required
+  
+}
+
+void PPEffect::createDescriptorPool(const vkutil::VulkanState & state, const vkutil::SwapChain & swapchain) {
+
+  VkDescriptorPoolSize samplerSize = {};
+  samplerSize.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+  samplerSize.descriptorCount = swapchain.images.size()*2;
+
+  VkDescriptorPoolSize sizes[] = {samplerSize};
+
+  VkDescriptorPoolCreateInfo poolInfo = {};
+  poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  poolInfo.poolSizeCount = 1;
+  poolInfo.pPoolSizes = sizes;
+  poolInfo.maxSets = swapchain.images.size();
+
+  if (VkResult res = vkCreateDescriptorPool(state.device, &poolInfo, nullptr, &descriptorPool))
+    throw vkutil::vk_trace_exception("Unable to create descriptor pool", res);
+  
+}
+
+void PPEffect::createDescriptorSet(const vkutil::VulkanState & state, const vkutil::SwapChain & swapchain, VkImageView & inputImageView, VkImageView & depthView) {
+
+  std::vector<VkDescriptorSetLayout> layouts(swapchain.images.size(), descriptorLayout);
+  this->descriptorSets.resize(swapchain.images.size());
+
+  VkDescriptorSetAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  allocInfo.descriptorPool = descriptorPool;
+  allocInfo.descriptorSetCount = swapchain.images.size();
+  allocInfo.pSetLayouts = layouts.data();
+
+  if (VkResult res = vkAllocateDescriptorSets(state.device, &allocInfo, descriptorSets.data()))
+    throw vkutil::vk_trace_exception("Unable to allocate descriptor sets", res);
+
+  std::cout << "inputImageView " << inputImageView << std::endl;
+  for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
+    std::array<VkWriteDescriptorSet, 1> descriptorWrites;
+
+    VkDescriptorImageInfo gInfo;
+    gInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    gInfo.imageView = inputImageView;
+    gInfo.sampler = VK_NULL_HANDLE;
+
+    VkDescriptorImageInfo depthInfo;
+    depthInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    depthInfo.imageView = depthView;
+    depthInfo.sampler = VK_NULL_HANDLE;
+
+    VkDescriptorImageInfo imageInfo[2] = {gInfo, depthInfo};
+
+    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[0].dstSet = descriptorSets[i];
+    descriptorWrites[0].dstBinding = 0;
+    descriptorWrites[0].dstArrayElement = 0;
+    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    descriptorWrites[0].descriptorCount = 1;
+    descriptorWrites[0].pBufferInfo = nullptr;
+    descriptorWrites[0].pImageInfo = imageInfo;
+    descriptorWrites[0].pTexelBufferView = nullptr;
+    descriptorWrites[0].pNext = nullptr;
+
+    vkUpdateDescriptorSets(state.device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+    
+  }
+  
+}
+
+void PPEffect::bindDescriptorSets(VkCommandBuffer &buffer, uint32_t frameIndex) {
+
+  vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
   
 }
 

@@ -153,10 +153,15 @@ int main(int argc, char ** argv) {
   LoadingResource ppShader = resourceManager->loadResourceBg(ResourceLocation("Shader", "resources/shaders/pp.shader"));
   ppShader->wait();
 
+  LoadingResource testPPShader = resourceManager->loadResourceBg(ResourceLocation("Shader", "resources/shaders/test_pp.shader"));
+  testPPShader->wait();
+
+
+  std::shared_ptr<PPEffect> testEffect = std::make_shared<PPEffect>(std::dynamic_pointer_cast<Shader>(testPPShader->location));
+  
   Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
-  Viewport *view = new Viewport(
-      window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {});
+  Viewport *view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {testEffect});
   window->setActiveViewport(view);
 
   std::shared_ptr<audio::AudioContext> context(new audio::AudioContext());

@@ -160,6 +160,11 @@ private:
   VkPipelineLayout defferedPipelineLayout;
   VkPipeline defferedPipeline;
 
+  std::vector<std::shared_ptr<PPEffect>> ppEffects;
+  std::vector<VkImage> ppImages;
+  std::vector<VmaAllocation> ppImageMemories;
+  std::vector<VkImageView> ppImageViews;
+
   std::vector<VkCommandBuffer> commandBuffers;
   VkCommandBuffer transferCmdBuffer;
 

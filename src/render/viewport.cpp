@@ -36,6 +36,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
   this->camera = camera;
   this->lightIndex = 0;
   this->defferedShader = defferedShader;
+  this->ppEffects = effects;
 
   this->frameIndex = 0;
 
@@ -64,19 +65,25 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
   createDefferedObjects();
   setupPostProcessingPipeline();
 
-  for (uint32_t i = 0; i < effects.size(); ++i) {
+  for (uint32_t i = 0; i < ppEffects.size(); ++i) {
+
+    ppEffects[i]->createDescriptorSetLayout(state);
     // subpass has to be offset by 2 for object-pass and deffered-lighting
-    effects[i]->setupPipeline(state, swapchain, renderPass, i+2);
+    ppEffects[i]->setupPipeline(state, swapchain, renderPass, i+2);
   }
 
   setupFramebuffers();
   createDefferedDescriptorPool();
   createDefferedDescriptorSets();
 
+  for (uint32_t i = 0; i < ppEffects.size(); ++i) {
+    ppEffects[i]->createDescriptorPool(state, swapchain);
+    ppEffects[i]->createDescriptorSet(state, swapchain, ppImageViews[i], depthImageView);
+  }
+  
+  
   setupCommandBuffers();
-
   createTransferCommandBuffer();
-
   createSyncObjects();
 
   //ppBufferModel = std::shared_ptr<Model>(Model::loadFromFile(state, "resources/models/quad.ply"));
@@ -396,7 +403,7 @@ void Viewport::setupRenderPass() {
   depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
   VkAttachmentReference colorAttachmentRef = {};
-  colorAttachmentRef.attachment = 0;
+  colorAttachmentRef.attachment = ppEffects.size() ? 5 : 0;
   colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
   VkAttachmentReference depthAttachmentRef = {};
@@ -443,6 +450,52 @@ void Viewport::setupRenderPass() {
   subpass2.inputAttachmentCount = inputRefs.size();
   subpass2.pInputAttachments = inputRefs.data();
 
+  std::vector<VkSubpassDescription> ppDescriptions(ppEffects.size());
+  std::vector<VkSubpassDependency> ppDependencies(ppEffects.size());
+  std::vector<VkAttachmentDescription> ppAttachmentDescs(ppEffects.size());
+  std::vector<VkAttachmentReference> ppAttachmentRefs(3 * ppEffects.size());
+
+  for (uint32_t i = 0; i < ppEffects.size(); ++i) {
+
+    VkAttachmentDescription ppAttachment = {};
+    ppAttachment.format = swapchain.format;
+    ppAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    ppAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    ppAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    ppAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    ppAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    ppAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ppAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    ppAttachmentDescs[i] = ppAttachment;
+
+    ppAttachmentRefs[i*3] = {};
+    ppAttachmentRefs[i*3].attachment = i+5;
+    ppAttachmentRefs[i*3].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    ppAttachmentRefs[i*3+1] = {};
+    ppAttachmentRefs[i*3+1].attachment = 2;
+    ppAttachmentRefs[i*3+1].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    ppAttachmentRefs[i * 3 + 2] = {};
+    ppAttachmentRefs[i*3+2].attachment = (i == ppEffects.size()-1 ? 0 : i+6);
+    ppAttachmentRefs[i*3+2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    ppDescriptions[i].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    ppDescriptions[i].colorAttachmentCount = 1;
+    ppDescriptions[i].inputAttachmentCount = 1;
+    ppDescriptions[i].pColorAttachments = &ppAttachmentRefs[i*3+2];
+    ppDescriptions[i].pInputAttachments = &ppAttachmentRefs[i*3];
+
+    ppDependencies[i].srcSubpass = i+1;
+    ppDependencies[i].dstSubpass = i+2;
+    ppDependencies[i].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    ppDependencies[i].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    ppDependencies[i].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    ppDependencies[i].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    
+  }
+
   VkSubpassDependency dependency = {};
   dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
   dependency.dstSubpass = 0;
@@ -459,10 +512,13 @@ void Viewport::setupRenderPass() {
   dependency2.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   dependency2.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-  std::array<VkAttachmentDescription, 5> attachments = {colorAttachment, depthAttachment, gAttachment, nAttachment, aAttachment};
+  std::vector<VkAttachmentDescription> attachments = {colorAttachment, depthAttachment, gAttachment, nAttachment, aAttachment};
+  attachments.insert(attachments.end(), ppAttachmentDescs.begin(), ppAttachmentDescs.end());
 
-  std::array<VkSubpassDescription, 2> subpasses = {subpass, subpass2};
-  std::array<VkSubpassDependency, 2> dependencies = {dependency, dependency2};
+  std::vector<VkSubpassDescription> subpasses = {subpass, subpass2};
+  subpasses.insert(subpasses.end(), ppDescriptions.begin(), ppDescriptions.end());
+  std::vector<VkSubpassDependency> dependencies = {dependency, dependency2};
+  dependencies.insert(dependencies.end(), ppDependencies.begin(), ppDependencies.end());
 
   VkRenderPassCreateInfo renderPassInfo = {};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -488,6 +544,17 @@ void Viewport::createDefferedObjects() {
 
   vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, swapchain.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, aBufferImage, aBufferImageMemory);
   aBufferImageView = vkutil::createImageView(state.device, aBufferImage, swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+  this->ppImages.resize(ppEffects.size());
+  this->ppImageViews.resize(ppEffects.size());
+  this->ppImageMemories.resize(ppEffects.size());
+  
+  for (unsigned int i = 0; i < ppEffects.size(); ++i) {
+
+    vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, swapchain.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ppImages[i], ppImageMemories[i]);
+    ppImageViews[i] = vkutil::createImageView(state.device, ppImages[i], swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    
+  }
 
   VkDeviceSize lightSize = sizeof(LightData);
   VkDeviceSize cameraSize = sizeof(CameraData);
@@ -854,6 +921,7 @@ void Viewport::createDefferedDescriptorSets() {
     descriptorWrites[0].pBufferInfo = nullptr;
     descriptorWrites[0].pImageInfo = &gInfo;
     descriptorWrites[0].pTexelBufferView = nullptr;
+    descriptorWrites[0].pNext = nullptr;
 
     VkDescriptorImageInfo nInfo;
     nInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -869,6 +937,7 @@ void Viewport::createDefferedDescriptorSets() {
     descriptorWrites[1].pBufferInfo = nullptr;
     descriptorWrites[1].pImageInfo = &nInfo;
     descriptorWrites[1].pTexelBufferView = nullptr;
+    descriptorWrites[1].pNext = nullptr;
 
     VkDescriptorImageInfo aInfo;
     aInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -884,6 +953,7 @@ void Viewport::createDefferedDescriptorSets() {
     descriptorWrites[2].pBufferInfo = nullptr;
     descriptorWrites[2].pImageInfo = &aInfo;
     descriptorWrites[2].pTexelBufferView = nullptr;
+    descriptorWrites[2].pNext = nullptr;
 
     VkDescriptorBufferInfo lightInfo = {};
     lightInfo.buffer = this->defferedLightBuffers[i];
@@ -899,6 +969,7 @@ void Viewport::createDefferedDescriptorSets() {
     descriptorWrites[3].pBufferInfo = &lightInfo;
     descriptorWrites[3].pImageInfo = nullptr;
     descriptorWrites[3].pTexelBufferView = nullptr;
+    descriptorWrites[3].pNext = nullptr;
 
     VkDescriptorBufferInfo cameraInfo = {};
     cameraInfo.buffer = this->defferedCameraBuffers[i];
@@ -914,6 +985,7 @@ void Viewport::createDefferedDescriptorSets() {
     descriptorWrites[4].pBufferInfo = &cameraInfo;
     descriptorWrites[4].pImageInfo = nullptr;
     descriptorWrites[4].pTexelBufferView = nullptr;
+    descriptorWrites[4].pNext = nullptr;
 
     vkUpdateDescriptorSets(state.device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 
@@ -941,7 +1013,8 @@ void Viewport::setupFramebuffers() {
 
   for (unsigned int i = 0; i < swapchain.imageViews.size(); ++i) {
 
-    std::array<VkImageView, 5> attachments = {swapchain.imageViews[i], depthImageView, gBufferImageView, nBufferImageView, aBufferImageView};
+    std::vector<VkImageView> attachments = {swapchain.imageViews[i], depthImageView, gBufferImageView, nBufferImageView, aBufferImageView};
+    attachments.insert(attachments.end(), ppImageViews.begin(), ppImageViews.end());
 
     VkFramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1093,12 +1166,17 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   renderPassInfo.renderArea.offset = {0,0};
   renderPassInfo.renderArea.extent = swapchain.extent;
 
-  std::array<VkClearValue, 5> clearValues;
+  std::vector<VkClearValue> clearValues(5 + ppEffects.size());
   clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
   clearValues[1].depthStencil = {1.0f, 0};
   clearValues[2].color = {0.0f, 0.0f, 0.0f};
   clearValues[3].color = {0.0f, 0.0f, 0.0f};
   clearValues[4].color = {0.0f, 0.0f, 0.0f};
+
+  for (unsigned int i = 0; i < ppEffects.size(); ++i) {
+    clearValues[i + 5].color = {0.0f, 0.0f, 0.0f};
+  }
+  
   renderPassInfo.clearValueCount = clearValues.size();
   renderPassInfo.pClearValues = clearValues.data();
 
@@ -1121,6 +1199,17 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, defferedPipelineLayout, 0, 1, &defferedDescSets[frameIndex], 0, nullptr);
 
   vkCmdDrawIndexed(buffer, ppBufferModel->getIndexCount(), 1, 0, 0, 0);
+
+  for (std::shared_ptr<PPEffect> e : ppEffects) {
+    vkCmdNextSubpass(buffer, VK_SUBPASS_CONTENTS_INLINE);
+
+    e->bindForRender(buffer);
+    ppBufferModel->bindForRender(buffer);
+    e->bindDescriptorSets(buffer, frameIndex);
+    
+    vkCmdDrawIndexed(buffer, ppBufferModel->getIndexCount(), 1, 0, 0, 0);
+    
+  }
 
   vkCmdEndRenderPass(buffer);
 
