@@ -83,7 +83,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
 
 }
 
-void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
+void createResourceLoaders(ResourceManager * resourceManager) {
   
   resourceManager->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
   resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
@@ -92,10 +92,10 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
   resourceManager->addRegistry("Sound", (ResourceRegistry<Resource> *) new ResourceRegistry<audio::Sound>());
 
-  resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader(view->getState()));
-  resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader(view->getState()));
-  resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-  resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader(view->getState()));
+  resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader());
+  resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader());
+  resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader());
+  resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader());
   resourceManager->addLoader("Mesh", (ResourceLoader<Resource> *) new MeshLoader());
   resourceManager->addLoader("Sound", (ResourceLoader<Resource> *) new audio::SoundLoader());
 
@@ -106,7 +106,7 @@ void createResourceLoaders(ResourceManager * resourceManager, Viewport * view) {
   
   resourceManager->addLoader("Node", (ResourceLoader<Resource> *) new NodeLoader());
 
-  std::shared_ptr<ArchiveLoader> gltfLoader(new GLTFNodeLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
+  std::shared_ptr<ArchiveLoader> gltfLoader(new GLTFNodeLoader());
 
   resourceManager->attachArchiveType("glb", gltfLoader);
 
@@ -146,21 +146,28 @@ int main(int argc, char ** argv) {
   Entity::registerDefaultEntityTypes();
 
   std::shared_ptr<Window> window(new Window(width, height));
+  ResourceManager * resourceManager = new ResourceManager(window->getState());
+  createResourceLoaders(resourceManager);
+  resourceManager->startLoadingThreads(1);
 
+  LoadingResource ppShader = resourceManager->loadResourceBg(ResourceLocation("Shader", "resources/shaders/pp.shader"));
+  ppShader->wait();
+
+  LoadingResource testPPShader = resourceManager->loadResourceBg(ResourceLocation("Shader", "resources/shaders/test_pp.shader"));
+  testPPShader->wait();
+
+
+  std::shared_ptr<PPEffect> testEffect = std::make_shared<PPEffect>(std::dynamic_pointer_cast<Shader>(testPPShader->location));
+  
   Camera * cam = new Camera(70.0, 0.001, 100.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
-  Viewport * view = new Viewport(window, cam);
+  Viewport *view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {testEffect});
   window->setActiveViewport(view);
 
   std::shared_ptr<audio::AudioContext> context(new audio::AudioContext());
 
-  lout << "Viewport OK" << std::endl;
 
-  ResourceManager * resourceManager = new ResourceManager(ResourceManager::RESOURCE_MODEL | ResourceManager::RESOURCE_SHADER);
-
-  createResourceLoaders(resourceManager, view);
-
-  resourceManager->startLoadingThreads(1);
+  
 
   //LoadingResource treeStruct = resourceManager->loadResourceBg("Structure", "tree.glb");
   //LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");

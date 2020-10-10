@@ -11,7 +11,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
 
   NodeUploader(std::shared_ptr<strc::Node> node);
 
-  std::shared_ptr<strc::Node> uploadResource() override;
+  std::shared_ptr<strc::Node> uploadResource(vkutil::VulkanState & state) override;
 
   bool uploadReady() override;
 

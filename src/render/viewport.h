@@ -10,6 +10,7 @@
 #include "model.h"
 #include "renderelement.h"
 #include "camera.h"
+#include "render/postprocessing.h"
 
 class ThreadedBufferManager {
 
@@ -51,7 +52,7 @@ class ThreadedBufferManager {
 
 class Viewport : public MemoryTransferHandler {
 public:
-  Viewport(std::shared_ptr<Window> window, Camera * camera);
+  Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects);
   virtual ~Viewport();
 
   struct LightData {
@@ -86,12 +87,12 @@ public:
 protected:
 
   void setupRenderPass();
-  void createPPObjects();
-  void destroyPPObjects();
+  void createDefferedObjects();
+  void destroyDefferedObjects();
 
-  void createPpDescriptorSetLayout();
-  void createPpDescriptorPool();
-  void createPPDescriptorSets();
+  void createDefferedDescriptorSetLayout();
+  void createDefferedDescriptorPool();
+  void createDefferedDescriptorSets();
 
   void setupPostProcessingPipeline();
   void setupFramebuffers();
@@ -145,17 +146,24 @@ private:
   VkImageView aBufferImageView;
   VmaAllocation aBufferImageMemory;
 
-  std::vector<VkBuffer> ppLightBuffers;
-  std::vector<VmaAllocation> ppLightBuffersMemory;
-  std::vector<VkBuffer> ppCameraBuffers;
-  std::vector<VmaAllocation> ppCameraBuffersMemory;
+  std::vector<VkBuffer> defferedLightBuffers;
+  std::vector<VmaAllocation> defferedLightBuffersMemory;
+  std::vector<VkBuffer> defferedCameraBuffers;
+  std::vector<VmaAllocation> defferedCameraBuffersMemory;
 
-  VkDescriptorSetLayout ppDescLayout;
-  VkDescriptorPool ppDescPool;
-  std::vector<VkDescriptorSet> ppDescSets;
+  VkDescriptorSetLayout defferedDescLayout;
+  VkDescriptorPool defferedDescPool;
+  std::vector<VkDescriptorSet> defferedDescSets;
 
-  VkPipelineLayout ppPipelineLayout;
-  VkPipeline ppPipeline;
+  std::shared_ptr<Shader> defferedShader;
+
+  VkPipelineLayout defferedPipelineLayout;
+  VkPipeline defferedPipeline;
+
+  std::vector<std::shared_ptr<PPEffect>> ppEffects;
+  std::vector<VkImage> ppImages;
+  std::vector<VmaAllocation> ppImageMemories;
+  std::vector<VkImageView> ppImageViews;
 
   std::vector<VkCommandBuffer> commandBuffers;
   VkCommandBuffer transferCmdBuffer;

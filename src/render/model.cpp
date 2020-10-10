@@ -354,13 +354,13 @@ void Model::uploadToGPU(const VkDevice & device, const VkCommandPool & commandPo
 
 }
 
-ModelUploader::ModelUploader(const vkutil::VulkanState & state, Model * model) : state(state) {
+ModelUploader::ModelUploader(Model * model) {
 
     this->model = model;
 
 }
 
-std::shared_ptr<Model> ModelUploader::uploadResource() {
+std::shared_ptr<Model> ModelUploader::uploadResource(vkutil::VulkanState & state) {
 
     model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
     return std::shared_ptr<Model>(model);
@@ -388,6 +388,6 @@ ModelLoader::ModelLoader(const vkutil::VulkanState & state) : state(state) {
 std::shared_ptr<ResourceUploader<Model>> ModelLoader::loadResource(std::string fname) {
 
     Model * model = Model::loadFromFile(state, fname);
-    return std::shared_ptr<ResourceUploader<Model>>(new ModelUploader(state, model));
+    return std::shared_ptr<ResourceUploader<Model>>(new ModelUploader(model));
 
 }

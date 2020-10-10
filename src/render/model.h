@@ -71,14 +71,13 @@ private:
 class ModelUploader : public ResourceUploader<Model> {
 
 public:
-  ModelUploader(const vkutil::VulkanState & state, Model * model);
+  ModelUploader(Model * model);
 
-  std::shared_ptr<Model> uploadResource();
+  std::shared_ptr<Model> uploadResource(vkutil::VulkanState & state);
   bool uploadReady();
 
 private:
 
-  const vkutil::VulkanState & state;
   Model * model;
 
 };

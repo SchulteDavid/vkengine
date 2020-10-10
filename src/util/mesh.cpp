@@ -831,7 +831,7 @@ bool MeshUploader::uploadReady() {
   return true;
 }
 
-std::shared_ptr<Mesh> MeshUploader::uploadResource() {
+std::shared_ptr<Mesh> MeshUploader::uploadResource(vkutil::VulkanState & state) {
   return mesh;
 }
 

@@ -86,20 +86,20 @@ VkPipeline Material::setupStaticPipeline(const vkutil::VulkanState & state, cons
 
 }
 
-MaterialUploader::MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, std::vector<LoadingResource> textures) : state(state), renderPass(renderPass), swapChainExtent(swapChainExtent) {
+MaterialUploader::MaterialUploader(LoadingResource shader, std::vector<LoadingResource> textures) {
 
     this->shader = shader;
     this->textures = textures;
 
 }
 
-MaterialUploader::MaterialUploader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, LoadingResource shader, LoadingResource staticShader, std::vector<LoadingResource> textures) : MaterialUploader(state, renderPass, swapChainExtent, shader, textures) {
+MaterialUploader::MaterialUploader(LoadingResource shader, LoadingResource staticShader, std::vector<LoadingResource> textures) : MaterialUploader(shader, textures) {
 
     this->staticShader = staticShader;
 
 }
 
-std::shared_ptr<Material> MaterialUploader::uploadResource() {
+std::shared_ptr<Material> MaterialUploader::uploadResource(vkutil::VulkanState & state) {
 
     std::shared_ptr<Shader> mShader = std::dynamic_pointer_cast<Shader>(shader->location);
 
@@ -122,7 +122,7 @@ std::shared_ptr<Material> MaterialUploader::uploadResource() {
       mat = new Material(mShader, sShader, mTextures);
 
     }
-
+    
     //mat->setupPipeline(state, renderPass, swapChainExtent);
     //mat->prepareDescriptors();
 
@@ -143,7 +143,7 @@ bool MaterialUploader::uploadReady() {
 
 }
 
-MaterialLoader::MaterialLoader(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent) : state(state), renderPass(renderPass), swapChainExtent(swapChainExtent) {
+MaterialLoader::MaterialLoader() {
 
 }
 
@@ -189,21 +189,18 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
 
     lout << "Textures Loaded" << std::endl;
 
-    return new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, staticShaderRes, textureRes);
+    return new MaterialUploader(shaderRes, staticShaderRes, textureRes);
 
   }
 
-  return new MaterialUploader(state, renderPass, swapChainExtent, shaderRes, staticShaderRes, {});
+  return new MaterialUploader(shaderRes, staticShaderRes, {});
 }
 
 std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::string fname) {
 
     using namespace config;
 
-    //CompoundNode * root = ConfigLoader::loadFileTree(fname);
     std::shared_ptr<NodeCompound> root = config::parseFile(fname);
-
-    lout << "Loading material from compound " << root << std::endl;
 
     return std::shared_ptr<MaterialUploader>((MaterialUploader *)buildResource(root));
 

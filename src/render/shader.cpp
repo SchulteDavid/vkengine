@@ -103,21 +103,26 @@ void Shader::bindForRender(VkCommandBuffer & cmdBuffer, VkDescriptorSet & descri
 
 }
 
-VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & layout) {
+std::vector<vkutil::ShaderInputDescription> Shader::getShaderInputDescriptions() {
 
   std::vector<vkutil::ShaderInputDescription> inputShaders(modules.size());
 
-  std::string mainName = "main";
+  static char * mainName = (char *) "main";
 
   for (unsigned int i = 0; i < modules.size(); ++i) {
 
-    inputShaders[i].entryName = (char *) mainName.c_str();
+    inputShaders[i].entryName = mainName;
     inputShaders[i].module = modules[i];
     inputShaders[i].usage = stages[i];
 
   }
+  return inputShaders;
+}
 
-  VkPipeline graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descLayout, layout, swapChainExtent);
+VkPipeline Shader::setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & layout, uint32_t subpassId) {
+
+  std::vector<vkutil::ShaderInputDescription> inputShaders = getShaderInputDescriptions();
+  VkPipeline graphicsPipeline = vkutil::createGraphicsPipeline(state, renderPass, inputShaders, descs, descLayout, layout, swapChainExtent, subpassId);
 
   this->graphicsPipeline = graphicsPipeline;
 
@@ -358,7 +363,7 @@ void Shader::setInputs(std::vector<InputDescription> inputs) {
   this->inputs = inputs;
 }
 
-ShaderLoader::ShaderLoader(const vkutil::VulkanState & state) : state(state) {
+ShaderLoader::ShaderLoader() {
 
 }
 
@@ -377,8 +382,6 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
   std::vector<uint8_t> fragCode = readFile(fragFname);
 
   unsigned int textureCount = tmpRoot->getNode<int32_t>("textureCount")->getElement(0);
-
-  std::shared_ptr<Shader> shader(new Shader(vertCode, fragCode, state, textureCount));
 
   if (tmpRoot->hasChild("inputs")) {
 
@@ -399,7 +402,7 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
 
     }
 
-    shader->setInputs(inputs);
+    return std::make_shared<ShaderUploader>(vertCode, fragCode, textureCount, inputs);
 
 
   } else {
@@ -422,23 +425,30 @@ std::shared_ptr<ResourceUploader<Shader>> ShaderLoader::loadResource(std::string
     vertElements[4].attributeName = "MATERIAL_INDEX";
     vertElements[4].location = 4;
 
-    shader->setInputs(vertElements);
+    return std::make_shared<ShaderUploader>(vertCode, fragCode, textureCount, vertElements);
 
   }
 
-  return std::shared_ptr<ShaderUploader>(new ShaderUploader(state, shader));
+  return nullptr;
 
 }
 
-ShaderUploader::ShaderUploader(const vkutil::VulkanState & state, std::shared_ptr<Shader> shader) : state(state) {
+ShaderUploader::ShaderUploader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, uint32_t textureCount, std::vector<InputDescription> inputs) {
 
-  this->shader = shader;
+  this->vertCode = vertCode;
+  this->fragCode = fragCode;
+  this->textureCount = textureCount;
+  this->inputs = inputs;
 
 }
 
-std::shared_ptr<Shader> ShaderUploader::uploadResource() {
+std::shared_ptr<Shader> ShaderUploader::uploadResource(vkutil::VulkanState & state) {
 
-  this->shader->createModules(state);
+  std::shared_ptr<Shader> shader = std::make_shared<Shader>(vertCode, fragCode, state, textureCount);
+
+  shader->setInputs(inputs);
+  
+  shader->createModules(state);
   return shader;
 
 }
