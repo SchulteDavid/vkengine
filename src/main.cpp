@@ -26,6 +26,7 @@
 #include "render/instancedrenderelement.h"
 #include "audio/audiocontext.h"
 #include "audio/sound.h"
+#include "scripting/script.h"
 
 static bool run = true;
 static bool wait;
@@ -91,6 +92,7 @@ void createResourceLoaders(ResourceManager * resourceManager) {
   resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
   resourceManager->addRegistry("Sound", (ResourceRegistry<Resource> *) new ResourceRegistry<audio::Sound>());
+  resourceManager->addRegistry("Script", (ResourceRegistry<Resource> *) new ResourceRegistry<scripting::Script>());
 
   resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader());
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader());
@@ -176,9 +178,7 @@ int main(int argc, char ** argv) {
   LoadingResource node3 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/test.node"));
 
   lout << "Start wait for node " << node << std::endl;
-  //while(!node->status.isUseable) ;
-  //node3->fut.wait();
-  //while(!node3->status.isUseable);
+
   node->wait();
   node3->wait();
 
