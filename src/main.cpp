@@ -58,7 +58,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
 
     view->renderIntoSecondary();
 
-    if (loopCount % 100 == 0) {
+    /*if (loopCount % 100 == 0) {
       Transform<double> trans;
       trans.position = Math::Vector<3>({0.0, 0.0, 30.0});
 
@@ -70,7 +70,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
 
       node->viewportAdd(view, node);
       node->worldAdd(world, node);
-    }
+      }*/
 
     loopCount++;
 
@@ -239,15 +239,17 @@ int main(int argc, char ** argv) {
 
   lout << "End of mainloop" << std::endl;
 
+  lout << "Final resources" << std::endl;
+  resourceManager->printSummary();
+  
   lout << "Joining Threads" << std::endl;
   rotateThread.join();
-
-
-  lout << "Final resources" << std::endl;
-
-  resourceManager->printSummary();
+  resourceManager->joinLoadingThreads();
 
   lout << n3->getResource<Mesh>("TestResource") << std::endl;
+
+  delete resourceManager;
+  delete view;
 
   return 0;
 }

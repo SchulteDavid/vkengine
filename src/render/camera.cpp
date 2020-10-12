@@ -84,8 +84,9 @@ Math::Vector<3, float> Camera::getPosition() {
 }
 
 void Camera::updateView() {
-
-  view = glm::inverse(toGLMMatrix(getTransformationMatrix(transform)));
+  
+  Transform<float> inverse = inverseTransform(transform);
+  view = toGLMMatrix(getTransformationMatrix(inverse));
 
 }
 

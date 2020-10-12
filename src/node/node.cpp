@@ -21,7 +21,7 @@ Node::Node(std::string name, Transform<double> transform) : name(name) {
 }
 
 Node::~Node() {
-
+  std::cout << "Deleting Node " << name << std::endl;
 }
 
 void Node::attachEventHandler(std::shared_ptr<EventHandler> handler, std::shared_ptr<Node> self) {
