@@ -114,7 +114,7 @@ void ResourceManager::threadLoadingFunction(ResourceManager * resourceManager) {
 
       //lout << "Getting new Resource to load" << std::endl;
       LoadingResource fres = resourceManager->getNextResource();
-      if (!fres || !fres->isPresent) continue;
+      if (!fres->isPresent) continue;
 
       if (resourceManager->isLoaded(fres->name)) {
 
@@ -261,8 +261,6 @@ LoadingResource ResourceManager::getNextResource() {
 
   loadingCV.wait(lock, [&] {return !loadingQueue.empty() || !keepThreadsRunning;});
 
-  if (!keepThreadsRunning) return nullptr;
-  
   /*if (loadingQueue.empty()) {
 
 
@@ -286,8 +284,6 @@ LoadingResource ResourceManager::getNextUploadingResource() {
   std::unique_lock<std::mutex> lock(uploadingQueueMutex);
 
   uploadingCV.wait(lock, [&] {return !uploadingQueue.empty() || !keepThreadsRunning;});
-
-  if (!keepThreadsRunning) return nullptr;
 
   /*if (uploadingQueue.empty()) {
 

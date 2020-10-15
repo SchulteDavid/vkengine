@@ -156,8 +156,6 @@ AudioContext::~AudioContext() {
   
   delete data;
 
-  std::cout << "Audio Context destroyed" << std::endl;
-
 }
 
 void AudioContext::setListenerTransform(Transform<double> trans) {

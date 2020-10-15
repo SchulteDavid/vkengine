@@ -8,7 +8,7 @@ World::World() {
 
 World::~World() {
 
-  std::cout << "World is deleted" << std::endl;
+
 
 }
 

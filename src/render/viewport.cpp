@@ -101,11 +101,9 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
 }
 
 Viewport::~Viewport() {
-  std::cout << "Waiting for fences" << std::endl;
   for (unsigned int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
     vkWaitForFences(state.device, 1, &inFlightFences[i], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-  std::cout << "Deleting buffer manager" << std::endl;
   if (bufferManager) delete bufferManager;
 
 }

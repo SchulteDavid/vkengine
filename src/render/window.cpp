@@ -95,7 +95,6 @@ Window::~Window() {
     /*vmaDestroyAllocator(state.vmaAllocator);
 
     vkutil::destroyWindow(state.glfwWindow);*/
-  std::cout << "Window destroyed" << std::endl;
 
 }
 

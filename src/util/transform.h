@@ -79,8 +79,8 @@ template <typename T> Transform<T> combineTransforms(const Transform<T> & t1, co
 
 template <typename T> Transform<T> inverseTransform(const Transform<T> trans) {
   Transform<T> res;
+  res.position = ((T) -1) * trans.position;
   res.rotation = trans.rotation.conjugate();
-  res.position = ((T) -1) * (res.rotation.toRotationMatrix() * trans.position);
   res.scale = trans.scale;
   return res;
 }
