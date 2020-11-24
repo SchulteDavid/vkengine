@@ -445,8 +445,8 @@ std::vector<uint8_t> Mesh::getCompactIndices(uint32_t * indexSizeBytes, uint32_t
 
     *indexSizeBytes = sizeof(uint16_t);
     *indexCount = indices.size();
-
-    std::vector<uint8_t> indexData((sizeof(uint16_t) / sizeof(uint8_t)) * indices.size());
+    
+    std::vector<uint8_t> indexData(sizeof(uint16_t) * indices.size());
     uint16_t * data = (uint16_t *) indexData.data();
 
     for (unsigned int i = 0; i < indices.size(); ++i) {

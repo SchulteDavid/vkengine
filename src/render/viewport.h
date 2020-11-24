@@ -14,39 +14,42 @@
 
 class ThreadedBufferManager {
 
-  public:
+public:
 
-    struct BufferElement {
+  struct BufferElement {
 
-      uint32_t usageCount;
-      VkCommandBuffer buffer;
+    uint32_t usageCount;
+    VkCommandBuffer buffer;
 
-    };
+  };
 
-    ThreadedBufferManager();
-    ThreadedBufferManager(unsigned int bufferCount, unsigned int frameCount, vkutil::VulkanState & state);
+  ThreadedBufferManager();
+  ThreadedBufferManager(unsigned int bufferCount, unsigned int frameCount, vkutil::VulkanState & state);
 
-    /// returns the active buffer
-    VkCommandBuffer getBufferForRender(uint32_t frameIndex);
-    /// releases the active buffer back to the queue
-    void releaseRenderBuffer(uint32_t frameIndex);
+  /// returns the active buffer
+  VkCommandBuffer getBufferForRender(uint32_t frameIndex);
+  /// releases the active buffer back to the queue
+  void releaseRenderBuffer(uint32_t frameIndex, bool internal=false);
 
-    /// returns a buffer that can be recorded to
-    BufferElement * getBufferForRecording();
-    /// sets the next buffer to use.
-    void setActiveBuffer(BufferElement * buffer);
+  /// returns a buffer that can be recorded to
+  BufferElement * getBufferForRecording();
+  /// sets the next buffer to use.
+  void setActiveBuffer(BufferElement * buffer);
 
-  private:
+private:
 
-    std::mutex lock;
+  void pushBufferToUseable(BufferElement * buffer);
 
-    VkCommandPool bufferPool;
-    std::vector<BufferElement> buffers;
-    std::vector<BufferElement *> attachedBuffers;
+  std::mutex lock;
+  std::condition_variable var;
 
-    std::queue<BufferElement *> useableBuffers;
-    BufferElement * activeBuffer;
-    BufferElement * nextBuffer;
+  VkCommandPool bufferPool;
+  std::vector<BufferElement> buffers;
+  std::vector<BufferElement *> attachedBuffers;
+
+  std::queue<BufferElement *> useableBuffers;
+  BufferElement * activeBuffer;
+  BufferElement * nextBuffer;
 
 };
 

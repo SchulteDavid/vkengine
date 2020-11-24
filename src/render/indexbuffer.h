@@ -19,7 +19,7 @@ template <typename T = uint16_t> class IndexBuffer : public StorageBuffer {
         IndexBuffer(const vkutil::VulkanState & state, const std::vector<T> & indices, uint32_t indexSizeBytes) :
          StorageBuffer(state, indexSizeBytes * indices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
 
-            bufferSize = indexSizeBytes * indices.size();
+            bufferSize = indices.size();
             this->indexSizeBytes = indexSizeBytes;
 
             VkBufferCreateInfo stBufferCreateInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -38,6 +38,7 @@ template <typename T = uint16_t> class IndexBuffer : public StorageBuffer {
             void * data;
             //vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
 
+	    //std::cout << "BufferSize (bytes): " << bufferSize << " elements: " << indices.size() << std::endl;
             vmaMapMemory(state.vmaAllocator, stagingBufferMemory, &data);
             memcpy(stagingBufferAllocInfo.pMappedData, indices.data(), bufferSize);
             vmaUnmapMemory(state.vmaAllocator, stagingBufferMemory);

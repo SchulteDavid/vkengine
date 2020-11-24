@@ -17,16 +17,18 @@ struct Viewport::CameraData {
 
 std::vector<Model::Vertex> viewModelData = {
 
-					    {glm::vec3(-1, -1, 0), glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(0,0), 0},
-					    {glm::vec3(1, -1, 0),  glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(1,0), 0},
-					    {glm::vec3(1, 1, 0),   glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(1,1), 0},
-					    {glm::vec3(-1, 1, 0),  glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(0,1), 0},
+					    {glm::vec3(-1, -1, 0), glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(0, 0), 0},
+					    {glm::vec3( 1, -1, 0),  glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(1, 0), 0},
+					    {glm::vec3( 1,  1, 0),   glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(1, 1), 0},
+					    {glm::vec3(-1,  1, 0),  glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec2(0, 1), 0},
 
 };
 
 std::vector<uint16_t> viewModelIndices = {
+					  2, 3, 0,
 					  0, 1, 2,
-					  0, 2, 3,
+					  2, 3, 0,
+					  0, 1, 2,
 };
 
 Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects) : state(window->getState()) {
@@ -37,6 +39,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
   this->lightIndex = 0;
   this->defferedShader = defferedShader;
   this->ppEffects = effects;
+  this->framebufferResized = false;
 
   this->frameIndex = 0;
   this->framebufferResized = false;
@@ -218,15 +221,21 @@ void Viewport::drawFrame(bool updateElements) {
   if (updateElements)
     prepareRenderElements();
 
-  uint32_t releaseFrameIndex = (frameIndex)%MAX_FRAMES_IN_FLIGHT;
+  uint32_t releaseFrameIndex = (frameIndex - 1) % (MAX_FRAMES_IN_FLIGHT);
   vkWaitForFences(state.device, 1, &inFlightFences[releaseFrameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
+  //vkDeviceWaitIdle(state.device);
 
   uint32_t imageIndex = 0;
   VkResult result = vkAcquireNextImageKHR(state.device, swapchain.chain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
+  //std::cout << "imageIndex " << imageIndex << "  " << commandBuffers.size() << std::endl;
+  if (imageIndex >= commandBuffers.size()) {
+    std::cerr << "WTF? " << imageIndex << " " << commandBuffers.size() << std::endl;
+  }
 
   if (bufferManager) {
+    //std::cout << "Releasing buffer for frameIndex " << releaseFrameIndex << std::endl;
     bufferManager->releaseRenderBuffer(releaseFrameIndex);
   }
 
@@ -236,7 +245,11 @@ void Viewport::drawFrame(bool updateElements) {
 
   }
 
+  //std::cout << "Recording  single buffer" << std::endl;
+  
   recordSingleBuffer(commandBuffers[imageIndex], imageIndex);
+
+  //std::cout << "Recording done " << std::endl;
 
   switch(result) {
 
@@ -1186,9 +1199,9 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
 
   if (bufferManager) {
     VkCommandBuffer secBuffer = bufferManager->getBufferForRender(frameIndex);
-    lout << "Submitting buffer " << secBuffer << " to " << buffer << " : " << frameIndex << std::endl;
-    for (VkCommandBuffer & b : this->commandBuffers)
-      lout << b << std::endl;
+    //lout << "Submitting buffer " << secBuffer << " to " << buffer << " : " << frameIndex << std::endl;
+    /*for (VkCommandBuffer & b : this->commandBuffers)
+      lout << b << std::endl;*/
     if (secBuffer)
       vkCmdExecuteCommands(buffer, 1, &secBuffer);
   }
@@ -1264,9 +1277,9 @@ void Viewport::updateLight(uint32_t index, glm::vec4 pos, glm::vec4 color) {
 
 void Viewport::createSecondaryBuffers() {
 
-  uint32_t bufferCount = MAX_FRAMES_IN_FLIGHT * 3;
+  uint32_t bufferCount = swapchain.framebuffers.size() * 3;
 
-  this->bufferManager = new ThreadedBufferManager(bufferCount, MAX_FRAMES_IN_FLIGHT, state);
+  this->bufferManager = new ThreadedBufferManager(bufferCount, swapchain.framebuffers.size(), state);
 
 }
 
@@ -1276,7 +1289,7 @@ void Viewport::renderIntoSecondary() {
 
   ThreadedBufferManager::BufferElement * bufferElem = bufferManager->getBufferForRecording();
 
-  //lout << "Buffer " << buffer << std::endl;
+  //lout << "Buffer " << bufferElem->buffer << " " << bufferElem->usageCount << std::endl;
 
   VkCommandBuffer buffer = bufferElem->buffer;
 
@@ -1316,9 +1329,11 @@ void Viewport::renderIntoSecondary() {
     relem->render(buffer, frameIndex);
   }
 
-  if (vkEndCommandBuffer(buffer) != VK_SUCCESS)
-    throw dbg::trace_exception("Unable to record command buffer");
+  //std::cout << "Ending buffer " << buffer << std::endl;
+  if (VkResult res = vkEndCommandBuffer(buffer))
+    throw vkutil::vk_trace_exception("Unable to end command buffer", res);
 
+  // std::cout << "Submitting " << buffer << std::endl;
   /// Submit the resulting buffer as the current state
   bufferManager->setActiveBuffer(bufferElem);
 
@@ -1367,13 +1382,15 @@ ThreadedBufferManager::ThreadedBufferManager(unsigned int bufferCount, unsigned 
   nextBuffer = nullptr;
 
   attachedBuffers.resize(frameCount);
+  for (unsigned int i = 0; i < frameCount; ++i) {
+    attachedBuffers[i] = nullptr;
+  }
 
 }
 
 VkCommandBuffer ThreadedBufferManager::getBufferForRender(uint32_t frameIndex) {
 
-  //lout << "Getting buffer for render" << std::endl;
-
+  std::unique_lock<std::mutex> ulock(lock);
 
   if (!activeBuffer) {
     //lout << "No active buffer set" << std::endl;
@@ -1385,51 +1402,78 @@ VkCommandBuffer ThreadedBufferManager::getBufferForRender(uint32_t frameIndex) {
     }
   }
 
-  lock.lock();
+  //std::cout << "Next: " << nextBuffer->buffer << " active: " << activeBuffer->buffer << std::endl;
+  
   if (nextBuffer != activeBuffer) {
+    //std::cout << "Active buffer usage count " << activeBuffer->usageCount << std::endl;
+    BufferElement * tmp = activeBuffer;
     activeBuffer = nextBuffer;
+    if (!tmp->usageCount) {
+      pushBufferToUseable(tmp);
+    }
   }
 
-  attachedBuffers[frameIndex] = activeBuffer;
-  activeBuffer->usageCount++;
+  if (attachedBuffers[frameIndex]) {
+    releaseRenderBuffer(frameIndex, true);
+  }
 
-  lock.unlock();
-
+  if (attachedBuffers[frameIndex] != activeBuffer) {
+    attachedBuffers[frameIndex] = activeBuffer;
+    activeBuffer->usageCount++;
+  }
+  //lout << "Getting buffer for render " << frameIndex << " " << this->activeBuffer->buffer << std::endl;
+  
   return this->activeBuffer->buffer;
 }
 
-void ThreadedBufferManager::releaseRenderBuffer(uint32_t frameIndex) {
+void ThreadedBufferManager::releaseRenderBuffer(uint32_t frameIndex, bool internal) {
 
-  lock.lock();
+  if (!internal)
+    lock.lock();
+
+  if (frameIndex >= attachedBuffers.size())
+    throw dbg::trace_exception(std::string("Frame index to high: ").append(std::to_string(frameIndex)).append(" >= ").append(std::to_string(attachedBuffers.size())));
+  
   BufferElement * buffer = attachedBuffers[frameIndex];
 
   if (!buffer) {
-    lock.unlock();
     //lout << "Released buffer is NULL" << std::endl;
+    if (!internal)
+      lock.unlock();
     return;
   }
 
-  buffer->usageCount--;
-  //lout << "Releasing " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << std::endl;
+  /*for (BufferElement & e : buffers) {
+    lout << "Buffer " << e.buffer << " " << e.usageCount << std::endl;
+    }*/
 
-  if (!buffer->usageCount) {
-    useableBuffers.push(buffer);
+  buffer->usageCount--;
+
+  if (!buffer->usageCount && activeBuffer != buffer) {
+    pushBufferToUseable(buffer);
   }
+  //lout << "Released " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << " queue: " << useableBuffers.size() << std::endl;
 
   attachedBuffers[frameIndex] = nullptr;
-  lock.unlock();
+
+  if (!internal)
+    lock.unlock();
+  
+  //var.notify_all();
 
 }
 
 ThreadedBufferManager::BufferElement * ThreadedBufferManager::getBufferForRecording() {
   //lout << "Getting buffer for recording" << std::endl;
-  lock.lock();
+  std::unique_lock<std::mutex> ulock(lock);
   //lout << "Getting buffer for recording" << std::endl;
 
   if (useableBuffers.empty()) {
-    lock.unlock();
 
-    lout << "Attached Buffers: " << attachedBuffers.size() << std::endl;
+    //std::cout << "Waiting for buffer to be unused" << std::endl;
+    
+    //var.wait(ulock);
+    //lout << "Attached Buffers: " << attachedBuffers.size() << std::endl;
     for (BufferElement & e : buffers) {
       lout << "Buffer " << e.buffer << " : " << e.usageCount << std::endl;
     }
@@ -1440,13 +1484,11 @@ ThreadedBufferManager::BufferElement * ThreadedBufferManager::getBufferForRecord
 
   BufferElement * buffer = useableBuffers.front();
   if (buffer->usageCount) {
-    lerr << buffer->buffer << " : " << buffer->usageCount << std::endl;
-    lerr << "Active: " << activeBuffer->buffer << std::endl;
-    throw dbg::trace_exception("attached buffer in queue:");
+    //lerr << "Buffer found in use: " << buffer->buffer << " : " << buffer->usageCount << std::endl;
+    //lerr << "Active: " << activeBuffer->buffer << std::endl;
+    throw dbg::trace_exception(std::string("attached buffer in queue: ").append(std::to_string(buffer->usageCount)));
   }
   useableBuffers.pop();
-
-  lock.unlock();
 
   //lout << "Returning " << buffer->buffer << " : " << buffer->usageCount << " for recording" << std::endl;
 
@@ -1455,19 +1497,26 @@ ThreadedBufferManager::BufferElement * ThreadedBufferManager::getBufferForRecord
 
 void ThreadedBufferManager::setActiveBuffer(BufferElement * buffer) {
 
-  //lout << "Setting active buffer " << buffer->buffer << std::endl;
-
-  lock.lock();
-  if (nextBuffer && nextBuffer->usageCount == 0) {
+  std::unique_lock<std::mutex> ulock(lock);
+  
+  if (nextBuffer && nextBuffer->usageCount == 0 && nextBuffer != activeBuffer) {
     //lout << "Recycling buffer " << nextBuffer->buffer << std::endl;
-    useableBuffers.push(nextBuffer);
+    pushBufferToUseable(nextBuffer);
     //lout << useableBuffers.size() << " buffers in queue" << std::endl;
   }
 
   this->nextBuffer = buffer;
 
-  lock.unlock();
+}
 
-  //lout << "Next buffer set to " << nextBuffer->buffer << " : " << nextBuffer->usageCount << std::endl;
+void ThreadedBufferManager::pushBufferToUseable(BufferElement * buffer) {
 
+  if (buffer->usageCount)
+    throw dbg::trace_exception(std::string("Pushing buffer with usage count != 0 : ").append(std::to_string(buffer->usageCount)));
+  
+  if (activeBuffer == buffer)
+    throw dbg::trace_exception("Pushing activeBuffer into queue");
+
+  useableBuffers.push(buffer);
+  
 }
