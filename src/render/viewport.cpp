@@ -39,6 +39,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
   this->ppEffects = effects;
 
   this->frameIndex = 0;
+  this->framebufferResized = false;
 
   lout << "Creating swapchain" << std::endl;
 
@@ -1185,7 +1186,9 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
 
   if (bufferManager) {
     VkCommandBuffer secBuffer = bufferManager->getBufferForRender(frameIndex);
-    //lout << "Submitting buffer " << secBuffer << std::endl;
+    lout << "Submitting buffer " << secBuffer << " to " << buffer << " : " << frameIndex << std::endl;
+    for (VkCommandBuffer & b : this->commandBuffers)
+      lout << b << std::endl;
     if (secBuffer)
       vkCmdExecuteCommands(buffer, 1, &secBuffer);
   }
