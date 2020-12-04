@@ -1287,7 +1287,9 @@ void Viewport::renderIntoSecondary() {
 
   /// Get the next usable buffer.
 
+  
   ThreadedBufferManager::BufferElement * bufferElem = bufferManager->getBufferForRecording();
+  
 
   //lout << "Buffer " << bufferElem->buffer << " " << bufferElem->usageCount << std::endl;
 
@@ -1500,9 +1502,7 @@ void ThreadedBufferManager::setActiveBuffer(BufferElement * buffer) {
   std::unique_lock<std::mutex> ulock(lock);
   
   if (nextBuffer && nextBuffer->usageCount == 0 && nextBuffer != activeBuffer) {
-    //lout << "Recycling buffer " << nextBuffer->buffer << std::endl;
     pushBufferToUseable(nextBuffer);
-    //lout << useableBuffers.size() << " buffers in queue" << std::endl;
   }
 
   this->nextBuffer = buffer;

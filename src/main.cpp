@@ -44,6 +44,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
   while (run){
     auto now = std::chrono::high_resolution_clock::now();
     double dt = std::chrono::duration<double, std::chrono::seconds::period>(now - startRenderTime).count();
+    std::cout << "dt = " << (dt * 1000) << " ms" << std::endl;
     startRenderTime = now;
 
     double time = std::chrono::duration<double, std::chrono::seconds::period>(now - initTime).count();
