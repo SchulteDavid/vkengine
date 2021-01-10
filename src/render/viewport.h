@@ -36,6 +36,8 @@ public:
   /// sets the next buffer to use.
   void setActiveBuffer(BufferElement * buffer);
 
+  void printAttachedBuffers();
+
 private:
 
   void pushBufferToUseable(BufferElement * buffer);
@@ -173,7 +175,7 @@ private:
 
   std::vector<VkSemaphore> imageAvailableSemaphores;
   std::vector<VkSemaphore> renderFinishedSemaphores;
-  unsigned int frameIndex;
+  int frameIndex;
   std::vector<VkFence> inFlightFences;
   VkFence transferFence;
 

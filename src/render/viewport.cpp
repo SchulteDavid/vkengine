@@ -221,9 +221,23 @@ void Viewport::drawFrame(bool updateElements) {
   if (updateElements)
     prepareRenderElements();
 
-  uint32_t releaseFrameIndex = (frameIndex - 1) % (MAX_FRAMES_IN_FLIGHT);
+  /// Keep this like this, this computes the mathematical modulo, no negative results.
+  /// This will always keep the frame order correct.
+  int32_t releaseFrameIndex = ((frameIndex - 1) + MAX_FRAMES_IN_FLIGHT) % MAX_FRAMES_IN_FLIGHT;
+
+  //std::cout << "Waiting for frame " << releaseFrameIndex << " to be finished" << std::endl;
   vkWaitForFences(state.device, 1, &inFlightFences[releaseFrameIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
+  if (bufferManager) {
+    //std::cout << "Releasing buffer for frameIndex " << releaseFrameIndex << std::endl;
+    bufferManager->releaseRenderBuffer(releaseFrameIndex);
+    //if (bufferManager) {
+    //lout << "Buffer layout: " << std::endl;
+    //bufferManager->printAttachedBuffers();
+    //lout << std::endl;
+    //}
+  }
+  
   //vkDeviceWaitIdle(state.device);
 
   uint32_t imageIndex = 0;
@@ -232,11 +246,6 @@ void Viewport::drawFrame(bool updateElements) {
   //std::cout << "imageIndex " << imageIndex << "  " << commandBuffers.size() << std::endl;
   if (imageIndex >= commandBuffers.size()) {
     std::cerr << "WTF? " << imageIndex << " " << commandBuffers.size() << std::endl;
-  }
-
-  if (bufferManager) {
-    //std::cout << "Releasing buffer for frameIndex " << releaseFrameIndex << std::endl;
-    bufferManager->releaseRenderBuffer(releaseFrameIndex);
   }
 
   if (!this->destroyableSwapchains.empty()) {
@@ -1200,8 +1209,7 @@ void Viewport::recordSingleBuffer(VkCommandBuffer & buffer, unsigned int frameIn
   if (bufferManager) {
     VkCommandBuffer secBuffer = bufferManager->getBufferForRender(frameIndex);
     //lout << "Submitting buffer " << secBuffer << " to " << buffer << " : " << frameIndex << std::endl;
-    /*for (VkCommandBuffer & b : this->commandBuffers)
-      lout << b << std::endl;*/
+    //bufferManager->printAttachedBuffers();
     if (secBuffer)
       vkCmdExecuteCommands(buffer, 1, &secBuffer);
   }
@@ -1287,16 +1295,13 @@ void Viewport::renderIntoSecondary() {
 
   /// Get the next usable buffer.
 
-  
   ThreadedBufferManager::BufferElement * bufferElem = bufferManager->getBufferForRecording();
-  
 
   //lout << "Buffer " << bufferElem->buffer << " " << bufferElem->usageCount << std::endl;
 
   VkCommandBuffer buffer = bufferElem->buffer;
 
   /// Reset the buffer
-
   vkResetCommandBuffer(buffer, 0);
 
   VkCommandBufferInheritanceInfo inheritanceInfo = {};
@@ -1451,11 +1456,11 @@ void ThreadedBufferManager::releaseRenderBuffer(uint32_t frameIndex, bool intern
 
   buffer->usageCount--;
 
-  if (!buffer->usageCount && activeBuffer != buffer) {
+  if (!buffer->usageCount && activeBuffer->buffer != buffer->buffer) {
     pushBufferToUseable(buffer);
+    //lout << "Released " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << " queue: " << useableBuffers.size() << " active: "<< activeBuffer->buffer  << std::endl;
   }
-  //lout << "Released " << buffer->buffer << " : " << buffer->usageCount << " frameIndex " << frameIndex << " queue: " << useableBuffers.size() << std::endl;
-
+  
   attachedBuffers[frameIndex] = nullptr;
 
   if (!internal)
@@ -1518,5 +1523,19 @@ void ThreadedBufferManager::pushBufferToUseable(BufferElement * buffer) {
     throw dbg::trace_exception("Pushing activeBuffer into queue");
 
   useableBuffers.push(buffer);
+  
+}
+
+void ThreadedBufferManager::printAttachedBuffers() {
+
+  for (uint32_t i = 0; i < attachedBuffers.size(); ++i) {
+
+    lout << "[" << i << "]: ";
+    if (attachedBuffers[i])
+      lout << attachedBuffers[i]->buffer << " " << attachedBuffers[i]->usageCount << std::endl;
+    else
+      lout << "NULL" << std::endl;
+    
+  }
   
 }
