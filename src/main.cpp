@@ -125,12 +125,40 @@ double noiseFunc(double x, double y, double z) {
 
 }
 
+void testSpline2D() {
+
+  FILE * file = fopen("spline.csv", "w");
+
+  std::vector<double> x = { 0, 1, 2, 3 };
+  std::vector<Math::Vector<2>> y = {
+      Math::Vector<2>({0, 0}),
+      Math::Vector<2>({1, 2}),
+      Math::Vector<2>({0, 4}),
+      Math::Vector<2>({3, 8}),
+  };
+
+  const Interpolator<Math::Vector<2>> & interpolator = SplineInterpolator(x, y);
+
+  for (double i = 0; i <= 3.0; i += 0.125) {
+
+    Math::Vector<2> pos = interpolator(i);
+    
+    fprintf(file, "%lf,%lf,%lf\n", i, pos[0], pos[1]);
+    
+  }
+
+  fclose(file);
+  
+}
+
 int main(int argc, char ** argv) {
 
   unsigned int width = 1280;
   unsigned int height = 720;
 
   unsigned int tmp = 0;
+
+  testSpline2D();
 
   if (argc >= 3) {
 
@@ -247,8 +275,6 @@ int main(int argc, char ** argv) {
   lout << "Final resources" << std::endl;
 
   resourceManager->printSummary();
-
-  lout << n3->getResource<Mesh>("TestResource") << std::endl;
 
   return 0;
 }

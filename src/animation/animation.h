@@ -6,6 +6,8 @@
 
 #include "util/transform.h"
 
+#include "interpolation/interpolator.h"
+
 struct Keyframe {
 
   Transform<double> transform;
