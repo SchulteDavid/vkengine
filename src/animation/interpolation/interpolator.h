@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <mathutils/vector.h>
-#include <mathutils/spline.h>
+#include <mathutils/vectorspline.h>
 
 template <typename T> class Interpolator {
 
@@ -21,7 +21,7 @@ public:
 protected:
   virtual T interpolate(double x) const = 0;
 
-  void findIndices(double x, int & klo, int & khi) {
+  void findIndices(double x, int & klo, int & khi) const {
     klo = 0;
     khi = this->xValues.size()-1;
 
@@ -67,10 +67,10 @@ protected:
 template<unsigned int dim, typename T = double> class SplineInterpolator : public Interpolator<Math::Vector<dim, T>> {
 
 public:
-  SplineInterpolator(const std::vector<double> & xValues, const std::vector<Math::Vector<dim, T>> & yValues) : Interpolator<Math::Vector<dim, T>>(xValues, yValues) {
+  SplineInterpolator(const std::vector<double> & xValues, const std::vector<Math::Vector<dim, T>> & yValues) : Interpolator<Math::Vector<dim, T>>(xValues, yValues), spline(xValues, yValues) {
     //splines = std::vector<Math::Spline<T>>(dim);
 
-    for (unsigned int i = 0; i < dim; ++i) {
+    /*for (unsigned int i = 0; i < dim; ++i) {
 
       std::vector<T> y(yValues.size());
       for (unsigned int j = 0; j < yValues.size(); ++j)
@@ -78,25 +78,28 @@ public:
       
       //splines[i] = Math::Spline(xValues, y);
       splines.push_back(Math::Spline(xValues, y));
-    }
+      }*/
+    //spline = Math::Spline<Math::Vector<dim, T>>(xValues, yValues);
     
   }
 
 protected:
   Math::Vector<dim, T> interpolate(double x) const {
 
-    std::vector<T> vals(dim);
+    /*std::vector<T> vals(dim);
 
     for (unsigned int i = 0; i < dim; ++i) {
       const Math::Spline<T> & sp = splines[i];
       vals[i] = sp(x);
-    }
+      }*/
     
-    return Math::Vector<dim, T>(vals);
+    //return Math::Vector<dim, T>(vals);
+
+    return spline(x);
   }
 
 private:
-  std::vector<Math::Spline<T>> splines;
+  Math::VectorSpline<dim, T> spline;
   
 };
 

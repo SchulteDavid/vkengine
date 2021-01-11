@@ -139,7 +139,7 @@ void testSpline2D() {
 
   const Interpolator<Math::Vector<2>> & interpolator = SplineInterpolator(x, y);
 
-  for (double i = 0; i <= 3.0; i += 0.125) {
+  for (double i = 0; i <= 3.0; i += 0.01) {
 
     Math::Vector<2> pos = interpolator(i);
     
@@ -159,6 +159,8 @@ int main(int argc, char ** argv) {
   unsigned int tmp = 0;
 
   testSpline2D();
+
+  return 0;
 
   if (argc >= 3) {
 
