@@ -17,3 +17,8 @@
 *.orig
 \#*\#
 .ccls-cache
+
+old_data/*
+bin/*
+*__pycache__*
+local/*

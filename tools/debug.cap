@@ -1,0 +1,27 @@
+{
+    "rdocCaptureSettings": 1,
+    "settings": {
+        "autoStart": false,
+        "commandLine": "",
+        "environment": [
+        ],
+        "executable": "/home/david/Documents/Projects/vkengine/bin/Debug/VkEngine",
+        "inject": false,
+        "numQueuedFrames": 3,
+        "options": {
+            "allowFullscreen": true,
+            "allowVSync": true,
+            "apiValidation": true,
+            "captureAllCmdLists": false,
+            "captureCallstacks": true,
+            "captureCallstacksOnlyDraws": false,
+            "debugOutputMute": true,
+            "delayForDebugger": 0,
+            "hookIntoChildren": true,
+            "refAllResources": false,
+            "verifyBufferAccess": true
+        },
+        "queuedFrameCap": 1,
+        "workingDir": "/home/david/Documents/Projects/vkengine"
+    }
+}
