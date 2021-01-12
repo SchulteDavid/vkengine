@@ -3,6 +3,8 @@
 
 #define PI 3.14159265358979323846
 
+#define VIEWPORT_MAX_LIGHT_COUNT 128
+
 layout (input_attachment_index = 0, binding = 0) uniform subpassInput inputPosition;
 layout (input_attachment_index = 1, binding = 1) uniform subpassInput inputNormal;
 layout (input_attachment_index = 2, binding = 2) uniform subpassInput inputAlbedo;
@@ -10,8 +12,8 @@ layout (input_attachment_index = 2, binding = 2) uniform subpassInput inputAlbed
 layout (binding = 3) uniform LightData {
 
     int activeCount;
-    vec4 position[32];
-    vec4 color[32];
+    vec4 position[VIEWPORT_MAX_LIGHT_COUNT];
+    vec4 color[VIEWPORT_MAX_LIGHT_COUNT];
 
 } inLights;
 

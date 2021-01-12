@@ -39,6 +39,7 @@ std::shared_ptr<strc::Node> NodeUploader::uploadResource(vkutil::VulkanState & s
   populateChildren(node);
   populateEventHandler(node);
   populateResources(node);
+  populateAnimations(node);
 
   return node;
 
@@ -60,6 +61,10 @@ void NodeUploader::addAttachedResource(std::string name, LoadingResource res) {
   resourcesToAttach[name] = res;
 }
 
+void NodeUploader::addAnimation(std::string name, std::shared_ptr<Animation> anim) {
+  animations[name] = anim;
+}
+
 void NodeUploader::populateChildren(std::shared_ptr<strc::Node> node) {
 
   for (const LoadingResource & res : children) {
@@ -77,6 +82,14 @@ void NodeUploader::populateResources(std::shared_ptr<strc::Node> node) {
 
   for (auto it : resourcesToAttach) {
     node->attachResource(it.first, it.second->location);
+  }
+  
+}
+
+void NodeUploader::populateAnimations(std::shared_ptr<strc::Node> node) {
+
+  for (auto it : animations) {
+    node->addAnimation(it.first, it.second);
   }
   
 }

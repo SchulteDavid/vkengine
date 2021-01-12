@@ -18,6 +18,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
   void addChild(LoadingResource child);
   void addEventHandler(std::shared_ptr<strc::EventHandler> handler);
   void addAttachedResource(std::string name, LoadingResource res);
+  void addAnimation(std::string name, std::shared_ptr<Animation> anim);
 
   virtual std::string getNodeName();
 
@@ -27,6 +28,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
   void populateChildren(std::shared_ptr<strc::Node> node);
   void populateEventHandler(std::shared_ptr<strc::Node> node);
   void populateResources(std::shared_ptr<strc::Node> node);
+  void populateAnimations(std::shared_ptr<strc::Node> node);
   bool childrenReady();
 
   virtual std::shared_ptr<strc::Node> constructNode();
@@ -37,6 +39,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
   std::shared_ptr<strc::EventHandler> eventHandler;
 
   std::unordered_map<std::string, LoadingResource> resourcesToAttach;
+  std::unordered_map<std::string, std::shared_ptr<Animation>> animations;
 
 };
 

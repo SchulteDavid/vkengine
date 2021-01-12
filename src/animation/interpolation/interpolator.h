@@ -38,8 +38,8 @@ protected:
     }
   }
 
-  const std::vector<double> & xValues;
-  const std::vector<T> & yValues;
+  const std::vector<double> xValues;
+  const std::vector<T> yValues;
   
 };
 
@@ -68,33 +68,10 @@ template<unsigned int dim, typename T = double> class SplineInterpolator : publi
 
 public:
   SplineInterpolator(const std::vector<double> & xValues, const std::vector<Math::Vector<dim, T>> & yValues) : Interpolator<Math::Vector<dim, T>>(xValues, yValues), spline(xValues, yValues) {
-    //splines = std::vector<Math::Spline<T>>(dim);
-
-    /*for (unsigned int i = 0; i < dim; ++i) {
-
-      std::vector<T> y(yValues.size());
-      for (unsigned int j = 0; j < yValues.size(); ++j)
-	y[i] = yValues[j](i);
-      
-      //splines[i] = Math::Spline(xValues, y);
-      splines.push_back(Math::Spline(xValues, y));
-      }*/
-    //spline = Math::Spline<Math::Vector<dim, T>>(xValues, yValues);
-    
   }
 
 protected:
   Math::Vector<dim, T> interpolate(double x) const {
-
-    /*std::vector<T> vals(dim);
-
-    for (unsigned int i = 0; i < dim; ++i) {
-      const Math::Spline<T> & sp = splines[i];
-      vals[i] = sp(x);
-      }*/
-    
-    //return Math::Vector<dim, T>(vals);
-
     return spline(x);
   }
 

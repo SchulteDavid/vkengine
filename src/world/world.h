@@ -17,7 +17,7 @@ public:
   void simulateStep(double dt);
   void synchronize();
 
-  void update(double dt);
+  void update(double dt, double t);
 
   void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse, double force);
 

@@ -12,6 +12,8 @@
 #include "camera.h"
 #include "render/postprocessing.h"
 
+#define VIEWPORT_MAX_LIGHT_COUNT 128
+
 class ThreadedBufferManager {
 
 public:
@@ -63,8 +65,8 @@ public:
   struct LightData {
 
     int32_t activeCount;
-    alignas(16) glm::vec4 position[32];
-    alignas(16) glm::vec4 color[32];
+    alignas(16) glm::vec4 position[VIEWPORT_MAX_LIGHT_COUNT];
+    alignas(16) glm::vec4 color[VIEWPORT_MAX_LIGHT_COUNT];
 
   };
 

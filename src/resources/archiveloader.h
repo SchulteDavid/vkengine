@@ -29,7 +29,7 @@ class ArchiveLoader {
 
  protected:
 
-  LoadingResource uploadResource(ResourceLocation loaction, std::shared_ptr<void> resource);
+  LoadingResource uploadResource(ResourceLocation location, std::shared_ptr<void> resource);
   LoadingResource loadDependency(ResourceLocation location);
 
  private:

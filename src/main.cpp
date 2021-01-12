@@ -44,7 +44,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
   while (run){
     auto now = std::chrono::high_resolution_clock::now();
     double dt = std::chrono::duration<double, std::chrono::seconds::period>(now - startRenderTime).count();
-    std::cout << "dt = " << (dt * 1000) << " ms" << std::endl;
+    //std::cout << "dt = " << (dt * 1000) << " ms" << std::endl;
     startRenderTime = now;
 
     double time = std::chrono::duration<double, std::chrono::seconds::period>(now - initTime).count();
@@ -52,13 +52,13 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
     world->simulateStep(dt);
 
     world->synchronize();
-    world->update(dt);
+    world->update(dt, time);
 
     view->manageMemoryTransfer();
 
     view->renderIntoSecondary();
 
-    if (loopCount % 100 == 0) {
+    /*if (loopCount % 100 == 0) {
       Transform<double> trans;
       trans.position = Math::Vector<3>({0.0, 0.0, 30.0});
 
@@ -70,7 +70,7 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
 
       node->viewportAdd(view, node);
       node->worldAdd(world, node);
-    }
+      }*/
 
     loopCount++;
 
@@ -158,10 +158,6 @@ int main(int argc, char ** argv) {
 
   unsigned int tmp = 0;
 
-  testSpline2D();
-
-  return 0;
-
   if (argc >= 3) {
 
     width = atoi(argv[1]);
@@ -238,17 +234,13 @@ int main(int argc, char ** argv) {
   view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
   //view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
 
-  lout << "Adding baseNode to Viewport" << std::endl;
   std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "exports.glb"));
   baseNode->viewportAdd(view, baseNode);
   baseNode->worldAdd(world, baseNode);
-  lout << "Done Node " << baseNode << std::endl;
 
-  lout << "Adding other Node" << std::endl;
   std::shared_ptr<strc::Node> n3 = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/test.node"));
   n3->viewportAdd(view, n3);
   n3->worldAdd(world, n3);
-  lout << "Done adding other node" << std::endl;
 
   std::thread rotateThread(rotateFunc, world, view, n3->getChild("FallingBox"));
 

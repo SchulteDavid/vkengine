@@ -15,7 +15,7 @@ namespace strc {
     std::shared_ptr<Node> getParent();
 
     virtual void onCollision(std::shared_ptr<Node> other, double impulse, double force);
-    virtual void onUpdate(double dt);
+    virtual void onUpdate(double dt, double t);
 
   protected:
 

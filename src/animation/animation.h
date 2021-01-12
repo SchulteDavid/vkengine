@@ -5,26 +5,33 @@
 #include <mathutils/vector.h>
 
 #include "util/transform.h"
-
-#include "interpolation/interpolator.h"
+#include "animation/interpolation/interpolator.h"
 
 struct Keyframe {
 
+  double time;
   Transform<double> transform;
 
 };
 
 class Animation {
 
-    public:
-        Animation();
-        virtual ~Animation();
+public:
+  Animation(std::vector<Keyframe> & keyframes);
+  Animation();
+  virtual ~Animation();
 
-    protected:
+  double getDuration();
+  Transform<double> getTransform(double t);
 
-    private:
-
-        std::vector<Keyframe> frames;
+  const std::vector<Keyframe> & getKeyframes();
+  
+protected:
+  
+private:
+  
+  std::vector<Keyframe> frames;
+  Interpolator<Transform<double>> * interpolator;
 
 };
 

@@ -442,7 +442,7 @@ void from_json(const json & j, gltf_skin_t & skin) {
 
 }
 
-template <typename T> T gltfGetBufferData(gltf_accessor_t & acc, gltf_buffer_view_t & bufferView, uint8_t * data, int index) {
+template <typename T> T gltfGetBufferData(const gltf_accessor_t & acc, const gltf_buffer_view_t & bufferView, uint8_t * data, int index) {
 
   /*if (index > acc.count)
     throw dbg::trace_exception("No enougth elements in buffer view");*/
@@ -487,6 +487,17 @@ void gltfLoadFloatBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8
 
 }
 
+std::vector<float> gltfLoadFloatBuffer(const gltf_accessor_t & acc, const gltf_buffer_view_t & view, uint8_t * buffer) {
+
+  std::vector<float> data(acc.count);
+  for (unsigned int i = 0; i < acc.count; ++i) {
+    data[i] = gltfGetBufferData<float>(acc, view, buffer, i);
+  }
+
+  return data;
+  
+}
+
 void gltfLoadIntBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer, std::vector<VertexAttribute::VertexAttributeData> & value) {
 
   for (unsigned int i = 0; i < acc.count; ++i) {
@@ -497,7 +508,7 @@ void gltfLoadIntBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t
 
 }
 
-template <unsigned int dim, typename T> std::vector<Math::Vector<dim, T>> gltfLoadVecBuffer(gltf_accessor_t & acc, gltf_buffer_view_t & view, uint8_t * buffer) {
+template <unsigned int dim, typename T> std::vector<Math::Vector<dim, T>> gltfLoadVecBuffer(const gltf_accessor_t & acc, const gltf_buffer_view_t & view, uint8_t * buffer) {
 
   std::vector<Math::Vector<dim, T>> value(acc.count);
 
@@ -509,6 +520,24 @@ template <unsigned int dim, typename T> std::vector<Math::Vector<dim, T>> gltfLo
       tmp[j] = gltfGetBufferData<T>(acc, view, buffer, i*dim+j);
 
     value[i] = Vector<dim, T>(tmp);
+
+  }
+  return value;
+
+}
+
+template <typename T> std::vector<Math::Quaternion<T>> gltfLoadQuaternionBuffer(const gltf_accessor_t & acc, const gltf_buffer_view_t & view, uint8_t * buffer) {
+
+  std::vector<Math::Quaternion<T>> value(acc.count);
+
+  for (unsigned int i = 0; i < acc.count; ++i) {
+
+    T tmp[4];
+
+    for (unsigned int j = 0; j < 4; ++j)
+      tmp[j] = gltfGetBufferData<T>(acc, view, buffer, i*4+j);
+
+    value[i] = Quaternion<T>(tmp[3], tmp[0], tmp[1], tmp[2]);
 
   }
   return value;
@@ -1051,6 +1080,216 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
 
 }
 
+#include <list>
+
+void updateLoadedPositions(std::unordered_map<float, Transform<float>> & transforms, std::vector<float> & times, std::vector<Math::Vector<3, float>> & positions) {
+
+  if (times.size() != positions.size()) {
+    throw dbg::trace_exception("Timestamp and position count do not match in animation");
+  }
+
+  for (unsigned int i = 0; i < times.size(); ++i) {
+
+    float time = times[i];
+
+    if (transforms.find(time) != transforms.end()) {
+
+      transforms[time].position = Vector<3, float>({positions[i][0], -positions[i][2], positions[i][1]});
+      //transforms[time].position = positions[i];
+      
+    } else {
+
+      /// TODO : Update to interpolate nearest keyframes for other chanels.
+      
+      Transform<float> trans;
+      trans.position = Vector<3, float>({positions[i][0], -positions[i][2], positions[i][1]});
+      //trans.position = positions[i];
+
+      transforms[time] = trans;
+      
+    }
+    
+  }
+  
+}
+
+void updateLoadedScales(std::unordered_map<float, Transform<float>> & transforms, std::vector<float> & times, std::vector<Math::Vector<3, float>> & scales) {
+
+  if (times.size() != scales.size()) {
+    throw dbg::trace_exception("Timestamp and position count do not match in animation");
+  }
+
+  for (unsigned int i = 0; i < times.size(); ++i) {
+
+    float time = times[i];
+
+    if (transforms.find(time) != transforms.end()) {
+
+      transforms[time].scale = Vector<3, float>({scales[i][0], -scales[i][2], scales[i][1]});
+      //transforms[time].scale = scales[i];
+
+    } else {
+
+      /// TODO : Update to interpolate nearest keyframes for other chanels.
+      
+      Transform<float> trans;
+      trans.scale = Vector<3, float>({scales[i][0], -scales[i][2], scales[i][1]});
+      //trans.scale = scales[i];
+
+      transforms[time] = trans;
+      
+    }
+    
+  }
+  
+}
+
+void updateLoadedRotations(std::unordered_map<float, Transform<float>> & transforms, std::vector<float> & times, std::vector<Math::Quaternion<float>> & rotations) {
+
+  static Quaternion<float> rx90 = Math::Quaternion<float>(0.707106781, 0.707106781, 0, 0);
+  static Quaternion<float> mrx90 = Math::Quaternion<float>(0.707106781, -0.707106781, 0, 0);
+
+      if (times.size() != rotations.size()) {
+    throw dbg::trace_exception("Timestamp and rotation count do not match in animation");
+  }
+
+  for (unsigned int i = 0; i < times.size(); ++i) {
+
+    float time = times[i];
+
+    if (transforms.find(time) != transforms.end()) {
+
+      transforms[time].rotation = Quaternion<float>(rotations[i].a, rotations[i].b, -rotations[i].d, rotations[i].c);
+      
+    } else {
+
+      /// TODO : Update to interpolate nearest keyframes for other chanels.
+      
+      Transform<float> trans;
+      trans.rotation = Quaternion<float>(rotations[i].a, rotations[i].b, -rotations[i].d, rotations[i].c);
+
+      transforms[time] = trans;
+      
+    }
+    
+  }
+  
+}
+
+void insertKeyframe(std::vector<Keyframe> & keyframes, const Keyframe & frame) {
+
+  size_t n = keyframes.size();
+  if (n == 0) {
+    keyframes.push_back(frame);
+    return;
+  }
+
+  size_t klo = 0, khi = n-1;
+
+  while ((khi - klo) > 1) {
+    
+    size_t piv = (khi + klo) / 2;
+    double pivTime = keyframes[piv].time;
+    
+    if (pivTime < frame.time) {
+      klo = piv;
+    } else {
+      khi = piv;
+    }
+    
+  }
+  
+  keyframes.insert(keyframes.begin() + klo, frame);
+  
+}
+
+std::shared_ptr<Animation> gltfLoadAnimation(const gltf_animation_t & anim, const int nodeIndex, gltf_file_data_t & fileData) {
+
+  std::unordered_map<std::string, gltf_animation_sampler_t> samplersByChanelName;
+
+  for (const gltf_animation_channel_t & chanel : anim.channels) {
+
+    samplersByChanelName[chanel.path] = anim.samplers[chanel.sampler];
+    
+  }
+
+  std::unordered_map<float, Transform<float>> loadedTransforms;
+
+  for (auto it = samplersByChanelName.begin(); it != samplersByChanelName.end(); ++it) {
+
+
+    const gltf_accessor_t & timeAcc = fileData.accessors[it->second.input];
+    std::vector<float> timestamps = gltfLoadFloatBuffer(timeAcc, fileData.bufferViews[timeAcc.bufferView], fileData.binaryBuffer);
+
+    const gltf_accessor_t & dataAcc = fileData.accessors[it->second.output];
+    
+    if (it->first == "translation") {
+
+      std::vector<Math::Vector<3, float>> positions = gltfLoadVecBuffer<3, float>(dataAcc, fileData.bufferViews[dataAcc.bufferView], fileData.binaryBuffer);
+      updateLoadedPositions(loadedTransforms, timestamps, positions);
+      
+      
+    } else if (it->first == "rotation") {
+
+      std::vector<Math::Quaternion<float>> rotations = gltfLoadQuaternionBuffer<float>(dataAcc, fileData.bufferViews[dataAcc.bufferView], fileData.binaryBuffer);
+      updateLoadedRotations(loadedTransforms, timestamps, rotations);
+
+    } else if (it->first == "scale") {
+      
+      std::vector<Math::Vector<3, float>> scales = gltfLoadVecBuffer<3, float>(dataAcc, fileData.bufferViews[dataAcc.bufferView], fileData.binaryBuffer);
+      updateLoadedScales(loadedTransforms, timestamps, scales);
+      
+    }
+    
+    
+  }
+
+  std::vector<Keyframe> keyframes;
+
+  static Transform<double> zUpTransform = Transform<double>(Vector<3>({0,0,0}), Quaternion<double>(sin(M_PI/4), cos(M_PI/4), 0, 0));
+
+  for (auto it = loadedTransforms.begin(); it != loadedTransforms.end(); ++it) {
+
+    Keyframe frame;
+    frame.time = (double) it->first;
+    frame.transform = convertTransform<float, double>(it->second);
+    
+    insertKeyframe(keyframes, frame);
+  }
+
+  return std::make_shared<Animation>(keyframes);
+  
+}
+
+void gltfLinkAnimations(std::shared_ptr<NodeUploader> node, const int nodeIndex, gltf_file_data_t & fileData) {
+
+  std::list<gltf_animation_t> animations;
+
+  /// Get animations for this object
+  for (const gltf_animation_t & anim : fileData.animations) {
+
+    for (const gltf_animation_channel_t & chanel : anim.channels) {
+
+      if (chanel.node == nodeIndex) {
+	animations.push_back(anim);
+	break;
+      }
+      
+    }
+    
+  }
+
+  std::cout << "Node " << node->getNodeName() << " has " << animations.size() << " animations." << std::endl;
+
+  for (const gltf_animation_t & anim : animations) {
+
+    std::shared_ptr<Animation> animation = gltfLoadAnimation(anim, nodeIndex, fileData);
+    node->addAnimation(anim.name, animation);
+    
+  }
+  
+}
+
 std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string filename) {
 
   lout << "Loading gltf-node " << nodeId << std::endl;
@@ -1069,6 +1308,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
   std::shared_ptr<NodeUploader> uploader = nullptr;
 
+  /// Load Node mesh if present
   if (node.mesh >= 0) {
 
     lout << "Node " << nodeId << " has a mesh: " << node.mesh << std::endl;
@@ -1102,7 +1342,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     uploader = std::make_shared<NodeUploader>(snode);
   }
 
-
+  /// Load node children
   for (const int id : node.children) {
 
     std::shared_ptr<NodeUploader> childUploader = loadNodeGLTF(fileData, id, filename);
@@ -1110,6 +1350,10 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     uploader->addChild(child);
 
   }
+
+  /// Look for animations for this node.
+
+  gltfLinkAnimations(uploader, nodeId, fileData);
 
   return uploader;
 

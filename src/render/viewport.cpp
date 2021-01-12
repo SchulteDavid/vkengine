@@ -318,7 +318,7 @@ void Viewport::drawFrame(bool updateElements) {
 
   if (!frameIndex) {
     double duration = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - startRenderTime).count();
-    lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
+    //lout << "Frame time: " << duration << "ms => fps: " << (1000.0 / duration) << std::endl;
   }
 
   startRenderTime = std::chrono::high_resolution_clock::now();
@@ -1256,7 +1256,7 @@ void Viewport::recordCommandBuffers() {
 uint32_t Viewport::addLight(glm::vec4 pos, glm::vec4 color) {
 
   //if (lightIndex > 31) throw dbg::trace_exception("To many lights in viewport");
-  if (lightIndex > 31) return 0xffffffff;
+  if (lightIndex > VIEWPORT_MAX_LIGHT_COUNT-1) return 0xffffffff;
 
   this->lights.position[lightIndex] = pos;
   this->lights.color[lightIndex] = color;

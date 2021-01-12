@@ -37,11 +37,11 @@ void World::simulateStep(double dt) {
 
 }
 
-void World::update(double dt) {
+void World::update(double dt, double t) {
 
-    for (std::shared_ptr<Entity> e : entities) {
-        e->onUpdate(dt);
-    }
+  for (std::shared_ptr<Entity> e : entities) {
+    e->onUpdate(dt, t);
+  }
 
 }
 
@@ -49,8 +49,8 @@ void World::synchronize() {
 
   physicsContext->synchronize();
   
-    for (std::shared_ptr<Entity> e : entities) {
-        e->synchronize();
-    }
+  for (std::shared_ptr<Entity> e : entities) {
+    e->synchronize();
+  }
 
 }

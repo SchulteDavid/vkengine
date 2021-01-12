@@ -4,19 +4,22 @@
 #include "nodeloader.h"
 #include "node/event.h"
 
+#include "animation/animationplayer.h"
+
 using namespace Math;
 using namespace strc;
 
 Node::Node(std::string name) : Node(name, Transform<double>()) {
-
 }
 
 Node::Node(std::string name, Transform<double> transform) : name(name) {
 
   this->transform = transform;
   this->globalTransform = transform;
+  this->parentTransform = transform;
 
   this->eventHandler = std::make_shared<EventHandler>();
+  this->animationPlayer = nullptr;
 
 }
 
@@ -98,7 +101,7 @@ std::shared_ptr<NodeUploader> loadDefaultNode(std::shared_ptr<config::NodeCompou
 void Node::setTransform(Transform<double> trans) {
 
   this->transform = trans;
-  this->globalTransform = trans;
+  this->globalTransform = this->parentTransform * trans;
 
   this->onTransformUpdate();
 
@@ -110,6 +113,7 @@ void Node::setTransform(Transform<double> trans) {
 void Node::setTransform(Transform<double> trans, Transform<double> ptrans) {
 
   this->transform = trans;
+  this->parentTransform = ptrans;
   this->globalTransform = ptrans * trans;
 
   this->onTransformUpdate();
@@ -134,6 +138,32 @@ const Transform<double> & Node::getGlobalTransform() {
 
 const std::string Node::getName() {
   return name;
+}
+
+void Node::onUpdate(const double dt, const double t) {
+
+  if (animationPlayer) {
+    animationPlayer->applyToNode(t, *this);
+  }
+  
+  this->eventHandler->onUpdate(dt, t);
+
+  for (auto child : children) {
+    child.second->onUpdate(dt, t);
+  }
+  
+}
+
+void Node::addAnimation(std::string name, std::shared_ptr<Animation> animation) {
+
+  if (!this->animationPlayer) {
+    this->animationPlayer = std::make_shared<AnimationPlayer>();
+  }
+
+  this->animationPlayer->addAnimation(name, animation);
+
+  animationPlayer->plotAnimPath(name, this->name);
+  
 }
 
 #include "meshnode.h"

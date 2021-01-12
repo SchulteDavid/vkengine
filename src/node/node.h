@@ -13,6 +13,8 @@
 class Viewport;
 class World;
 class Entity;
+class AnimationPlayer;
+class Animation;
 
 namespace strc {
 
@@ -59,7 +61,12 @@ namespace strc {
       return res;
     }
 
+    // Called for each physics update, should handle animation, event-update, etc.
+    virtual void onUpdate(const double dt, const double t);
+
     std::shared_ptr<Node> createDuplicate(std::string newName);
+
+    void addAnimation(std::string name, std::shared_ptr<Animation> animation);
     
   protected:
     friend Entity;
@@ -71,6 +78,9 @@ namespace strc {
     /// relative to the world's origin.
     Transform<double> globalTransform;
 
+    /// This is the absolute transform of the nodes parent
+    Transform<double> parentTransform;
+
     virtual void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self);
     virtual void addToViewport(Viewport * view, std::shared_ptr<Node> self);
 
@@ -79,6 +89,8 @@ namespace strc {
     virtual std::shared_ptr<Node> duplicate(std::string name);
 
     const std::string name;
+
+    std::shared_ptr<AnimationPlayer> animationPlayer;
 
   private:
     std::unordered_map<std::string, std::shared_ptr<Node>> children;

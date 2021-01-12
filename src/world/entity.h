@@ -20,7 +20,7 @@ public:
   virtual ~Entity();
 
   virtual void onCollision(std::shared_ptr<Entity> entity, double impulse, double force);
-  virtual void onUpdate(const double dt);
+  virtual void onUpdate(const double dt, const double t);
   void synchronize();
 
   void applyImpulse(Math::Vector<3, double> impulse);

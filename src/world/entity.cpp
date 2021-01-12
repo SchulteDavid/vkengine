@@ -72,8 +72,9 @@ void Entity::onCollision(std::shared_ptr<Entity> entity, double impulse, double 
   this->node->eventHandler->onCollision(entity->node, impulse, force);
 }
 
-void Entity::onUpdate(const double dt) {
-  this->node->eventHandler->onUpdate(dt);
+void Entity::onUpdate(const double dt, const double t) {
+  this->node->onUpdate(dt, t);
+  //this->node->eventHandler->onUpdate(dt);
 }
 
 std::shared_ptr<PhysicsObject> Entity::getPhysicsObject() {

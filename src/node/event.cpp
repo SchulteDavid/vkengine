@@ -14,7 +14,7 @@ void EventHandler::onCollision(std::shared_ptr<Node> other, double impulse, doub
 
 }
 
-void EventHandler::onUpdate(double dt) {
+void EventHandler::onUpdate(double dt, double t) {
 
 }
 
