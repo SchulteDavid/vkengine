@@ -724,6 +724,8 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
   };
   Math::Matrix<4, 4, float> zupMatrix(zupData);
 
+  mmesh->makeConsistentWithNormals();
+  
   return zupMatrix * mmesh;
 
 }

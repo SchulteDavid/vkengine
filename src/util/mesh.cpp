@@ -840,3 +840,41 @@ std::shared_ptr<ResourceUploader<Mesh>> MeshLoader::loadResource(std::string fna
   std::shared_ptr<Mesh> mesh = Mesh::loadFromFile(fname);
   return std::shared_ptr<ResourceUploader<Mesh>>(new MeshUploader(mesh));
 }
+
+void Mesh::makeConsistentWithNormals() {
+
+  /*for (unsigned int i = 0; i < indices.size() / 3; ++i) {
+
+    unsigned int i0 = 3 * i;
+    unsigned int i1 = 3 * i + 1;
+    unsigned int i2 = 3 * i + 2;
+
+    Vector<3, float> v0 = attributes["POSITION"].value[indices[i0]].vec3;
+    Vector<3, float> v1 = attributes["POSITION"].value[indices[i1]].vec3;
+    Vector<3, float> v2 = attributes["POSITION"].value[indices[i2]].vec3;
+
+    Vector<3, float> n0 = attributes["NORMAL"].value[indices[i0]].vec3;
+    Vector<3, float> n1 = attributes["NORMAL"].value[indices[i1]].vec3;
+    Vector<3, float> n2 = attributes["NORMAL"].value[indices[i2]].vec3;
+
+    Vector<3, float> faceNormal = (n0 + n1 + n2) / 3.0f;
+
+    Vector<3, float> d0 = v1 - v0;
+    d0.normalize();
+
+    Vector<3, float> d1 = v2 - v1;
+    d1.normalize();
+    
+    Vector<3, float> edgeNormal = cross(d0, d1);
+
+    if (faceNormal * edgeNormal < 0.0) {
+
+      uint32_t tmp = indices[i0];
+      indices[i0] = indices[i2];
+      indices[i2] = tmp;
+      
+    }
+    
+    }*/
+  
+}

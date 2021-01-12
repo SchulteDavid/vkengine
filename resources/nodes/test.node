@@ -72,7 +72,7 @@ comp children = [
 	
 	    },
 	    {
-		string location = "axe_anim.glb"
+		string location = "axe.glb"
 	    }
 	 ]
   }

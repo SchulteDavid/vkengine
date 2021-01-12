@@ -139,6 +139,8 @@ public:
 
   std::vector<InterleaveElement> compactStorage(const std::vector<InputDescription> & iData, unsigned int * stride);
 
+  void makeConsistentWithNormals();
+
 protected:
 
 private:
