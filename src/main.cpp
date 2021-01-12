@@ -198,8 +198,8 @@ int main(int argc, char ** argv) {
 
   //LoadingResource treeStruct = resourceManager->loadResourceBg("Structure", "tree.glb");
   //LoadingResource llvl = resourceManager->loadResourceBg("Level", "resources/level/test.lvl");
-  LoadingResource node = resourceManager->loadResourceBg(ResourceLocation("Node", "exports.glb"));
-  LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "platform.glb"));
+  LoadingResource node = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/box.glb"));
+  LoadingResource node2 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/platform.glb"));
   LoadingResource node3 = resourceManager->loadResourceBg(ResourceLocation("Node", "resources/nodes/test.node"));
 
   lout << "Start wait for node " << node << std::endl;
@@ -234,7 +234,7 @@ int main(int argc, char ** argv) {
   view->addLight(glm::vec4(1.0, 1.2, -1.5, 2.0), glm::vec4(20.0, 20.0, 20.0, 0.0));
   //view->addLight(glm::vec4(0.2, 0.0, 1.0, 1.0), glm::vec4(0.0, 0.0, 1.0, 0.0));
 
-  std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "exports.glb"));
+  std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/box.glb"));
   baseNode->viewportAdd(view, baseNode);
   baseNode->worldAdd(world, baseNode);
 

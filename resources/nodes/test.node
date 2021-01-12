@@ -22,7 +22,7 @@ comp children = [
 	comp children = [
 
 	     {
-		string location = "exports.glb::Cube"
+		string location = "resources/nodes/box.glb::Cube"
 	     },
 	     {
 		string type = "LightNode"
@@ -67,13 +67,30 @@ comp children = [
 		     float64 scale = [1,1,1]
 		}
 
-		string mesh = "platform.glb::Platform"
-     		string material = "platform.glb::Material.001"
+		string mesh = "resources/nodes/platform.glb::Platform"
+     		string material = "resources/nodes/platform.glb::Material.001"
 	
 	    },
 	    {
-		string location = "axe.glb"
+		string type = "Node"
+		string name = "StatueRoot0"
+
+		comp transform = {
+		     float64 position = [3, 0, 0]
+		     float64 rotation = [1,0,0,0]
+		     float64 scale = [4,4,4]
+		}
+
+		comp children = [
+		     {
+			string location = "resources/nodes/statue.glb"
+		     }
+		]
+	    },
+	    {
+		string location = "resources/nodes/axe.glb"
 	    }
+	    
 	 ]
   }
 ]
@@ -91,6 +108,6 @@ comp attachedResources = [
      {
 	string type = "Mesh"
 	string name = "TestResource"
-	string location = "platform.glb::Platform"
+	string location = "resources/nodes/platform.glb::Platform"
      }
 ]
