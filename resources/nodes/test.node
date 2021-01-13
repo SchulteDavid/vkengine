@@ -33,7 +33,7 @@ comp children = [
      	     	     float64 scale = [1,1,1]
 		}
 		int32 lighttype = 1
-		float32 power = 300.0
+		float32 power = 0.0
      	     }
 
 	 ]

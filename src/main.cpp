@@ -26,6 +26,7 @@
 #include "render/instancedrenderelement.h"
 #include "audio/audiocontext.h"
 #include "audio/sound.h"
+#include "render/cubemap.h"
 
 static bool run = true;
 static bool wait;
@@ -88,6 +89,7 @@ void createResourceLoaders(ResourceManager * resourceManager) {
   
   resourceManager->addRegistry("Shader", (ResourceRegistry<Resource> *) new ResourceRegistry<Shader>());
   resourceManager->addRegistry("Texture", (ResourceRegistry<Resource> *) new ResourceRegistry<Texture>());
+  resourceManager->addRegistry("CubeMap", (ResourceRegistry<Resource> *) new ResourceRegistry<CubeMap>());
   resourceManager->addRegistry("Material", (ResourceRegistry<Resource> *) new ResourceRegistry<Material>());
   resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
@@ -95,6 +97,7 @@ void createResourceLoaders(ResourceManager * resourceManager) {
 
   resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader());
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader());
+  resourceManager->addLoader("CubeMap", (ResourceLoader<Resource> *) new CubeMapLoader());
   resourceManager->addLoader("Material", (ResourceLoader<Resource> *) new MaterialLoader());
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new PNGLoader());
   resourceManager->addLoader("Mesh", (ResourceLoader<Resource> *) new MeshLoader());
@@ -154,61 +157,6 @@ void testSpline2D() {
 #include "util/image/png.h"
 #include "render/cubemap.h"
 
-std::vector<uint8_t> loadPNGasVector(std::string fname) {
-
-  FILE * file = fopen(fname.c_str(), "r");
-  uint32_t width, height, chanelCount;
-  uint8_t * data = pngLoadImageData(file, &width, &height, &chanelCount);
-  fclose(file);
-
-  std::vector<uint8_t> res(width*height*4);
-  if (chanelCount >= 4) {
-    for (uint32_t i = 0; i < width * height * 4; ++i) {
-      res[i] = data[i];
-    }
-  } else {
-    for (uint32_t i = 0; i < width * height; ++i) {
-      res[i*4] = data[i*3];
-      res[i*4+1] = data[i*3+1];
-      res[i*4+2] = data[i*3+2];
-      res[i*4+3] = 255;
-    }
-  }
-
-  free(data);
-
-  return res;
-  
-}
-
-std::shared_ptr<CubeMap> testCubeMapLoading(vkutil::VulkanState & state, ResourceManager * resManager) {
-
-  std::vector<uint8_t> front = loadPNGasVector("resources/textures/test_cubemap/pos_y.png");
-  std::vector<uint8_t> back  = loadPNGasVector("resources/textures/test_cubemap/neg_y.png");
-
-  std::vector<uint8_t> up    = loadPNGasVector("resources/textures/test_cubemap/pos_z.png");
-  std::vector<uint8_t> down  = loadPNGasVector("resources/textures/test_cubemap/neg_z.png");
-
-  std::vector<uint8_t> right = loadPNGasVector("resources/textures/test_cubemap/pos_x.png");
-  std::vector<uint8_t> left  = loadPNGasVector("resources/textures/test_cubemap/neg_x.png");
-
-  std::vector<uint8_t> data;
-  data.insert(data.end(), right.begin(), right.end());
-  data.insert(data.end(), left.begin(), left.end());
-
-  data.insert(data.end(), up.begin(), up.end());
-  data.insert(data.end(), down.begin(), down.end());
-
-  data.insert(data.end(), front.begin(), front.end());
-  data.insert(data.end(), back.begin(), back.end());
-
-  std::shared_ptr<CubeMap> map = std::make_shared<CubeMap>(state, data, 2048, 2048, 1);
-
-  resManager->registerResource(ResourceLocation("Texture", "resources/textures/test_cubemap"), map);
-
-  return map;
-  
-}
 
 int main(int argc, char ** argv) {
 
@@ -236,7 +184,7 @@ int main(int argc, char ** argv) {
   createResourceLoaders(resourceManager);
   resourceManager->startLoadingThreads(1);
 
-  std::shared_ptr<Texture> skyBox = testCubeMapLoading(window->getState(), resourceManager);
+  //std::shared_ptr<Texture> skyBox = testCubeMapLoading(window->getState(), resourceManager);
 
   LoadingResource ppShader = resourceManager->loadResourceBg(ResourceLocation("Shader", "resources/shaders/pp.shader"));
   ppShader->wait();
@@ -244,11 +192,14 @@ int main(int argc, char ** argv) {
   LoadingResource testPPShader = resourceManager->loadResourceBg(ResourceLocation("Shader", "resources/shaders/test_pp.shader"));
   testPPShader->wait();
 
+  LoadingResource skyBoxRes = resourceManager->loadResourceBg(ResourceLocation("CubeMap", "resources/textures/test_cubemap/cubemap.conf"));
+  skyBoxRes->wait();
 
   std::shared_ptr<PPEffect> testEffect = std::make_shared<PPEffect>(std::dynamic_pointer_cast<Shader>(testPPShader->location));
   
   Camera * cam = new Camera(70.0, 0.001, 1000.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
+  std::shared_ptr<Texture> skyBox = std::dynamic_pointer_cast<CubeMap>(skyBoxRes->location);
   Viewport *view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {}, skyBox);
   window->setActiveViewport(view);
 

@@ -13,4 +13,11 @@ public:
   
 };
 
+class CubeMapLoader : public ResourceLoader<Texture> {
+
+public:
+  std::shared_ptr<ResourceUploader<Texture>> loadResource(std::string filename);
+  
+};
+
 #endif
