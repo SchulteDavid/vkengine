@@ -21,6 +21,7 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, i
 
     format = VK_FORMAT_R32G32B32A32_SFLOAT;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layerCount = 1;
 
     VkDeviceSize imageSize = sizeof(float) * data.size();
     VkBuffer stagingBuffer;
@@ -46,32 +47,37 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, i
     vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
 
     this->transitionLayout(state, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(state, stagingBuffer, image, width, height, depth);
+    copyBufferToImage(state, stagingBuffer, image, width, height, depth, 1);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     lout << "Generating mipmaps" << std::endl;
     generateMipmaps(width, height, state.graphicsCommandPool, device, state.graphicsQueue);
     lout << "done" << std::endl;
 
+    this->transitionLayout(state, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
     /*vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingMemory, nullptr);*/
 
-    view = vkutil::createImageView(device, image, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+    view = vkutil::createImageView(device, image, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, VK_IMAGE_VIEW_TYPE_2D, 1);
 
     this->sampler = createSampler(state, mipLevels);
 
 }
 
-Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
+Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth) : Texture(state, data, width, height, depth, VK_IMAGE_VIEW_TYPE_2D, 1, 0) {
+
+
+}
+
+Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth, VkImageViewType viewType, int layerCount, VkImageCreateFlags flags) : allocator(state.vmaAllocator), device(state.device) {
 
     //format = VK_FORMAT_R32G32B32A32_SFLOAT;
     format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    this->layerCount = layerCount;
 
     VkDeviceSize imageSize = sizeof(uint8_t) * data.size();
     VkBuffer stagingBuffer;
@@ -96,13 +102,13 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data,
 
     lout << "Creating Image" << std::endl;
 
-    vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory);
+    vkutil::createImage(allocator, device, width, height, depth, mipLevels, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory, flags, layerCount);
 
     lout << "Trasitioning Layout" << std::endl;
 
     //state.graphicsQueueMutex.lock();
     this->transitionLayout(state, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(state, stagingBuffer, image, width, height, depth);
+    copyBufferToImage(state, stagingBuffer, image, width, height, depth, layerCount);
     //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     lout << "Generating mipmaps" << std::endl;
@@ -112,15 +118,14 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data,
     lout << "done" << std::endl;
     //state.graphicsQueueMutex.unlock();
 
+    //this->transitionLayout(state, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     this->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    //this->transitionLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vmaDestroyBuffer(allocator, stagingBuffer, stagingBufferMemory);
     /*vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingMemory, nullptr);*/
 
-    view = vkutil::createImageView(device, image, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+    view = vkutil::createImageView(device, image, format, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels, viewType, layerCount);
 
     this->sampler = createSampler(state, mipLevels);
 
@@ -146,7 +151,7 @@ void Texture::generateMipmaps(int width, int height, const VkCommandPool & comma
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.layerCount = layerCount;
     barrier.subresourceRange.levelCount = 1;
 
     uint32_t mipWidth = width;
@@ -169,13 +174,13 @@ void Texture::generateMipmaps(int width, int height, const VkCommandPool & comma
         blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         blit.srcSubresource.mipLevel = i - 1;
         blit.srcSubresource.baseArrayLayer = 0;
-        blit.srcSubresource.layerCount = 1;
+        blit.srcSubresource.layerCount = layerCount;
         blit.dstOffsets[0] = { 0, 0, 0 };
         blit.dstOffsets[1] = { (int32_t) (mipWidth > 1 ? mipWidth / 2 : 1), (int32_t) (mipHeight > 1 ? mipHeight / 2 : 1), 1 };
         blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         blit.dstSubresource.mipLevel = i;
         blit.dstSubresource.baseArrayLayer = 0;
-        blit.dstSubresource.layerCount = 1;
+        blit.dstSubresource.layerCount = layerCount;
 
         vkCmdBlitImage(cmdBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
@@ -208,7 +213,7 @@ VkSampler & Texture::getSampler() {
     return sampler;
 }
 
-void Texture::copyBufferToImage(VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth) {
+void Texture::copyBufferToImage(VulkanState & state, VkBuffer & buffer, VkImage & image, uint32_t width, uint32_t height, uint32_t depth, uint32_t layerCount) {
 
     VkCommandBuffer commandBuffer = vkutil::beginSingleCommand(state.transferCommandPool, state.device);
 
@@ -220,7 +225,7 @@ void Texture::copyBufferToImage(VulkanState & state, VkBuffer & buffer, VkImage 
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
+    region.imageSubresource.layerCount = layerCount;
 
     region.imageExtent = {width, height, depth};
     region.imageOffset = {0,0,0};
@@ -235,7 +240,7 @@ void Texture::transitionLayout(VulkanState & state, VkImageLayout newLayout) {
 
 
     //transitionImageLayout(state, image, format, layout, newLayout, mipLevels);
-    vkutil::transitionImageLayout(image, format, layout, newLayout, mipLevels, state.loadingCommandPool, state.device, state.loadingGraphicsQueue);
+  vkutil::transitionImageLayout(image, format, layout, newLayout, mipLevels, state.loadingCommandPool, state.device, state.loadingGraphicsQueue, layerCount);
 
     layout = newLayout;
 

@@ -19,13 +19,22 @@ layout (binding = 3) uniform LightData {
 
 layout (binding = 4) uniform CameraData {
 
-    vec3 position;
+    mat4 view;
+    mat4 projection;
 
 } inCamera;
+
+layout (binding = 5) uniform samplerCube skyBox;
+
+layout (location = 0) in vec3 uv;
 
 layout (location = 0) out vec4 ppResult;
 
 const vec3 skyColor = vec3(0.688927, 0.839366, 1.0);
+
+vec3 toSkyBoxCoord(vec3 direction) {
+  return vec3(direction.x, direction.z, direction.y);
+}
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 
@@ -127,7 +136,7 @@ vec4 getGColor(float shadow) {
 
     vec3 Normal = subpassLoad(inputNormal).rgb;
 
-    vec3 camPos     = inCamera.position;
+    vec3 camPos     = inCamera.view[3].xyz;
     vec3 WorldPos   = subpassLoad(inputPosition).rgb;
     vec3 albedo     = subpassLoad(inputAlbedo).rgb;
     float metallic  = subpassLoad(inputAlbedo).a;
@@ -153,7 +162,7 @@ vec4 getGColor(float shadow) {
         vec3 L = normalize(reflect(-V, N));
 
         vec3 H = normalize(V + L);
-        vec3 radiance = vec3(0.1);// * texture(skybox, L).rgb;
+        vec3 radiance = texture(skyBox, toSkyBoxCoord(L)).rgb;
 
         float NDF = DistributionGGX(N, H, roughness);
         float G   = GeometrySmith(N, V, L, roughness);
@@ -183,16 +192,32 @@ vec4 getGColor(float shadow) {
 
 }
 
+const float fov = radians(70.0);
+const float aspect = 1280.0 / 720.0;
+
 void main() {
 
-    vec3 light = vec3(0.1);
+  vec3 light = vec3(0.1);
 
-    vec3 n = normalize(subpassLoad(inputNormal).xyz);
-    vec3 p = subpassLoad(inputPosition).xyz;
-    vec3 c = inCamera.position - p;
+  vec3 n = normalize(subpassLoad(inputNormal).xyz);
+  vec3 p = subpassLoad(inputPosition).xyz;
+  vec3 c = inCamera.view[3].xyz - p;
+  
+  ppResult = getGColor(1.0);
+  if (subpassLoad(inputPosition).a <= 0.0) {
 
-    ppResult = getGColor(1.0);
-    if (subpassLoad(inputPosition).a <= 0.0)
-        ppResult = vec4(skyColor, 1.0);
+    float fov_x = atan(tan(fov/2) * aspect) * 2;
+
+    vec3 camDir = normalize(vec3(sin(fov_x * uv.x),
+				 -sin(fov * uv.y),
+				 -1));
+    
+    //vec3 direction = normalize(inCamera.facing + 0.1 * vec3(uv.x, uv.y, 1));
+    vec3 direction = normalize((inCamera.view * vec4(camDir, 0.0)).xyz);
+    
+    ppResult = texture(skyBox, toSkyBoxCoord(direction));
+    //ppResult = vec4(direction, 1.0);
+      
+  }
 
 }

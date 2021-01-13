@@ -59,6 +59,14 @@ void Camera::setPosition(float x, float y, float z) {
 
 }
 
+float Camera::getAspect() {
+  return aspect;
+}
+
+float Camera::getFov() {
+  return fov;
+}
+
 void Camera::setRotation(Math::Quaternion<float> r) {
   transform.rotation = r;
   updateView();
@@ -71,8 +79,10 @@ void Camera::rotate(Math::Quaternion<float> d) {
 
 }
 
-glm::vec3 Camera::getFacing() {
-    return facing;
+Math::Vector<3, float> Camera::getFacing() {
+  Math::Vector<3, float> yAxis(1, 0, 0);
+  Math::Vector<3, float> facing = transform.rotation.toRotationMatrix() * yAxis;
+  return facing;
 }
 
 Quaternion<float> Camera::getRotation() {

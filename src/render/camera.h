@@ -25,11 +25,14 @@ class Camera {
 
   void setRotation(Math::Quaternion<float> r);
 
-  glm::vec3 getFacing();
+  Math::Vector<3, float> getFacing();
   Math::Quaternion<float> getRotation();
   Math::Vector<3, float> getPosition();
 
   Transform<float> getTransform();
+
+  float getFov();
+  float getAspect();
 
  protected:
 

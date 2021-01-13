@@ -11,7 +11,8 @@
 
 struct Viewport::CameraData {
 
-  alignas(16) glm::vec3 position;
+  alignas(16) glm::mat4 view;
+  glm::mat4 projection;
 
 };
 
@@ -31,9 +32,11 @@ std::vector<uint16_t> viewModelIndices = {
 					  0, 1, 2,
 };
 
-Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects) : state(window->getState()) {
+Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects, std::shared_ptr<Texture> sb) : state(window->getState()) {
 
   bufferManager = nullptr;
+  this->skyBox = sb;
+  this->skyBox->transitionLayout(state, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
   this->camera = camera;
   this->lightIndex = 0;
@@ -60,7 +63,7 @@ Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_
   /** Creating depth resources **/
   VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
   vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-  depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+  depthImageView = vkutil::createImageView(state.device, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1, VK_IMAGE_VIEW_TYPE_2D, 1);
   vkutil::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, state.graphicsCommandPool, state.device, state.graphicsQueue);
 
   swapchain.imageViews = vkutil::createSwapchainImageViews(swapchain.images, swapchain.format, state.device);
@@ -362,14 +365,14 @@ void Viewport::updateUniformBuffer(uint32_t imageIndex) {
 
   vmaMapMemory(state.vmaAllocator, defferedCameraBuffersMemory[imageIndex], &data);
   CameraData * camData = (CameraData *) data;
-  Math::Vector<3, float> camPos = camera->getPosition();
-  camData->position = glm::vec3(camPos[0], camPos[1], camPos[2]);
+
+  Transform<float> camTrans = camera->getTransform();
+  camData->view = toGLMMatrix(getTransformationMatrix<float>(camTrans));
+  camData->projection = camera->getProjection();
+  
   vmaUnmapMemory(state.vmaAllocator, defferedCameraBuffersMemory[imageIndex]);
 
-  //auto currentTime = std::chrono::high_resolution_clock::now();
-  //double time = std::chrono::duration<double, std::chrono::milliseconds::period>(currentTime - startTime).count();
-  //lout << "Uniform buffer update: " << time << "ms" << std::endl;
-
+  
 }
 
 
@@ -560,13 +563,13 @@ void Viewport::setupRenderPass() {
 void Viewport::createDefferedObjects() {
 
   vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImage, gBufferImageMemory);
-  gBufferImageView = vkutil::createImageView(state.device, gBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+  gBufferImageView = vkutil::createImageView(state.device, gBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_VIEW_TYPE_2D, 1);
 
   vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, nBufferImage, nBufferImageMemory);
-  nBufferImageView = vkutil::createImageView(state.device, nBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+  nBufferImageView = vkutil::createImageView(state.device, nBufferImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_VIEW_TYPE_2D, 1);
 
   vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, swapchain.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, aBufferImage, aBufferImageMemory);
-  aBufferImageView = vkutil::createImageView(state.device, aBufferImage, swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+  aBufferImageView = vkutil::createImageView(state.device, aBufferImage, swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_VIEW_TYPE_2D, 1);
 
   this->ppImages.resize(ppEffects.size());
   this->ppImageViews.resize(ppEffects.size());
@@ -575,7 +578,7 @@ void Viewport::createDefferedObjects() {
   for (unsigned int i = 0; i < ppEffects.size(); ++i) {
 
     vkutil::createImage(state.vmaAllocator, state.device, swapchain.extent.width, swapchain.extent.height, 1, 1, swapchain.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ppImages[i], ppImageMemories[i]);
-    ppImageViews[i] = vkutil::createImageView(state.device, ppImages[i], swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    ppImageViews[i] = vkutil::createImageView(state.device, ppImages[i], swapchain.format, VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_IMAGE_VIEW_TYPE_2D, 1);
     
   }
 
@@ -671,14 +674,14 @@ void Viewport::setupPostProcessingPipeline() {
   std::vector<vkutil::ShaderInputDescription> shaders = defferedShader->getShaderInputDescriptions();
 
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages(shaders.size());
-    for (unsigned int i = 0; i < shaders.size(); ++i) {
-
-        shaderStages[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shaderStages[i].module = shaders[i].module;
-        shaderStages[i].stage = shaders[i].usage;
-        shaderStages[i].pName = shaders[i].entryName;
-
-    }
+  for (unsigned int i = 0; i < shaders.size(); ++i) {
+    
+    shaderStages[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStages[i].module = shaders[i].module;
+    shaderStages[i].stage = shaders[i].usage;
+    shaderStages[i].pName = shaders[i].entryName;
+    
+  }
 
   /** fixed function **/
 
@@ -849,7 +852,7 @@ void Viewport::setupPostProcessingPipeline() {
 
 void Viewport::createDefferedDescriptorSetLayout() {
 
-  std::array<VkDescriptorSetLayoutBinding, 5> bindings;
+  std::array<VkDescriptorSetLayoutBinding, 6> bindings;
   bindings[0].binding = 0;
   bindings[0].descriptorCount = 1;
   bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -875,6 +878,12 @@ void Viewport::createDefferedDescriptorSetLayout() {
   bindings[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   bindings[4].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+  bindings[5].binding = 5;
+  bindings[5].descriptorCount = 1;
+  bindings[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  bindings[5].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  bindings[5].pImmutableSamplers = nullptr;
+
   VkDescriptorSetLayoutCreateInfo layoutInfo = {};
   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
   layoutInfo.pBindings = bindings.data();
@@ -899,11 +908,17 @@ void Viewport::createDefferedDescriptorPool() {
   cameraSize.descriptorCount = swapchain.images.size();
   cameraSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-  VkDescriptorPoolSize sizes[] = {samplerSize, samplerSize, samplerSize, lightSize, cameraSize};
+  VkDescriptorPoolSize cubemapSize = {};
+  cubemapSize.descriptorCount = swapchain.images.size();
+  cubemapSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+  VkDescriptorPoolSize sizes[] = {
+      samplerSize, samplerSize, samplerSize, lightSize, cameraSize, cubemapSize
+  };
 
   VkDescriptorPoolCreateInfo poolInfo = {};
   poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-  poolInfo.poolSizeCount = 5;
+  poolInfo.poolSizeCount = 6;
   poolInfo.pPoolSizes = sizes;
   poolInfo.maxSets = swapchain.images.size();
 
@@ -928,7 +943,7 @@ void Viewport::createDefferedDescriptorSets() {
 
   for (unsigned int i = 0; i < swapchain.images.size(); ++i) {
 
-    std::array<VkWriteDescriptorSet, 5> descriptorWrites = {};
+    std::array<VkWriteDescriptorSet, 6> descriptorWrites = {};
 
     VkDescriptorImageInfo gInfo;
     gInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1010,8 +1025,23 @@ void Viewport::createDefferedDescriptorSets() {
     descriptorWrites[4].pTexelBufferView = nullptr;
     descriptorWrites[4].pNext = nullptr;
 
-    vkUpdateDescriptorSets(state.device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+    VkDescriptorImageInfo cubeMapInfo = {};
+    cubeMapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    cubeMapInfo.imageView = skyBox->getView();
+    cubeMapInfo.sampler = skyBox->getSampler();
 
+    descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrites[5].dstSet = defferedDescSets[i];
+    descriptorWrites[5].dstBinding = 5;
+    descriptorWrites[5].dstArrayElement = 0;
+    descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrites[5].descriptorCount = 1;
+    descriptorWrites[5].pBufferInfo = nullptr;
+    descriptorWrites[5].pImageInfo = &cubeMapInfo;
+    descriptorWrites[5].pTexelBufferView = nullptr;
+    descriptorWrites[5].pNext = nullptr;
+
+    vkUpdateDescriptorSets(state.device, descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
   }
 
 }

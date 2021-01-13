@@ -59,7 +59,7 @@ private:
 
 class Viewport : public MemoryTransferHandler {
 public:
-  Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects);
+  Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects, std::shared_ptr<Texture> skyBox);
   virtual ~Viewport();
 
   struct LightData {
@@ -198,6 +198,8 @@ private:
   void markLightDataCorrect(uint32_t imageIndex);
 
   ThreadedBufferManager * bufferManager;
+
+  std::shared_ptr<Texture> skyBox;
 
 };
 

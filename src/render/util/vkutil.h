@@ -135,9 +135,9 @@ namespace vkutil {
   VkCommandPool createSecondaryCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface);
   VkCommandPool createTransferCommandPool(const VkPhysicalDevice & physicalDevice, const VkDevice & device, const VkSurfaceKHR & surface);
 
-  void createImage(const VmaAllocator & allocator, VkDevice device, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory);
-  VkImageView createImageView(const VkDevice & device, const VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels);
-  void transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const Queue & q);
+  void createImage(const VmaAllocator & allocator, VkDevice device, int width, int height, int depth, int mipLevels, VkFormat format, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memProps, VkImage & image, VmaAllocation & memory, VkImageCreateFlags flags = 0, int layerCount = 1);
+  VkImageView createImageView(const VkDevice & device, const VkImage & image, VkFormat format, VkImageAspectFlags aspect, int mipLevels, VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D, int layerCount = 1);
+  void transitionImageLayout(const VkImage & image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, int mipLevels, const VkCommandPool & commandPool, const VkDevice & device, const Queue & q, int layerCount = 1);
 
   VkCommandBuffer beginSingleCommand(const VulkanState & state);
   void endSingleCommand(VkCommandBuffer & commandBuffer, VulkanState & state);
