@@ -7,24 +7,36 @@
 using namespace Math;
 using namespace dbg;
 
+#include "util/transform.h"
+#include "node/node.h"
+
+float zupData[16] = {
+		     1, 0, 0, 0,
+		     0, 0, -1, 0,
+		     0, 1, 0, 0,
+		     0, 0, 0, 1
+};
+Math::Matrix<4, 4, float> zupMatrix(zupData);
+
 Math::Matrix<4,4,float> getTransformFromJoint(Joint & joint) {
 
   /// This should take less than a few hundred ns.
-  return joint.rotation.toModelMatrix(joint.offset) * joint.inverseTransform;
-  //return joint.inverseTransform;
-  //return joint.rotation.toModelMatrix(joint.offset);
+  Transform<float> fTrans = convertTransform<double, float>(joint.node->getGlobalTransform());
+
+  Math::Matrix<4, 4, float> tmat = getTransformationMatrix(fTrans);
+
+  Math::Matrix<4, 4, float> res = tmat * zupMatrix * joint.inverseTransform;
+
+  std::cout << tmat << std::endl;
+  
+  return tmat;
+  
+  //return Math::Matrix<4, 4, float>();
 
 }
 
 Skin::Skin(std::vector<Joint> joints) {
-    this->joints = joints;
-    for (Joint & j : this->joints) {
-
-        lout << "Before transpose " << std::endl << j.inverseTransform << std::endl;
-        j.inverseTransform = j.inverseTransform.transpose();
-        lout << "After transpose " << std::endl << j.inverseTransform << std::endl;
-
-    }
+  this->joints = joints;
 }
 
 Skin::~Skin() {
@@ -33,25 +45,62 @@ Skin::~Skin() {
 
 void Skin::writeTransformDataToBuffer(float * buffer) {
 
-    //float axis[3] = {0,0,1};
+  std::cout << "Skin has " << joints.size() << " joints: " << getDataSize() << std::endl;
+  
+  for (unsigned int i = 0; i < joints.size(); ++i) {
 
-    //joints[2].rotation = joints[2].rotation * Quaternion<float>::fromAxisAngle(Vector<3, float>(axis), 0.0016);
+    Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
+    const float * arr = mat.asArray();
 
-    for (unsigned int i = 0; i < joints.size(); ++i) {
+    void * dest = (void *) (buffer + 16 * i);
+    std::cout << dest << std::endl;
+    
+    memcpy(dest, arr, 16 * sizeof(float));
 
-        Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
-	//lout << i << std::endl;
-        //lout << mat << std::endl;
-        const float * arr = mat.asArray();
-
-        //lout << "arr[0] = " << arr[0] << " arr[4] = " << arr[4] << std::endl;
-
-        memcpy(buffer + 16 * i, arr, 16 * sizeof(float));
-
-    }
+  }
 
 }
 
 size_t Skin::getDataSize() {
-    return 16 * sizeof(float) * joints.size();
+  return 16 * sizeof(float) * joints.size();
+}
+
+SkinUploader::SkinUploader() {
+
+}
+
+SkinUploader::~SkinUploader () {
+
+}
+
+void SkinUploader::addJoint(LoadingResource node, Math::Matrix<4, 4, float> inverse) {
+
+  nodes.push_back(node);
+  inverses.push_back(inverse);
+  
+}
+
+bool SkinUploader::uploadReady() {
+
+  bool b = true;
+
+  for (LoadingResource res : nodes) {
+    b &= res->status.isUseable;
+  }
+
+  return b;
+  
+}
+
+std::shared_ptr<Skin> SkinUploader::uploadResource(vkutil::VulkanState & state) {
+
+  std::vector<Joint> joints(nodes.size());
+
+  for (uint32_t i = 0; i < nodes.size(); ++i) {
+    joints[i].node = std::dynamic_pointer_cast<strc::Node>(nodes[i]->location);
+    joints[i].inverseTransform = inverses[i];
+  }
+  
+  return std::make_shared<Skin>(joints);
+  
 }

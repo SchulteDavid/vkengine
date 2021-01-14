@@ -1,6 +1,12 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+layout (push_constant) uniform TransformData {
+
+       mat4 transform;
+
+} transformData;
+
 layout(binding = 0) uniform UniformBufferObject {
 
     mat4 view;
@@ -23,7 +29,7 @@ layout(location = 4) in int inMat;
 layout(location = 5) in vec4 boneWeights;
 layout(location = 6) in ivec4 boneIds;
 
-layout(location = 7) in mat4 tMat;
+//layout(location = 7) in mat4 tMat;
 
 layout (location = 0) out vec4 normal;
 layout (location = 1) out vec4 position;
@@ -40,18 +46,16 @@ layout (location = 3) flat out int matIndex;
 
 void main() {
 
-    mat4 skinMat = boneWeights.x * boneData.bones[boneIds.x];
-                    + boneWeights.y * boneData.bones[boneIds.y]
-                    + boneWeights.z * boneData.bones[boneIds.z]
-                    + boneWeights.w * boneData.bones[boneIds.w];
+    mat4 skinMat = boneWeights.x * boneData.bones[boneIds.x]
+      + boneWeights.y * boneData.bones[boneIds.y]
+      + boneWeights.z * boneData.bones[boneIds.z]
+      + boneWeights.w * boneData.bones[boneIds.w];
+    
+    if(boneIds == ivec4(0)) {
+      skinMat = mat4(1.0);
+    }
 
-    mat4 yupMat = mat4(
-                       1,0,0,0,
-                       0,0,1,0,
-                       0,-1,0,0,
-                       0,0,0,1
-                       );
-    mat4 transform = tMat * transpose(skinMat);
+    mat4 transform = transformData.transform * transpose(skinMat);
     position = transform * vec4(inPosition, 1.0);
     gl_Position = ubo.proj * ubo.view * position;
     normal = vec4(normalize((transform * vec4(inNormal, 0)).xyz), 0.0);

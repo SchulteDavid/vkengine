@@ -91,6 +91,8 @@ inline std::ostream & operator<<(std::ostream & stream, ResourceLocation loc) {
 typedef std::shared_ptr<FutureResource> LoadingResource;
 
 LoadingResource scheduleResourceLoad(ResourceManager * manager, ResourceLocation location);
+LoadingResource createSubresource(const ResourceLocation & location, std::shared_ptr<void> uploader);
+LoadingResource scheduleSubresourceUpload(ResourceManager * manager, LoadingResource res);
 LoadingResource scheduleSubresourceUpload(ResourceManager * manager, ResourceLocation location, std::shared_ptr<void> uploader);
 
 namespace res {

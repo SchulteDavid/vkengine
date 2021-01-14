@@ -9,12 +9,15 @@
 
 #include "nodeloader.h"
 
+#include "animation/skeletalrig.h"
+
 namespace strc {
 
   class MeshNode : public Node {
 
   public:
     MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans);
+    MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans, std::shared_ptr<Skin> skin);
 
     virtual ~MeshNode();
 
@@ -28,6 +31,8 @@ namespace strc {
     void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) override;
     void addToViewport(Viewport * view, std::shared_ptr<Node> self) override;
 
+    void onUpdate(const double dt, const double t) override;
+
     void onTransformUpdate() override;
 
     std::shared_ptr<Node> duplicate(std::string name) override;
@@ -37,6 +42,8 @@ namespace strc {
     std::shared_ptr<Model> model;
     std::shared_ptr<Material> material;
     std::shared_ptr<RenderElement> renderElement;
+
+    std::shared_ptr<Skin> skin;
 
     RenderElement::Instance instance;
 
@@ -56,6 +63,8 @@ public:
 
   std::string getNodeName() override;
 
+  void addSkin(LoadingResource res);
+
 protected:
   std::shared_ptr<strc::Node> constructNode() override;
 
@@ -64,6 +73,9 @@ private:
   LoadingResource meshRes;
   LoadingResource materialRes;
   Transform<double> transform;
+
+  LoadingResource skinResource;
+  
   const std::string nodeName;
 
 };

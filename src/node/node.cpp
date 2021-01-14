@@ -141,16 +141,23 @@ const std::string Node::getName() {
 }
 
 void Node::onUpdate(const double dt, const double t) {
+  
+}
+
+void Node::update(const double dt, const double t) {
 
   if (animationPlayer) {
+    std::cout << "Animating node: " << name << std::endl;
     animationPlayer->applyToNode(t, *this);
   }
   
   this->eventHandler->onUpdate(dt, t);
-
+  
   for (auto child : children) {
-    child.second->onUpdate(dt, t);
+    child.second->update(dt, t);
   }
+
+  onUpdate(dt, t);
   
 }
 
@@ -203,6 +210,10 @@ std::shared_ptr<Node> Node::createDuplicate(std::string name) {
   }
 
   res->attachEventHandler(eventHandler, res);
+
+  if (animationPlayer) {
+    res->animationPlayer = animationPlayer;
+  }
 
   return res;
 }

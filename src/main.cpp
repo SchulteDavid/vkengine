@@ -94,6 +94,7 @@ void createResourceLoaders(ResourceManager * resourceManager) {
   resourceManager->addRegistry("Mesh", (ResourceRegistry<Resource> *) new ResourceRegistry<Mesh>());
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
   resourceManager->addRegistry("Sound", (ResourceRegistry<Resource> *) new ResourceRegistry<audio::Sound>());
+  resourceManager->addRegistry("Skin", (ResourceRegistry<Resource> *) new ResourceRegistry<Skin>());
 
   resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader());
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader());

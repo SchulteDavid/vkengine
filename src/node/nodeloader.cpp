@@ -20,13 +20,15 @@ bool NodeUploader::uploadReady()  {
 
 bool NodeUploader::childrenReady() {
   bool isReady = true;
-
+  
   for (const LoadingResource & res : children)
     isReady &= res->status.isUseable;
 
   for (auto it : resourcesToAttach)
     isReady &= it.second->status.isUseable;
 
+  //std::cout << "Checking if " << this->getNodeName() << " is ready for upload: " << isReady << std::endl;
+  
   return isReady;
 }
 

@@ -432,6 +432,7 @@ struct gltf_skin_t {
 
   int inverseBindMatrices;
   std::vector<int> joints;
+  std::string name;
 
 };
 
@@ -439,6 +440,7 @@ void from_json(const json & j, gltf_skin_t & skin) {
 
   j.at("inverseBindMatrices").get_to(skin.inverseBindMatrices);
   j.at("joints").get_to(skin.joints);
+  j.at("name").get_to(skin.name);
 
 }
 
@@ -742,12 +744,9 @@ std::shared_ptr<Skin> gltfLoadSkin(gltf_skin_t & skin, std::vector<gltf_accessor
   for (unsigned int i = 0; i < skin.joints.size(); ++i) {
 
     joints[i].inverseTransform = transforms[i];
-    joints[i].offset = nodes[skin.joints[i]].globalTranslation;
-    joints[i].rotation = nodes[skin.joints[i]].globalRotation;
+    //joints[i].offset = nodes[skin.joints[i]].globalTranslation;
+    //joints[i].rotation = nodes[skin.joints[i]].globalRotation;
     lout << "inverse Transform of joint " << i << " : " << joints[i].inverseTransform << std::endl;
-    //lout << "rotation of joint " << i << ": " << joints[i].rotation << std::endl;
-    //joints[i].offset = Vector<3,float>(offset);
-    //joints[i].rotation = Quaternion<float>(1,0,0,0);
 
   }
 
@@ -803,7 +802,14 @@ struct gltf_file_data_t {
 
 };
 
-std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file_data_t * data) {
+struct gltf_loading_state_t {
+
+  std::vector<std::shared_ptr<NodeUploader>> nodes;
+  std::vector<LoadingResource> nodeRes;
+  
+};
+
+void gltfLoadFile(std::string fname, gltf_file_data_t * data) {
 
   if (fname.substr(fname.length()-3).compare("glb"))
     throw res::wrong_file_exception("Not a glb file");
@@ -892,63 +898,6 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
   int sceneID = jsonData["scene"].get<int>();
   uint8_t * binaryBuffer = chunks[1].rawData;
 
-  float tmp[3] = {0,0,0};
-  Vector<3, float> initTranslation(tmp);
-  tmp[0] = tmp[1] = tmp[2] = 1;
-  Vector<3, float> initScale(tmp);
-  Quaternion<float> initRotation(0.7071068,-0.7071068,0,0);
-
-  for (unsigned int i = 0; i < scenes[sceneID].nodes.size(); ++i) {
-    gltfUpdateChildGlobalTransform(nodes[scenes[sceneID].nodes[i]], nodes, initTranslation, initScale, initRotation);
-  }
-
-  /// Loading meshes into internal format (could be moved up???)
-  std::vector<std::shared_ptr<Mesh>> meshData(meshes.size());
-  for (unsigned int i = 0; i < meshes.size(); ++i) {
-    meshData[i] = gltfLoadMesh(meshes[i], accessors, bufferViews, binaryBuffer);
-  }
-
-  /// Loading skins
-  std::vector<std::shared_ptr<Skin>> skinData(skins.size());
-  for (unsigned int i = 0; i < skins.size(); ++i) {
-    skinData[i] = gltfLoadSkin(skins[i], accessors, bufferViews, binaryBuffer, nodes);
-  }
-
-  /// Loading nodes
-  std::vector<std::shared_ptr<GLTFNode>> nodeData(nodes.size());
-  for (unsigned int i = 0; i < nodes.size(); ++i) {
-
-    std::shared_ptr<GLTFNode> node(new GLTFNode());
-    node->setPosition(nodes[i].translation);
-    node->setRotation(nodes[i].rotation);
-    node->setScale(nodes[i].scale);
-    node->setName(nodes[i].name);
-
-    if (nodes[i].mesh >= 0) {
-      node->setMesh(meshData[nodes[i].mesh]);
-    }
-
-    if (nodes[i].skin >= 0) {
-      if (skinData.size() <= nodes[i].skin)
-	throw dbg::trace_exception("Node uses undefined skin");
-      node->setSkin(skinData[nodes[i].skin]);
-    }
-
-    nodeData[i] = node;
-
-  }
-  /// Linking nodes with children.
-  for (unsigned int i = 0; i < nodes.size(); ++i) {
-    for (int n : nodes[i].children) {
-      nodeData[i]->addChild(nodeData[n]);
-    }
-  }
-
-  std::vector<std::shared_ptr<GLTFNode>> rootNodes(scenes[sceneID].nodes.size());
-  for (unsigned int i = 0; i < scenes[sceneID].nodes.size(); ++i) {
-    rootNodes[i] = nodeData[scenes[sceneID].nodes[i]];
-  }
-
   if (data) {
 
     data->accessors = accessors;
@@ -969,8 +918,6 @@ std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file
   } else {
     delete[] binaryBuffer;
   }
-
-  return rootNodes;
 
 }
 
@@ -1068,6 +1015,7 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
 
   LoadingResource shader = loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallic.shader"));
   LoadingResource staticShader = loadDependency(ResourceLocation("Shader", "resources/shaders/gltf_pbrMetallicStatic.shader"));
+  LoadingResource skinShader = loadDependency(ResourceLocation("Shader", "resources/shaders/gltf/pbr_skin.shader"));
 
   LoadingResource colorImg = loadTexture(fileData, material.baseColorTexture.index, fname);
   LoadingResource normalImg = loadTexture(fileData, material.normalTexture.index, fname);
@@ -1075,7 +1023,7 @@ LoadingResource GLTFNodeLoader::loadMaterial(gltf_file_data_t & fileData, const 
 
   std::vector<LoadingResource> textures = {colorImg, normalImg, metalImg};
 
-  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(shader, staticShader, textures));
+  std::shared_ptr<ResourceUploader<Resource>> upldr((ResourceUploader<Resource> *) new MaterialUploader(shader, staticShader, skinShader, textures));
 
 
   return uploadResource(ResourceLocation("Material", fname, material.name), upldr);
@@ -1292,7 +1240,37 @@ void gltfLinkAnimations(std::shared_ptr<NodeUploader> node, const int nodeIndex,
   
 }
 
-std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string filename) {
+std::shared_ptr<SkinUploader> gltfLoadSkin(gltf_file_data_t & fileData, gltf_loading_state_t & state, const int nodeId, const int skinId) {
+
+  std::shared_ptr<SkinUploader> uploader = std::make_shared<SkinUploader>();
+
+  gltf_skin_t & skin = fileData.skins[skinId];
+
+  gltf_accessor_t & invAcc = fileData.accessors[skin.inverseBindMatrices];
+  std::vector<Math::Matrix<4, 4, float>> inverses = gltfLoadMatrixBuffer<4, float>(invAcc, fileData.bufferViews[invAcc.bufferView], fileData.binaryBuffer);
+
+  float zupData[16] = {
+		       1, 0, 0, 0,
+		       0, 0, 1, 0,
+		       0, -1, 0, 0,
+		       0, 0, 0, 1
+  };
+  Math::Matrix<4, 4, float> zupMatrix(zupData);
+  
+  for (unsigned int i = 0; i < skin.joints.size(); ++i) {
+
+    if (!state.nodeRes[skin.joints[i]])
+      throw dbg::trace_exception(std::string("Joint ").append(fileData.nodes[skin.joints[i]].name).append(" not loaded when loading skin."));
+    
+    uploader->addJoint(state.nodeRes[skin.joints[i]], inverses[i].transpose() * zupMatrix);
+    
+  }
+
+  return uploader;
+  
+}
+
+std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string filename, gltf_loading_state_t & state) {
 
   lout << "Loading gltf-node " << nodeId << std::endl;
 
@@ -1328,13 +1306,14 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
       LoadingResource matRes = this->loadMaterial(fileData, materialIndex, filename);
       uploader = std::shared_ptr<NodeUploader>(new MeshNodeUploader(node.name, meshRes, matRes, trans));
-      uploadResource(ResourceLocation("Node",filename, node.name) , uploader);
+      state.nodeRes[nodeId] = createResource(ResourceLocation("Node",filename, node.name) , uploader);
+      
 
     } else {
 
       LoadingResource matRes = this->loadDependency(ResourceLocation("Material", "resources/materials/gltf_default.mat"));
       uploader = std::make_shared<MeshNodeUploader>(node.name, meshRes, matRes, trans);
-      uploadResource(ResourceLocation("Node",filename, node.name), uploader);
+      state.nodeRes[nodeId] = createResource(ResourceLocation("Node",filename, node.name), uploader);
 
     }
 
@@ -1342,52 +1321,29 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
   } else {
     std::shared_ptr<strc::Node> snode = std::make_shared<strc::Node>(node.name, trans);
     uploader = std::make_shared<NodeUploader>(snode);
+    state.nodeRes[nodeId] = createResource(ResourceLocation("Node", filename, node.name), uploader);
   }
 
   /// Load node children
   for (const int id : node.children) {
 
-    std::shared_ptr<NodeUploader> childUploader = loadNodeGLTF(fileData, id, filename);
-    LoadingResource child = uploadResource(ResourceLocation("Node", filename, childUploader->getNodeName()), childUploader);
-    uploader->addChild(child);
-
+    std::shared_ptr<NodeUploader> childUploader = loadNodeGLTF(fileData, id, filename, state);
+    if (!state.nodeRes[id])
+      throw dbg::trace_exception("Loading of node yields no node.");
+    uploader->addChild(state.nodeRes[id]);
+    //state.nodeRes[nodeId] = child;
+    
   }
 
   /// Look for animations for this node.
 
   gltfLinkAnimations(uploader, nodeId, fileData);
 
+  state.nodes[nodeId] = uploader;
+  
   return uploader;
 
 }
-
-/*std::shared_ptr<ResourceUploader<strc::Node>> GLTFNodeLoader::loadResource(std::string fname) {
-
-  lout << "Loading gltf-data as Node" << std::endl;
-
-  gltf_file_data_t fileData;
-  std::vector<std::shared_ptr<GLTFNode>> nodes = gltfLoadFile(fname, &fileData);
-
-  lout << "GLTF-Data is loaded" << std::endl;
-
-  gltf_scene_t scene = fileData.scenes[fileData.rootScene];
-  std::shared_ptr<strc::Node> sceneNode(new strc::Node(""));
-
-  std::shared_ptr<NodeUploader> sceneUploader = std::make_shared<NodeUploader>(sceneNode);
-
-  for (int nodeId : scene.nodes) {
-
-    std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, fname);
-    LoadingResource res = scheduleSubresource(ResourceLocation("Node", fname, child->getNodeName()), child);
-    sceneUploader->addChild(res);
-
-  }
-
-  lout << "Loaded GLTF-Node successfully" << std::endl;
-
-  return sceneUploader;
-
-  }*/
 
 bool GLTFNodeLoader::canLoad(ResourceLocation location) {
 
@@ -1401,7 +1357,8 @@ LoadingResource GLTFNodeLoader::load(ResourceLocation location) {
   lout << "Loading gltf-data as Node" << std::endl;
 
   gltf_file_data_t fileData;
-  std::vector<std::shared_ptr<GLTFNode>> nodes = gltfLoadFile(location.filename, &fileData);
+  gltf_loading_state_t loadState;
+  gltfLoadFile(location.filename, &fileData);
 
   lout << "GLTF-Data is loaded" << std::endl;
 
@@ -1410,15 +1367,45 @@ LoadingResource GLTFNodeLoader::load(ResourceLocation location) {
 
   std::shared_ptr<NodeUploader> sceneUploader = std::make_shared<NodeUploader>(sceneNode);
 
+  loadState.nodes = std::vector<std::shared_ptr<NodeUploader>>(fileData.nodes.size());
+  loadState.nodeRes = std::vector<LoadingResource>(fileData.nodes.size());
+  
   for (int nodeId : scene.nodes) {
 
-    std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, location.filename);
-    LoadingResource res = uploadResource(ResourceLocation("Node", location.filename, child->getNodeName()), child);
-    sceneUploader->addChild(res);
+    std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, location.filename, loadState);
+    //LoadingResource res = uploadResource(ResourceLocation("Node", location.filename, child->getNodeName()), child);
+    if (!loadState.nodeRes[nodeId])
+      throw dbg::trace_exception("Loading of node yields no node.");
+    sceneUploader->addChild(loadState.nodeRes[nodeId]);
+    //loadState.nodes[nodeId] = child;
+    //loadState.nodeRes[nodeId] = res;
 
   }
 
   lout << "Loaded GLTF-Node successfully" << std::endl;
+
+  /// Look for skins for nodes.
+  for (unsigned int nodeId = 0; nodeId < fileData.nodes.size(); ++nodeId) {
+
+    std::cout << "LoadingResource for node " << fileData.nodes[nodeId].name << ": " << loadState.nodeRes[nodeId] << std::endl;
+    
+    if (fileData.nodes[nodeId].skin >= 0) {
+      /// Link skin data
+
+      std::shared_ptr<SkinUploader> skinUploader = gltfLoadSkin(fileData, loadState, nodeId, fileData.nodes[nodeId].skin);
+      LoadingResource skinRes = uploadResource( ResourceLocation("Skin", location.filename, fileData.skins[fileData.nodes[nodeId].skin].name), skinUploader);
+      //loadState.nodes[nodeId]->addAttachedResource(fileData.skins[fileData.nodes[nodeId].skin].name, skinRes);
+
+      std::shared_ptr<MeshNodeUploader> mnuploader = std::dynamic_pointer_cast<MeshNodeUploader>(loadState.nodes[nodeId]);
+      mnuploader->addSkin(skinRes);
+
+    }
+    
+  }
+
+  for (unsigned int nodeId = 0; nodeId < fileData.nodes.size(); ++nodeId) {
+    uploadResource(loadState.nodeRes[nodeId]);
+  }
 
   return uploadResource(ResourceLocation(location.type, location.filename), sceneUploader);
   

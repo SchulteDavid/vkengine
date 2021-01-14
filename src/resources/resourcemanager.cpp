@@ -405,6 +405,25 @@ LoadingResource scheduleResourceLoad(ResourceManager * manager, ResourceLocation
   return manager->loadResourceBg(location);
 }
 
+LoadingResource createSubresource(const ResourceLocation & location, std::shared_ptr<void> uploader) {
+
+  LoadingResource res(new FutureResource(location));
+  res->isPresent = true;
+  res->uploader = uploader;
+
+  res->status.isUseable = false;
+  res->status.isLoaded = true;
+  res->status.isUploaded = false;
+
+  return res;
+  
+}
+
+LoadingResource scheduleSubresourceUpload(ResourceManager * manager, LoadingResource res) {
+  manager->submitUpload(res);
+  return res;
+}
+
 LoadingResource scheduleSubresourceUpload(ResourceManager * manager, ResourceLocation location, std::shared_ptr<void> uploader) {
 
   LoadingResource res(new FutureResource(location));

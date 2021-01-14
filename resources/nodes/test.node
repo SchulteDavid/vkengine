@@ -88,7 +88,20 @@ comp children = [
 		]
 	    },
 	    {
-		string location = "resources/nodes/axe.glb"
+		string type = "Node"
+		string name = "AxeLocation"
+
+		comp transform = {
+	     	     float64 position = [-2,0,2]
+	     	     float64 rotation = [1,0,0,0]
+		     float64 scale = [1,1,1]
+		}
+
+		comp children = [
+		     {
+			string location = "resources/nodes/anim_test.glb"
+		     }
+		]
 	    }
 	    
 	 ]

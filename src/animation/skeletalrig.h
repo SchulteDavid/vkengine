@@ -8,28 +8,53 @@
 #include <mathutils/vector.h>
 #include <mathutils/matrix.h>
 
+#include "resources/resource.h"
+#include "resources/resourceuploader.h"
+#include "resources/resourceloader.h"
+
+namespace strc {
+  class Node;
+}
+
 struct Joint {
 
-    Math::Matrix<4,4,float> inverseTransform;
-    Math::Vector<3,float> offset;
-    Math::Quaternion<float> rotation;
+  Math::Matrix<4,4,float> inverseTransform;
+  std::shared_ptr<strc::Node> node;
 
 };
 
-class Skin {
+class Skin : public Resource {
 
-    public:
-        Skin(std::vector<Joint> joints);
-        virtual ~Skin();
+public:
+  Skin(std::vector<Joint> joints);
+  virtual ~Skin();
+  
+  void writeTransformDataToBuffer(float * buffer);
+  
+  size_t getDataSize();
+  
+private:
+  
+  std::vector<Joint> joints;
 
-        void writeTransformDataToBuffer(float * buffer);
+};
 
-        size_t getDataSize();
+class SkinUploader : public ResourceUploader<Skin> {
 
-    private:
+public:
 
-        std::vector<Joint> joints;
+  SkinUploader();
+  virtual ~SkinUploader();
 
+  void addJoint(LoadingResource node, Math::Matrix<4, 4, float> inverse);
+  
+  std::shared_ptr<Skin> uploadResource(vkutil::VulkanState & state);
+  bool uploadReady();
+
+private:
+  std::vector<LoadingResource> nodes;
+  std::vector<Math::Matrix<4,4, float>> inverses;
+  
 };
 
 #endif // SKELETALRIG_H

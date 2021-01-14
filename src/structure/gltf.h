@@ -61,6 +61,8 @@ struct gltf_file_data_t;
 #include "resources/archiveloader.h"
 #include "node/nodeloader.h"
 
+struct gltf_loading_state_t;
+
 class GLTFNodeLoader : public ArchiveLoader {
 
 public:
@@ -70,7 +72,7 @@ public:
   //std::shared_ptr<ResourceUploader<strc::Node>> loadResource(std::string fname);
   bool canLoad(ResourceLocation location);
   LoadingResource load(ResourceLocation location);
-  std::shared_ptr<NodeUploader> loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string fname);
+  std::shared_ptr<NodeUploader> loadNodeGLTF(gltf_file_data_t & fileData, const int nodeId, const std::string fname, gltf_loading_state_t & state);
 
   LoadingResource loadMaterial(gltf_file_data_t & fileData, const int materialId, const std::string fname);
   LoadingResource loadTexture(gltf_file_data_t & fileData, const int textureId, const std::string fname);
@@ -80,6 +82,6 @@ public:
 };
 
 struct gltf_file_data_t;
-std::vector<std::shared_ptr<GLTFNode>> gltfLoadFile(std::string fname, gltf_file_data_t * data = nullptr);
+void gltfLoadFile(std::string fname, gltf_file_data_t * data = nullptr);
 
 #endif // GLTF_H

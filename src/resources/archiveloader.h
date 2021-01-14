@@ -31,6 +31,8 @@ class ArchiveLoader {
 
   LoadingResource uploadResource(ResourceLocation location, std::shared_ptr<void> resource);
   LoadingResource loadDependency(ResourceLocation location);
+  LoadingResource createResource(ResourceLocation location, std::shared_ptr<void> resource);
+  LoadingResource uploadResource(LoadingResource res);
 
  private:
   ResourceManager * manager;

@@ -61,8 +61,7 @@ namespace strc {
       return res;
     }
 
-    // Called for each physics update, should handle animation, event-update, etc.
-    virtual void onUpdate(const double dt, const double t);
+    void update(const double dt, const double t);
 
     std::shared_ptr<Node> createDuplicate(std::string newName);
 
@@ -83,6 +82,7 @@ namespace strc {
 
     virtual void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self);
     virtual void addToViewport(Viewport * view, std::shared_ptr<Node> self);
+    virtual void onUpdate(const double dt, const double t);
 
     virtual void onTransformUpdate();
 

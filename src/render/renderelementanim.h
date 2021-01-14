@@ -7,7 +7,7 @@
 class RenderElementAnim : public RenderElement {
 
 public:
-  RenderElementAnim(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform);
+  RenderElementAnim(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> material, Transform<float> & initTransform, std::shared_ptr<Skin> skin);
   virtual ~RenderElementAnim();
   
   void createUniformBuffers(int scSize, std::vector<Shader::Binding> & bindings) override;
@@ -24,7 +24,7 @@ private:
   std::vector<VkBuffer> animationBuffers;
   std::vector<VmaAllocation> animationBuffersMemory;
   
-  std::vector<Shader::Binding> getShaderBindings(std::shared_ptr<Material> material);
+  std::vector<Shader::Binding> getShaderBindings(std::shared_ptr<Material> material, std::shared_ptr<Skin> skin);
   std::shared_ptr<Skin> skin;
   
 };

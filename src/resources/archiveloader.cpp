@@ -21,3 +21,11 @@ LoadingResource ArchiveLoader::loadDependency(ResourceLocation location) {
   return scheduleResourceLoad(manager, location);
   
 }
+
+LoadingResource ArchiveLoader::createResource(ResourceLocation location, std::shared_ptr<void> uploader) {
+  return createSubresource(location, uploader);
+}
+
+LoadingResource ArchiveLoader::uploadResource(LoadingResource resource) {
+  return scheduleSubresourceUpload(manager, resource);
+}

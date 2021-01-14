@@ -122,6 +122,42 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
 }
 
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, MaterialUsecase matUse) : state(view->getState()), MemoryTransferer(*view) {
+
+  std::vector<Shader::Binding> binds;
+
+  Shader::Binding uniformBufferBinding;
+  uniformBufferBinding.type = Shader::BINDING_UNIFORM_BUFFER;
+  uniformBufferBinding.elementCount = 1;
+  uniformBufferBinding.bindingId = 0;
+  uniformBufferBinding.elementSize = sizeof(UniformBufferObject);
+  binds.push_back(uniformBufferBinding);
+
+  if (mat->getTextures().size()) {
+    Shader::Binding textureBinding;
+    textureBinding.type = Shader::BINDING_TEXTURE_SAMPLER;
+    textureBinding.bindingId = 1;
+    binds.push_back(textureBinding);
+  }
+
+
+  this->binds = binds;
+
+  this->model = model;
+  this->shader = mat->getShader(matUse);
+  this->texture = mat->getTextures();
+
+  transform = initTransform;
+
+  model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+
+  descSetLayout = mat->prepareDescriptors(this->binds, matUse);
+ 
+  pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout, matUse);
+
+
+}
+
 RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, std::vector<Shader::Binding> binds) : state(view->getState()), MemoryTransferer(*view) {
 
   this->binds = binds;
@@ -134,6 +170,22 @@ RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std:
 
   descSetLayout = mat->prepareDescriptors(this->binds);
   pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout);
+
+
+}
+
+RenderElement::RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, Transform<float> & initTransform, std::vector<Shader::Binding> binds, MaterialUsecase matUse) : state(view->getState()), MemoryTransferer(*view) {
+
+  this->binds = binds;
+
+  this->model = model;
+  this->shader = mat->getShader(matUse);
+  this->texture = mat->getTextures();
+
+  model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
+
+  descSetLayout = mat->prepareDescriptors(this->binds);
+  pipeline = mat->setupPipeline(state, view->getRenderpass(), view->getSwapchainExtent(), descSetLayout, model.get(), pipelineLayout, matUse);
 
 
 }

@@ -42,6 +42,8 @@ public:
 
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform);
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, std::vector<Shader::Binding> binds);
+  RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, Transform<float> & initTransform, std::vector<Shader::Binding> binds, MaterialUsecase matUse);
+  
   virtual ~RenderElement();
 
   glm::mat4 getTransformationMatrixGLM(Transform<float> & instance);
@@ -77,6 +79,7 @@ public:
 protected:
 
   RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, bool useStaticShader);
+  RenderElement(Viewport * view, std::shared_ptr<Model> model, std::shared_ptr<Material> mat, int scSize, Transform<float> & initTransform, MaterialUsecase materialUse);
 
   const vkutil::VulkanState & state;
 

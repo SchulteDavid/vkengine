@@ -20,6 +20,14 @@ Material::Material(std::shared_ptr<Shader> shader, std::shared_ptr<Shader> stati
 
 }
 
+Material::Material(std::shared_ptr<Shader> shader, std::shared_ptr<Shader> staticShader, std::shared_ptr<Shader> skinShader, std::vector<std::shared_ptr<Texture>> textures) : Material(shader, staticShader, textures) {
+
+  this->skinShader = skinShader;
+
+}
+
+
+
 Material::~Material() {
 
 
@@ -32,6 +40,10 @@ std::shared_ptr<Shader> Material::getShader() {
 
 std::shared_ptr<Shader> Material::getStaticShader() {
     return staticShader;
+}
+
+std::shared_ptr<Shader> Material::getSkinShader() {
+  return skinShader;
 }
 
 std::vector<std::shared_ptr<Texture>> Material::getTextures() {
@@ -60,9 +72,41 @@ std::vector<Shader::Binding> Material::getDefaultBindings() {
   return binds;
 }
 
+std::shared_ptr<Shader> Material::getShader(MaterialUsecase use) {
+
+  switch(use) {
+
+  case MAT_USE_DEFAULT:
+    return shader;
+
+  case MAT_USE_STATIC:
+    if (!staticShader)
+      throw dbg::trace_exception("The material has no static shader.");
+    return staticShader;
+
+  case MAT_USE_SKIN:
+    if (!skinShader)
+      throw dbg::trace_exception("The material has no skin-shader.");
+    return skinShader;
+
+  default:
+    throw dbg::trace_exception("Unknown material usecase");
+    
+  }
+  
+}
+
 VkDescriptorSetLayout Material::prepareDescriptors(std::vector<Shader::Binding> bindings) {
 
     return shader->setupDescriptorSetLayout(bindings);
+
+}
+
+VkDescriptorSetLayout Material::prepareDescriptors(std::vector<Shader::Binding> bindings, MaterialUsecase use) {
+
+  std::shared_ptr<Shader> sdr = getShader(use);
+  
+  return sdr->setupDescriptorSetLayout(bindings);
 
 }
 
@@ -73,6 +117,18 @@ VkPipeline Material::setupPipeline(const vkutil::VulkanState & state, const VkRe
     descs.attributes = model->getAttributeDescriptions();
 
     return shader->setupGraphicsPipeline(descs, renderPass, state, descLayout, swapChainExtent, layout);
+
+}
+
+VkPipeline Material::setupPipeline(const vkutil::VulkanState & state, const VkRenderPass & renderPass, const VkExtent2D & swapChainExtent, const VkDescriptorSetLayout & descLayout, Model * model, VkPipelineLayout & layout, MaterialUsecase use) {
+
+    vkutil::VertexInputDescriptions descs;
+    descs.binding = model->getBindingDescription();
+    descs.attributes = model->getAttributeDescriptions();
+
+    std::shared_ptr<Shader> sdr = getShader(use);
+    
+    return sdr->setupGraphicsPipeline(descs, renderPass, state, descLayout, swapChainExtent, layout);
 
 }
 
@@ -99,6 +155,12 @@ MaterialUploader::MaterialUploader(LoadingResource shader, LoadingResource stati
 
 }
 
+MaterialUploader::MaterialUploader(LoadingResource shader, LoadingResource staticShader, LoadingResource skinShader, std::vector<LoadingResource> textures) : MaterialUploader(shader, staticShader, textures) {
+
+  this->skinShader = skinShader;
+
+}
+
 std::shared_ptr<Material> MaterialUploader::uploadResource(vkutil::VulkanState & state) {
 
     std::shared_ptr<Shader> mShader = std::dynamic_pointer_cast<Shader>(shader->location);
@@ -119,8 +181,13 @@ std::shared_ptr<Material> MaterialUploader::uploadResource(vkutil::VulkanState &
     } else {
 
       std::shared_ptr<Shader> sShader = std::dynamic_pointer_cast<Shader>(staticShader->location);
-      mat = new Material(mShader, sShader, mTextures);
-
+      if (!this->skinShader) {
+        
+        mat = new Material(mShader, sShader, mTextures);
+      } else {
+	std::shared_ptr<Shader> aShader = std::dynamic_pointer_cast<Shader>(skinShader->location);
+	mat = new Material(mShader, sShader, aShader, mTextures);
+      }
     }
     
     //mat->setupPipeline(state, renderPass, swapChainExtent);
@@ -139,7 +206,7 @@ bool MaterialUploader::uploadReady() {
         texturesOk &= r->status.isUseable;
     }
 
-    return shader->status.isUseable && (!staticShader || staticShader->status.isUseable) && texturesOk;
+    return shader->status.isUseable && (!staticShader || staticShader->status.isUseable) && (!skinShader || skinShader->status.isUseable) && texturesOk;
 
 }
 
@@ -156,6 +223,7 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
   LoadingResource shaderRes = this->loadDependency(ResourceLocation("Shader", shaderFname));
 
   LoadingResource staticShaderRes = nullptr;
+  LoadingResource skinShaderRes = nullptr;
 
   lout << "Dependency queued" << std::endl;
 
@@ -163,6 +231,13 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
 
     std::string staticShaderName(root->getNode<char>("staticShader")->getRawData());
     staticShaderRes = this->loadDependency(ResourceLocation("Shader", staticShaderName));
+
+  }
+
+  if (root->hasChild("skinShader")) {
+
+    std::string skinShaderName(root->getNode<char>("staticShader")->getRawData());
+    skinShaderRes = this->loadDependency(ResourceLocation("Shader", skinShaderName));
 
   }
 
@@ -189,11 +264,11 @@ ResourceUploader<Material> * MaterialLoader::buildResource(std::shared_ptr<confi
 
     lout << "Textures Loaded" << std::endl;
 
-    return new MaterialUploader(shaderRes, staticShaderRes, textureRes);
+    return new MaterialUploader(shaderRes, staticShaderRes, skinShaderRes, textureRes);
 
   }
 
-  return new MaterialUploader(shaderRes, staticShaderRes, {});
+  return new MaterialUploader(shaderRes, staticShaderRes, skinShaderRes, {});
 }
 
 std::shared_ptr<ResourceUploader<Material>> MaterialLoader::loadResource(std::string fname) {
