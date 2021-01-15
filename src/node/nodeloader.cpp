@@ -174,7 +174,7 @@ std::shared_ptr<NodeUploader> NodeLoader::loadNodeFromCompound(std::shared_ptr<c
   LoadingContext context;
   context.loader = this;
   context.transform = trans;
-  context.parentTransform = inContext.transform; /// TODO: change to be correct
+  context.parentTransform = inContext.parentTransform * inContext.transform; /// TODO: change to be correct
   context.fname = inContext.fname;
 
   std::string nodeName(comp->getNode<char>("name")->getRawData());

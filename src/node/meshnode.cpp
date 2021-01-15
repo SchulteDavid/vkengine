@@ -53,10 +53,10 @@ std::shared_ptr<Model> MeshNode::buildModel(vkutil::VulkanState & state) {
   unsigned int stride;
   const std::vector<InputDescription> & elements = skin ? material->getSkinShader()->getInputs() : material->getShader()->getInputs();
 
-  std::cout << "Mesh node '" << this->getName() << "' has the following descriptors:" << std::endl;
+  /*std::cout << "Mesh node '" << this->getName() << "' has the following descriptors:" << std::endl;
   for (const InputDescription & idesc : elements) {
     std::cout << idesc.attributeName << " at " << idesc.location << std::endl;
-  }
+    }*/
   
   std::vector<InterleaveElement> iData = mesh->compactStorage(elements, &stride);
 

@@ -40,6 +40,8 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
   uint32_t nCount = 0;
   uint32_t loopCount = 0;
 
+  uint32_t boxCount = 1;
+  
   view->createSecondaryBuffers();
 
   while (run){
@@ -71,6 +73,9 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
 
       node->viewportAdd(view, node);
       node->worldAdd(world, node);
+
+      boxCount++;
+      
       }*/
 
     loopCount++;
@@ -82,6 +87,8 @@ void rotateFunc(std::shared_ptr<World> world, Viewport * view, std::shared_ptr<s
     //lout << "Wait " << wait << std::endl;
 
   }
+
+  std::cout << "Box-count at end: " << boxCount << std::endl;
 
 }
 
@@ -201,7 +208,7 @@ int main(int argc, char ** argv) {
   Camera * cam = new Camera(70.0, 0.001, 1000.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
   std::shared_ptr<Texture> skyBox = std::dynamic_pointer_cast<CubeMap>(skyBoxRes->location);
-  Viewport *view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {}, skyBox);
+  Viewport *view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {testEffect}, skyBox);
   window->setActiveViewport(view);
 
   std::shared_ptr<audio::AudioContext> context(new audio::AudioContext());

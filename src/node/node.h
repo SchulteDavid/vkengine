@@ -39,6 +39,7 @@ namespace strc {
 
     void setTransform(Transform<double> trans);
     void setTransform(Transform<double> trans, Transform<double> ptrans);
+    void setGlobalTransform(Transform<double> trans);
 
     static void registerLoaders();
 

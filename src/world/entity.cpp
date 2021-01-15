@@ -40,7 +40,7 @@ void Entity::synchronize() {
 
     Transform<double> trans = physObject->getTransform();
     //std::cout << "Setting transform for entity " << trans << std::endl;
-    this->node->setTransform(trans);
+    this->node->setGlobalTransform(trans);
 
 }
 

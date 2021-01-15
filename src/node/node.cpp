@@ -124,6 +124,20 @@ void Node::setTransform(Transform<double> trans, Transform<double> ptrans) {
 
 }
 
+void Node::setGlobalTransform(Transform<double> trans) {
+
+  this->transform = trans;
+  this->globalTransform = trans;
+  this->parentTransform = Transform<double>();
+
+  this->onTransformUpdate();
+
+  for (auto child : children) {
+    child.second->setTransform(child.second->getTransform(), globalTransform);
+  }
+  
+}
+
 void Node::onTransformUpdate() {
 
 }
