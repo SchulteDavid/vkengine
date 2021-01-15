@@ -27,6 +27,7 @@
 #include "audio/audiocontext.h"
 #include "audio/sound.h"
 #include "render/cubemap.h"
+#include "plugin/plugin.h"
 
 static bool run = true;
 static bool wait;
@@ -102,6 +103,7 @@ void createResourceLoaders(ResourceManager * resourceManager) {
   resourceManager->addRegistry("Node", (ResourceRegistry<Resource> *) new ResourceRegistry<strc::Node>());
   resourceManager->addRegistry("Sound", (ResourceRegistry<Resource> *) new ResourceRegistry<audio::Sound>());
   resourceManager->addRegistry("Skin", (ResourceRegistry<Resource> *) new ResourceRegistry<Skin>());
+  resourceManager->addRegistry("Plugin", (ResourceRegistry<Resource> *) new ResourceRegistry<Plugin>());
 
   resourceManager->addLoader("Shader", (ResourceLoader<Resource> *) new ShaderLoader());
   resourceManager->addLoader("Texture", (ResourceLoader<Resource> *) new TextureLoader());

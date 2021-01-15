@@ -54,6 +54,8 @@ namespace audio {
   std::vector<uint8_t> loadWavData(const char * fname, SoundFormatInfo * outInfo) {
 
     FILE * file = fopen(fname, "rb");
+    if (!file)
+      throw dbg::trace_exception(std::string("Cannot open audio-file: ").append(fname));
 
     WavFileHeader wavHeader;
     fread(&wavHeader, sizeof(WavFileHeader), 1, file);

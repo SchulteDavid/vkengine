@@ -3,7 +3,9 @@
 
 #include "render/window.h"
 
-class Plugin {
+#include "resources/resource.h"
+
+class Plugin : public Resource {
 public:
   Plugin();
   virtual ~Plugin();
