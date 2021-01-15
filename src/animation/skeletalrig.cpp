@@ -18,18 +18,25 @@ float zupData[16] = {
 };
 Math::Matrix<4, 4, float> zupMatrix(zupData);
 
-Math::Matrix<4,4,float> getTransformFromJoint(Joint & joint) {
+Math::Matrix<4,4,float> getTransformFromJoint(Joint & joint, Math::Matrix<4, 4, float> invParentTrans) {
 
   /// This should take less than a few hundred ns.
-  Transform<float> fTrans = convertTransform<double, float>(joint.node->getGlobalTransform());
+  //Transform<float> fTrans(Math::Vector<3, float>({0,0,1}), Math::Quaternion<float>(0.92388,0,-0.382683,0));
+  Transform<float> fTrans = convertTransform<double,float>(joint.node->getGlobalTransform());
+  //fTrans.position = jTrans.position;
+  //fTrans.position = Math::Vector<3, float>();
 
+  std::cout << fTrans.position << " " << fTrans.rotation << " " << fTrans.scale << std::endl;
+  
   Math::Matrix<4, 4, float> tmat = getTransformationMatrix(fTrans);
 
-  Math::Matrix<4, 4, float> res = tmat * zupMatrix * joint.inverseTransform;
+  Math::Matrix<4, 4, float> invMat = zupMatrix * joint.inverseTransform;
+  
+  Math::Matrix<4, 4, float> res = invParentTrans * (tmat * invMat);
 
   std::cout << tmat << std::endl;
   
-  return tmat;
+  return res;
   
   //return Math::Matrix<4, 4, float>();
 
@@ -43,13 +50,22 @@ Skin::~Skin() {
 
 }
 
+Transform<double> Skin::getRootTransform() {
+  return joints[0].node->getParentTransform();
+}
+
 void Skin::writeTransformDataToBuffer(float * buffer) {
 
   std::cout << "Skin has " << joints.size() << " joints: " << getDataSize() << std::endl;
+
+  Transform<float> parentTransform = convertTransform<double, float>(joints[0].node->getParentTransform());
+  Transform<float> invParentTrans = inverseTransform(parentTransform);
+
+  Matrix<4, 4, float> invParentMat = getTransformationMatrix(invParentTrans);
   
   for (unsigned int i = 0; i < joints.size(); ++i) {
 
-    Matrix<4,4,float> mat = getTransformFromJoint(joints[i]);
+    Matrix<4,4,float> mat = getTransformFromJoint(joints[i], invParentMat);
     const float * arr = mat.asArray();
 
     void * dest = (void *) (buffer + 16 * i);

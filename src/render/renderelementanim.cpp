@@ -6,6 +6,7 @@ RenderElementAnim::RenderElementAnim(Viewport * view, std::shared_ptr<Model> mod
   RenderElement(view, model, material, initTransform, getShaderBindings(material, skin), MaterialUsecase::MAT_USE_SKIN) {
 
   this->skin = skin;
+  this->transform = convertTransform<double, float>(skin->getRootTransform());
 
 }
 

@@ -1075,7 +1075,7 @@ void updateLoadedScales(std::unordered_map<float, Transform<float>> & transforms
 
     if (transforms.find(time) != transforms.end()) {
 
-      transforms[time].scale = Vector<3, float>({scales[i][0], -scales[i][2], scales[i][1]});
+      transforms[time].scale = Vector<3, float>({scales[i][0], scales[i][2], scales[i][1]});
       //transforms[time].scale = scales[i];
 
     } else {
@@ -1083,7 +1083,7 @@ void updateLoadedScales(std::unordered_map<float, Transform<float>> & transforms
       /// TODO : Update to interpolate nearest keyframes for other chanels.
       
       Transform<float> trans;
-      trans.scale = Vector<3, float>({scales[i][0], -scales[i][2], scales[i][1]});
+      trans.scale = Vector<3, float>({scales[i][0], scales[i][2], scales[i][1]});
       //trans.scale = scales[i];
 
       transforms[time] = trans;

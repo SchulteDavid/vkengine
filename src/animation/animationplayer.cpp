@@ -15,8 +15,9 @@ AnimationPlayer::~AnimationPlayer() {
 void AnimationPlayer::applyToNode(double t, strc::Node & node) {
 
   double x = fmod(t, current->getDuration());
-  x = 0;
   Transform<double> trans = this->current->getTransform(x);
+
+  std::cout << "New Transform: " << trans << std::endl;
   
   node.setTransform(trans);
   

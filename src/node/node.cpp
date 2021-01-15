@@ -136,6 +136,10 @@ const Transform<double> & Node::getGlobalTransform() {
   return globalTransform;
 }
 
+const Transform<double> & Node::getParentTransform() {
+  return parentTransform;
+}
+
 const std::string Node::getName() {
   return name;
 }

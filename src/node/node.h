@@ -35,6 +35,7 @@ namespace strc {
 
     const Transform<double> & getTransform();
     const Transform<double> & getGlobalTransform();
+    const Transform<double> & getParentTransform();
 
     void setTransform(Transform<double> trans);
     void setTransform(Transform<double> trans, Transform<double> ptrans);

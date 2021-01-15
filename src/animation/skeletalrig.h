@@ -12,6 +12,8 @@
 #include "resources/resourceuploader.h"
 #include "resources/resourceloader.h"
 
+#include "util/transform.h"
+
 namespace strc {
   class Node;
 }
@@ -32,6 +34,7 @@ public:
   void writeTransformDataToBuffer(float * buffer);
   
   size_t getDataSize();
+  Transform<double> getRootTransform();
   
 private:
   

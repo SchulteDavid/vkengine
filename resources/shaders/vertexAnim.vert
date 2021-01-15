@@ -44,42 +44,46 @@ layout (location = 3) flat out int matIndex;
 //vec4 boneWeights = vec4(0.6456, 0.17386, 0.13727, 0.04326);
 //ivec4 boneIds = ivec4(1, 0, 4, 8);
 
+mat4 getBoneMat(int index) {
+  /*if (index < 1) {
+    return mat4(1.0);
+  } else {*/
+    return boneData.bones[index];
+  //}
+}
+
 void main() {
 
-    mat4 skinMat = boneWeights.x * boneData.bones[boneIds.x]
-      + boneWeights.y * boneData.bones[boneIds.y]
-      + boneWeights.z * boneData.bones[boneIds.z]
-      + boneWeights.w * boneData.bones[boneIds.w];
+  mat4 skinMat = boneWeights.x * getBoneMat(boneIds.x)
+    + boneWeights.y * getBoneMat(boneIds.y)
+    + boneWeights.z * getBoneMat(boneIds.z)
+    + boneWeights.w * getBoneMat(boneIds.w);
+  
+  if(boneIds == ivec4(0)) {
+    skinMat = mat4(1.0);
+  }
+  
+  mat4 transform = transformData.transform * transpose(skinMat);
+  position = transform * vec4(inPosition, 1.0);
+  //position.z *= -1;
+  gl_Position = ubo.proj * ubo.view * position;
+  gl_Position.y *= -1;
+  //gl_Position.z *= -1;
+  normal = vec4(normalize((transform * vec4(inNormal, 0)).xyz), 0.0);
+  
+  uvPos = inUv;
+  
+  position.w = gl_Position.z;
+  
+  vec3 t = normalize((transform * vec4(inTangent, 0)).xyz);
+  
+  vec3 bitangent = -cross(t, normal.yxz);
+  
+  toTangentMat = mat3(t.x, t.y, t.z,
+		      bitangent.x, bitangent.y, bitangent.z,
+		      normal.x, normal.y, normal.z );
+  
+  normal = vec4(inTangent, 1);
+  matIndex = inMat;
     
-    if(boneIds == ivec4(0)) {
-      skinMat = mat4(1.0);
-    }
-
-    mat4 transform = transformData.transform * transpose(skinMat);
-    position = transform * vec4(inPosition, 1.0);
-    gl_Position = ubo.proj * ubo.view * position;
-    normal = vec4(normalize((transform * vec4(inNormal, 0)).xyz), 0.0);
-    gl_Position.y *= -1;
-
-    uvPos = inUv;
-
-    position.w = gl_Position.z;
-
-    vec3 t = normalize((transform * vec4(inTangent, 0)).xyz);
-
-    vec3 bitangent = -cross(t, normal.yxz);
-
-	toTangentMat = (
-
-        mat3(
-            t.x, t.y, t.z,
-            bitangent.x, bitangent.y, bitangent.z,
-            normal.x, normal.y, normal.z
-        )
-
-	);
-
-	normal = vec4(inTangent, 1);
-	matIndex = inMat;
-
 }
