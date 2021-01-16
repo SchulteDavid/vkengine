@@ -96,7 +96,7 @@ public:
   
   ShaderUploader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, uint32_t textureCount, std::vector<InputDescription> inputs);
   
-  std::shared_ptr<Shader> uploadResource(vkutil::VulkanState & state);
+  std::shared_ptr<Shader> uploadResource(vkutil::VulkanState & state, ResourceManager * manager);
   bool uploadReady();
   
 private:

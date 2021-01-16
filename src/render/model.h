@@ -73,7 +73,7 @@ class ModelUploader : public ResourceUploader<Model> {
 public:
   ModelUploader(Model * model);
 
-  std::shared_ptr<Model> uploadResource(vkutil::VulkanState & state);
+  std::shared_ptr<Model> uploadResource(vkutil::VulkanState & state, ResourceManager * manager);
   bool uploadReady();
 
 private:

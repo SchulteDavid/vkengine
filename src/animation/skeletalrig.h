@@ -51,7 +51,7 @@ public:
 
   void addJoint(LoadingResource node, Math::Matrix<4, 4, float> inverse);
   
-  std::shared_ptr<Skin> uploadResource(vkutil::VulkanState & state);
+  std::shared_ptr<Skin> uploadResource(vkutil::VulkanState & state, ResourceManager * manager);
   bool uploadReady();
 
 private:

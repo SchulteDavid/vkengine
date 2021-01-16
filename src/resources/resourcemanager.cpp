@@ -234,7 +234,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
     lout << "Uploading " << fres->name << std::endl;
 
-    std::shared_ptr<Resource> tmpResource = tmpUploader->uploadResource(resourceManager->vulkanState);
+    std::shared_ptr<Resource> tmpResource = tmpUploader->uploadResource(resourceManager->vulkanState, resourceManager);
     if (!tmpResource) {
       lerr << "Resource " << fres->name << " is empty pointer" << std::endl;
       throw dbg::trace_exception("Null pointer for uploaded resource");

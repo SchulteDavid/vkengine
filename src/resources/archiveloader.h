@@ -1,6 +1,7 @@
 #ifndef ARCHIVE_LOADER_H
 #define ARCHIVE_LOADER_H
 
+#include "resources/resourcelocation.h"
 #include "resources/resourceloader.h"
 
 class ResourceManager;

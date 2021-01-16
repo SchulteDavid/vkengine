@@ -66,7 +66,7 @@ public:
   MaterialUploader(LoadingResource shader, std::vector<LoadingResource> textures);
   MaterialUploader(LoadingResource shader, LoadingResource staticShader, std::vector<LoadingResource> textures);
   MaterialUploader(LoadingResource shader, LoadingResource staticShader, LoadingResource skinShader, std::vector<LoadingResource> textures);
-  std::shared_ptr<Material> uploadResource(vkutil::VulkanState & state);
+  std::shared_ptr<Material> uploadResource(vkutil::VulkanState & state, ResourceManager * manager);
   bool uploadReady();
 
 private:

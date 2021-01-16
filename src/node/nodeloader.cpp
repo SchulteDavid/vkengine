@@ -6,12 +6,12 @@
 
 NodeUploader::NodeUploader() {
   this->rootNode = nullptr;
-  this->eventHandler = nullptr;
+  this->eventHandler = "";
 }
 
 NodeUploader::NodeUploader(std::shared_ptr<strc::Node> node) {
     this->rootNode = node;
-    this->eventHandler = nullptr;
+    this->eventHandler = "";
 }
 
 bool NodeUploader::uploadReady()  {
@@ -32,14 +32,14 @@ bool NodeUploader::childrenReady() {
   return isReady;
 }
 
-std::shared_ptr<strc::Node> NodeUploader::uploadResource(vkutil::VulkanState & state) {
+std::shared_ptr<strc::Node> NodeUploader::uploadResource(vkutil::VulkanState & state, ResourceManager * manager) {
 
   std::shared_ptr<strc::Node> node = constructNode();
 
   std::cout << "Got Node " << node << std::endl;
   
   populateChildren(node);
-  populateEventHandler(node);
+  populateEventHandler(node, manager);
   populateResources(node);
   populateAnimations(node);
 
@@ -55,7 +55,7 @@ void NodeUploader::addChild(LoadingResource child) {
   children.push_back(child);
 }
 
-void NodeUploader::addEventHandler(std::shared_ptr<strc::EventHandler> handler) {
+void NodeUploader::addEventHandler(std::string handler) {
   eventHandler = handler;
 }
 
@@ -96,11 +96,17 @@ void NodeUploader::populateAnimations(std::shared_ptr<strc::Node> node) {
   
 }
 
-void NodeUploader::populateEventHandler(std::shared_ptr<strc::Node> node) {
-  if (eventHandler)
-    node->attachEventHandler(eventHandler, node);
-  else
+
+
+void NodeUploader::populateEventHandler(std::shared_ptr<strc::Node> node, ResourceManager * manager) {
+  if (eventHandler != "") {
+
+    std::shared_ptr<strc::EventHandler> handler = strc::constructEventHandler(eventHandler);
+    node->attachEventHandler(handler, node);
+    
+  } else {
     node->attachEventHandler(std::make_shared<strc::EventHandler>(), node);
+  }
 }
 
 std::string NodeUploader::getNodeName() {
@@ -208,8 +214,8 @@ std::shared_ptr<NodeUploader> NodeLoader::loadNodeFromCompound(std::shared_ptr<c
 
   if (comp->hasChild("eventHandler")) {
     std::string handlerName(comp->getNode<char>("eventHandler")->getRawData());
-    std::shared_ptr<strc::EventHandler> handler = strc::constructEventHandler(handlerName);
-    node->addEventHandler(handler);
+    //std::shared_ptr<strc::EventHandler> handler = strc::constructEventHandler(handlerName);
+    node->addEventHandler(handlerName);
   }
 
   if (comp->hasChild("attachedResources")) {

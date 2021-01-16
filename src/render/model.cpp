@@ -360,7 +360,7 @@ ModelUploader::ModelUploader(Model * model) {
 
 }
 
-std::shared_ptr<Model> ModelUploader::uploadResource(vkutil::VulkanState & state) {
+std::shared_ptr<Model> ModelUploader::uploadResource(vkutil::VulkanState & state, ResourceManager * manager) {
 
     model->uploadToGPU(state.device, state.transferCommandPool, state.transferQueue);
     return std::shared_ptr<Model>(model);

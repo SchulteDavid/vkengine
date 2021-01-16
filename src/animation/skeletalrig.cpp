@@ -108,7 +108,7 @@ bool SkinUploader::uploadReady() {
   
 }
 
-std::shared_ptr<Skin> SkinUploader::uploadResource(vkutil::VulkanState & state) {
+std::shared_ptr<Skin> SkinUploader::uploadResource(vkutil::VulkanState & state, ResourceManager * manager) {
 
   std::vector<Joint> joints(nodes.size());
 
