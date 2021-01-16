@@ -12,6 +12,8 @@
 
 #include "util/debug/logger.h"
 
+class Window;
+
 namespace vkutil {
 
   struct QueueFamilyIndices {
@@ -101,6 +103,7 @@ namespace vkutil {
     VkCommandPool graphicsCommandPool;
     VkCommandPool loadingCommandPool;
     VkCommandPool transferCommandPool;
+    Window * window;
 
     std::mutex graphicsQueueMutex;
     std::mutex transferQueueMutex;
