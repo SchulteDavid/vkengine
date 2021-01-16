@@ -5,7 +5,7 @@
 
 using namespace strc;
 
-PlayerControler::PlayerControler(Camera * c, vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContex, std::shared_ptr<Node> node) : state(state) {
+PlayerControler::PlayerControler(std::shared_ptr<Camera> c, vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContex, std::shared_ptr<Node> node) : state(state) {
     this->camera = c;
     this->hasCursor = true;
 

@@ -59,7 +59,7 @@ private:
 
 class Viewport : public MemoryTransferHandler {
 public:
-  Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects, std::shared_ptr<Texture> skyBox);
+  Viewport(std::shared_ptr<Window> window, std::shared_ptr<Camera> camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects, std::shared_ptr<Texture> skyBox);
   virtual ~Viewport();
 
   struct LightData {
@@ -89,7 +89,7 @@ public:
   void createSecondaryBuffers();
   void renderIntoSecondary();
 
-  Camera * getCamera();
+  std::shared_ptr<Camera> getCamera();
 
 protected:
 
@@ -131,7 +131,7 @@ private:
 
   vkutil::VulkanState & state;
 
-  Camera * camera;
+  std::shared_ptr<Camera> camera;
   bool framebufferResized;
 
   Window * window;

@@ -207,7 +207,7 @@ int main(int argc, char ** argv) {
 
   std::shared_ptr<PPEffect> testEffect = std::make_shared<PPEffect>(std::dynamic_pointer_cast<Shader>(testPPShader->location));
   
-  Camera * cam = new Camera(70.0, 0.001, 1000.0, 1280.0/720.0, glm::vec3(0,-10,0));
+  std::shared_ptr<Camera> cam = std::make_shared<Camera>(70.0, 0.001, 1000.0, 1280.0/720.0, glm::vec3(0,-10,0));
 
   std::shared_ptr<Texture> skyBox = std::dynamic_pointer_cast<CubeMap>(skyBoxRes->location);
   Viewport *view = new Viewport(window, cam, std::dynamic_pointer_cast<Shader>(ppShader->location), {testEffect}, skyBox);

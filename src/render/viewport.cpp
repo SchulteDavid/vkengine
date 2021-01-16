@@ -32,7 +32,7 @@ std::vector<uint16_t> viewModelIndices = {
 					  0, 1, 2,
 };
 
-Viewport::Viewport(std::shared_ptr<Window> window, Camera * camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects, std::shared_ptr<Texture> sb) : state(window->getState()) {
+Viewport::Viewport(std::shared_ptr<Window> window, std::shared_ptr<Camera> camera, std::shared_ptr<Shader> defferedShader, std::vector<std::shared_ptr<PPEffect>> effects, std::shared_ptr<Texture> sb) : state(window->getState()) {
 
   bufferManager = nullptr;
   this->skyBox = sb;
@@ -328,7 +328,7 @@ void Viewport::drawFrame(bool updateElements) {
 
 }
 
-Camera * Viewport::getCamera() {
+std::shared_ptr<Camera> Viewport::getCamera() {
   return camera;
 }
 

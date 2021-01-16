@@ -12,7 +12,7 @@
 
 class PlayerControler : public InputHandler {
 public:
-  PlayerControler(Camera * camera, vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContext, std::shared_ptr<strc::Node> node);
+  PlayerControler(std::shared_ptr<Camera> camera, vkutil::VulkanState & state, std::shared_ptr<audio::AudioContext> audioContext, std::shared_ptr<strc::Node> node);
   virtual ~PlayerControler();
 
   void onMouseMotion(double xpos, double ypos, double dx, double dy);
@@ -29,7 +29,7 @@ private:
 
   vkutil::VulkanState & state;
 
-  Camera * camera;
+  std::shared_ptr<Camera> camera;
   bool hasCursor;
 
   double phi;

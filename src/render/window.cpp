@@ -146,7 +146,7 @@ Viewport * Window::getActiveViewport() {
     return this->view;
 }
 
-Camera * Window::getActiveCamera() {
+std::shared_ptr<Camera> Window::getActiveCamera() {
     return view->getCamera();
 }
 

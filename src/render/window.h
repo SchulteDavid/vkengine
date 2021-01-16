@@ -43,7 +43,7 @@ class Window
 
         void setActiveViewport(Viewport * view);
         Viewport * getActiveViewport();
-        Camera * getActiveCamera();
+        std::shared_ptr<Camera> getActiveCamera();
 
     protected:
 
