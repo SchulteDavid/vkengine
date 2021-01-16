@@ -161,7 +161,7 @@ MaterialUploader::MaterialUploader(LoadingResource shader, LoadingResource stati
 
 }
 
-std::shared_ptr<Material> MaterialUploader::uploadResource(vkutil::VulkanState & state) {
+std::shared_ptr<Material> MaterialUploader::uploadResource(vkutil::VulkanState & state, ResourceManager * manager) {
 
     std::shared_ptr<Shader> mShader = std::dynamic_pointer_cast<Shader>(shader->location);
 

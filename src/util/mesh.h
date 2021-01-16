@@ -157,8 +157,8 @@ class MeshUploader : public ResourceUploader<Mesh> {
 public:
   MeshUploader(std::shared_ptr<Mesh> mesh);
 
-  std::shared_ptr<Mesh> uploadResource(vkutil::VulkanState & ) override;
-  bool uploadReady();
+  std::shared_ptr<Mesh> uploadResource(vkutil::VulkanState & state, ResourceManager * manager) override;
+  bool uploadReady() override;
 
 private:
 

@@ -442,7 +442,7 @@ ShaderUploader::ShaderUploader(std::vector<uint8_t> vertCode, std::vector<uint8_
 
 }
 
-std::shared_ptr<Shader> ShaderUploader::uploadResource(vkutil::VulkanState & state) {
+std::shared_ptr<Shader> ShaderUploader::uploadResource(vkutil::VulkanState & state, ResourceManager * manager) {
 
   std::shared_ptr<Shader> shader = std::make_shared<Shader>(vertCode, fragCode, state, textureCount);
 

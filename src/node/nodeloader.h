@@ -11,12 +11,12 @@ class NodeUploader : public ResourceUploader<strc::Node> {
 
   NodeUploader(std::shared_ptr<strc::Node> node);
 
-  std::shared_ptr<strc::Node> uploadResource(vkutil::VulkanState & state) override;
+  std::shared_ptr<strc::Node> uploadResource(vkutil::VulkanState & state, ResourceManager * manager) override;
 
   bool uploadReady() override;
 
   void addChild(LoadingResource child);
-  void addEventHandler(std::shared_ptr<strc::EventHandler> handler);
+  void addEventHandler(std::string handler);
   void addAttachedResource(std::string name, LoadingResource res);
   void addAnimation(std::string name, std::shared_ptr<Animation> anim);
 
@@ -26,7 +26,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
 
   NodeUploader();
   void populateChildren(std::shared_ptr<strc::Node> node);
-  void populateEventHandler(std::shared_ptr<strc::Node> node);
+  void populateEventHandler(std::shared_ptr<strc::Node> node, ResourceManager * manager);
   void populateResources(std::shared_ptr<strc::Node> node);
   void populateAnimations(std::shared_ptr<strc::Node> node);
   bool childrenReady();
@@ -36,7 +36,8 @@ class NodeUploader : public ResourceUploader<strc::Node> {
  private:
   std::shared_ptr<strc::Node> rootNode;
   std::vector<LoadingResource> children;
-  std::shared_ptr<strc::EventHandler> eventHandler;
+  //std::shared_ptr<strc::EventHandler> eventHandler;
+  std::string eventHandler;
 
   std::unordered_map<std::string, LoadingResource> resourcesToAttach;
   std::unordered_map<std::string, std::shared_ptr<Animation>> animations;

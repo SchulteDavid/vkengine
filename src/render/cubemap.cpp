@@ -52,7 +52,7 @@ public:
     return true;
   }
 
-  std::shared_ptr<Texture> uploadResource(vkutil::VulkanState & state) {
+  std::shared_ptr<Texture> uploadResource(vkutil::VulkanState & state, ResourceManager * manager) {
     return std::make_shared<CubeMap>(state, data, width, height, depth);
   }
 
