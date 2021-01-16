@@ -51,6 +51,7 @@ Window::Window(unsigned int width, unsigned int height) {
     this->oldMouseY = 0;
 
     state.glfwWindow = vkutil::createWindow(width, height, this);
+    state.window = this;
 
     glfwSetKeyCallback(state.glfwWindow, glfw_inputs::onKeyboard);
     glfwSetMouseButtonCallback(state.glfwWindow, glfw_inputs::onMouseButton);
@@ -152,11 +153,12 @@ std::shared_ptr<Camera> Window::getActiveCamera() {
 
 void Window::onKeyboard(int key, int scancode, int action, int mods) {
 
-    for (std::shared_ptr<InputHandler> h : inputHandlers) {
-
-        h->onKeyboard(key, scancode, action, mods);
-
-    }
+  for (std::shared_ptr<InputHandler> h : inputHandlers) {
+    
+    std::cout << "Keyboard for handler " << h << std::endl;
+    h->onKeyboard(key, scancode, action, mods);
+    
+  }
 
 }
 
