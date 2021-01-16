@@ -100,3 +100,7 @@ double Entity::getMass() {
 Vector<3> Entity::getPosition() {
     return physObject->getPosition();
 }
+
+std::shared_ptr<strc::Node> Entity::getNode() {
+  return node;
+}

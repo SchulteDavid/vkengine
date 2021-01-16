@@ -68,6 +68,10 @@ namespace strc {
     std::shared_ptr<Node> createDuplicate(std::string newName);
 
     void addAnimation(std::string name, std::shared_ptr<Animation> animation);
+
+    virtual void saveNode(std::shared_ptr<config::NodeCompound> comp);
+    
+    std::shared_ptr<config::NodeCompound> toCompoundNode();
     
   protected:
     friend Entity;

@@ -282,6 +282,8 @@ int main(int argc, char ** argv) {
   run = false;
   wait = false;
 
+  world->saveNodeState("world.node");
+  
   lout << "End of mainloop" << std::endl;
 
   lout << "Joining Threads" << std::endl;

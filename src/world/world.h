@@ -21,6 +21,8 @@ public:
 
   void signalCollision(PhysicsObject * a, PhysicsObject * b, double impulse, double force);
 
+  void saveNodeState(std::string fname);
+  
 protected:
 
 private:

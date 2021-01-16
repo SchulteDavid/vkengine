@@ -1,5 +1,7 @@
 #include "world.h"
 
+#include <fstream>
+
 World::World() {
 
     this->physicsContext = new PhysicsContext();
@@ -53,4 +55,20 @@ void World::synchronize() {
     e->synchronize();
   }
 
+}
+
+void World::saveNodeState(std::string fname) {
+
+  std::ofstream ofile(fname);
+
+  std::shared_ptr<strc::Node> rNode = std::make_shared<strc::Node>("__root__");
+
+  for (std::shared_ptr<Entity> e : entities) {
+
+    rNode->addChild(e->getNode());
+    
+  }
+  
+  config::save(rNode->toCompoundNode(), ofile);
+  
 }

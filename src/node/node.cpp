@@ -191,6 +191,67 @@ void Node::addAnimation(std::string name, std::shared_ptr<Animation> animation) 
   
 }
 
+std::shared_ptr<config::NodeCompound> transformToCompound(const Transform<double> & trans) {
+
+  std::shared_ptr<config::NodeCompound> tNode = std::make_shared<config::NodeCompound>();
+  
+  double tmp[4];
+
+  tmp[0] = trans.position(0);
+  tmp[1] = trans.position(1);
+  tmp[2] = trans.position(2);
+
+  tNode->addChild("position", std::make_shared<config::Node<double>>(3, tmp));
+
+  tmp[0] = trans.rotation.a;
+  tmp[1] = trans.rotation.b;
+  tmp[2] = trans.rotation.c;
+  tmp[3] = trans.rotation.d;
+
+  tNode->addChild("rotation", std::make_shared<config::Node<double>>(4, tmp));
+
+  tmp[0] = trans.scale(0);
+  tmp[1] = trans.scale(1);
+  tmp[2] = trans.scale(2);
+
+  tNode->addChild("scale", std::make_shared<config::Node<double>>(3, tmp));
+
+  return tNode;
+    
+  
+}
+
+void Node::saveNode(std::shared_ptr<config::NodeCompound> comp) {
+
+}
+
+std::shared_ptr<config::NodeCompound> Node::toCompoundNode() {
+
+  std::shared_ptr<config::NodeCompound> root = std::make_shared<config::NodeCompound>();
+
+  root->addChild("name", std::make_shared<config::Node<char>>(name.length(), name.c_str()));
+  root->addChild("transform", transformToCompound(transform));
+
+  if (children.size()) {
+
+    std::vector<std::shared_ptr<config::NodeCompound>> childComps;
+    //uint32_t i;
+    
+    for (auto it = children.begin(); it != children.end(); ++it) {
+
+      if (it->second)
+	childComps.push_back(it->second->toCompoundNode());
+      
+    }
+
+    root->addChild("children", std::make_shared<config::Node<std::shared_ptr<config::NodeCompound>>>(childComps.size(), childComps.data()));
+    
+  }
+
+  return root;
+  
+}
+
 #include "meshnode.h"
 #include "lightnode.h"
 #include "physicsnode.h"

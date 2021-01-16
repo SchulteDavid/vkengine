@@ -35,6 +35,8 @@ public:
   static void registerDefaultEntityTypes();
   static std::shared_ptr<Entity> buildEntityFromType(std::string type, std::shared_ptr<strc::Node> node, std::shared_ptr<PhysicsObject> physObject);
 
+  std::shared_ptr<strc::Node> getNode();
+
 protected:
 
 private:
