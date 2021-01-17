@@ -1,6 +1,5 @@
 #include "node/physicsnode.h"
 
-#include "world/entity.h"
 #include "world/world.h"
 
 using namespace strc;
@@ -45,11 +44,30 @@ void PhysicsNode::applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position
   this->physObject->applyImpulse(impulse);
 }
 
-void PhysicsNode::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
-
-  std::shared_ptr<Entity> ent = Entity::buildEntityFromType("Entity", self, physObject);
-  world->addEntity(ent);
+void PhysicsNode::addToWorld(World * world, std::shared_ptr<Node> self) {
 
   isInSimulation = true;
+  this->world = world;
+  
+}
+
+void PhysicsNode::onUpdate(const double dt, const double t) {
+
+  double dist;
+  std::shared_ptr<strc::Node> node = this->world->raycast(physObject->getPosition(), Math::Vector<3>({0,0,-1}), 1.0, dist);
+  if (node) {
+    std::cout << "Node "<< this << " hits node " << node << " dist = " << dist << std::endl;
+  }
+  
+}
+
+std::shared_ptr<PhysicsObject> PhysicsNode::getPhysicsObject() {
+  return physObject;
+}
+
+void PhysicsNode::synchronize() {
+
+  Transform<double> trans = physObject->getTransform();
+  setGlobalTransform(trans);
   
 }

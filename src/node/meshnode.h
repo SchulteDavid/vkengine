@@ -28,7 +28,7 @@ namespace strc {
   protected:
 
 
-    void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) override;
+    void addToWorld(World * world, std::shared_ptr<Node> self) override;
     void addToViewport(Viewport * view, std::shared_ptr<Node> self) override;
 
     void onUpdate(const double dt, const double t) override;

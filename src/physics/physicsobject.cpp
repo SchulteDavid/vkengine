@@ -105,3 +105,7 @@ void PhysicsObject::applyImpulse(Vector<3> impulse) {
 void PhysicsObject::setAngularFactor(double f) {
     this->angularFactor = f;
 }
+
+void PhysicsObject::performRaycast() {
+  
+}

@@ -33,7 +33,7 @@ MeshNode::~MeshNode() {
 
 }
 
-void MeshNode::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
+void MeshNode::addToWorld(World * world, std::shared_ptr<Node> self) {
 
 }
 

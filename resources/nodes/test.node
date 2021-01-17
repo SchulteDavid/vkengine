@@ -14,7 +14,7 @@ comp children = [
 	string eventHandler = "TestEventHandler"
 
 	comp transform = {
-	     float64 position = [0,0,0]
+	     float64 position = [0,0,10]
      	     float64 rotation = [1,0,0,0]
 	     float64 scale = [1,1,1]
 	}

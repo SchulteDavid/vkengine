@@ -14,15 +14,23 @@ namespace strc {
     virtual ~PhysicsNode();
 
     void applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position);
+    void applyForce(Math::Vector<3> forcem, Math::Vector<3> position);
+    double getMass();
+
+    std::shared_ptr<PhysicsObject> getPhysicsObject();
+
+    void synchronize() override;
 
   protected:
 
-    void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) override;
+    void addToWorld(World * world, std::shared_ptr<Node> self) override;
     std::shared_ptr<Node> duplicate(std::string name) override;
     void onTransformUpdate() override;
+    void onUpdate(const double dt, const double t) override;
 
   private:
     std::shared_ptr<PhysicsObject> physObject;
+    World * world;
 
     bool isInSimulation;
 

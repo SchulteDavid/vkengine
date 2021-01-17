@@ -166,3 +166,32 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
   return std::make_shared<PhysicsObject>(mass, transform, shape);
   
 }
+
+PhysicsContext::RaycastResult PhysicsContext::performRaycastClosest(Math::Vector<3> origin, Math::Vector<3> direction, double maxLength) {
+
+  btVector3 start(origin[0], origin[1], origin[2]);
+  Math::Vector<3> tmpEnd = origin + maxLength * direction;
+  btVector3 end(tmpEnd[0], tmpEnd[1], tmpEnd[2]);
+  
+  btCollisionWorld::ClosestRayResultCallback callback(start, end);
+
+  this->dynamicsWorld->rayTest(start, end, callback);
+
+  RaycastResult res;
+  
+  if (callback.hasHit()) {
+
+    btVector3 wPos = callback.m_hitPointWorld;
+    Math::Vector<3> pos({wPos.x(), wPos.y(), wPos.z()});
+
+    res.distance = (pos - origin).length();
+    res.object = (PhysicsObject *) callback.m_collisionObject->getUserPointer();
+    
+  } else {
+    res.distance = std::numeric_limits<double>::infinity();
+    res.object = nullptr;
+  }
+
+  return res;
+  
+}

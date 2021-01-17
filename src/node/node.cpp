@@ -4,6 +4,8 @@
 #include "nodeloader.h"
 #include "node/event.h"
 
+#include "world/world.h"
+
 #include "animation/animationplayer.h"
 
 using namespace Math;
@@ -72,21 +74,26 @@ void Node::viewportAdd(Viewport * view, std::shared_ptr<Node> self) {
 
 }
 
-void Node::worldAdd(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
+void Node::worldAdd(World * world, std::shared_ptr<Node> self) {
 
   this->addToWorld(world, self);
 
   for (auto n : children) {
-    n.second->worldAdd(world, n.second);
+    //n.second->worldAdd(world, n.second);
+    world->addNode(n.second);
   }
   
 }
 
-void Node::addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self) {
+void Node::addToWorld(World * world, std::shared_ptr<Node> self) {
 
 }
 
 void Node::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
+
+}
+
+void Node::synchronize() {
 
 }
 

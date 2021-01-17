@@ -9,7 +9,6 @@
 #include "resources/resourcemanager.h"
 #include "inputs/playercontroler.h"
 #include "util/debug/trace_exception.h"
-#include "world/entity.h"
 #include "physics/physicscontext.h"
 #include "world/world.h"
 #include <execinfo.h>
@@ -187,8 +186,6 @@ int main(int argc, char ** argv) {
 								     Math::Vector<3, float>(64.0f,64.0f,64.0f),
 								     0.5, 128);*/
 
-  Entity::registerDefaultEntityTypes();
-
   std::shared_ptr<Window> window(new Window(width, height));
   ResourceManager * resourceManager = new ResourceManager(window->getState());
   createResourceLoaders(resourceManager);
@@ -258,11 +255,11 @@ int main(int argc, char ** argv) {
 
   std::shared_ptr<strc::Node> baseNode = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/box.glb"));
   baseNode->viewportAdd(view, baseNode);
-  baseNode->worldAdd(world, baseNode);
+  world->addNode(baseNode);
 
   std::shared_ptr<strc::Node> n3 = resourceManager->get<strc::Node>(ResourceLocation("Node", "resources/nodes/test.node"));
   n3->viewportAdd(view, n3);
-  n3->worldAdd(world, n3);
+  world->addNode(n3);
 
   std::thread rotateThread(rotateFunc, world, view, n3->getChild("FallingBox"));
 

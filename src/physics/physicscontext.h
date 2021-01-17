@@ -19,6 +19,12 @@ public:
 
 class PhysicsContext {
 public:
+
+  struct RaycastResult {
+    PhysicsObject * object;
+    double distance;
+  };
+  
   PhysicsContext();
   virtual ~PhysicsContext();
 
@@ -26,6 +32,9 @@ public:
   void synchronize();
 
   void addObject(std::shared_ptr<PhysicsObject> obj);
+
+  /// Returns closest element on raycast.
+  RaycastResult performRaycastClosest(Math::Vector<3> origin, Math::Vector<3> direction, double maxLength);
 
 protected:
 

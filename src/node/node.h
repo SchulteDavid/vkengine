@@ -12,7 +12,6 @@
 
 class Viewport;
 class World;
-class Entity;
 class AnimationPlayer;
 class Animation;
 
@@ -31,7 +30,7 @@ namespace strc {
     std::shared_ptr<Node> getChild(std::string name);
 
     void viewportAdd(Viewport * view, std::shared_ptr<Node> self);
-    void worldAdd(std::shared_ptr<World> world, std::shared_ptr<Node> self);
+    void worldAdd(World * world, std::shared_ptr<Node> self);
 
     const Transform<double> & getTransform();
     const Transform<double> & getGlobalTransform();
@@ -64,6 +63,7 @@ namespace strc {
     }
 
     void update(const double dt, const double t);
+    virtual void synchronize();
 
     std::shared_ptr<Node> createDuplicate(std::string newName);
 
@@ -74,7 +74,6 @@ namespace strc {
     std::shared_ptr<config::NodeCompound> toCompoundNode();
     
   protected:
-    friend Entity;
     /// This is the transform relative to
     /// the parent node.
     Transform<double> transform;
@@ -86,7 +85,7 @@ namespace strc {
     /// This is the absolute transform of the nodes parent
     Transform<double> parentTransform;
 
-    virtual void addToWorld(std::shared_ptr<World> world, std::shared_ptr<Node> self);
+    virtual void addToWorld(World * world, std::shared_ptr<Node> self);
     virtual void addToViewport(Viewport * view, std::shared_ptr<Node> self);
     virtual void onUpdate(const double dt, const double t);
 

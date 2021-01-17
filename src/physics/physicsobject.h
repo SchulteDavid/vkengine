@@ -39,6 +39,8 @@ public:
 
   void synchronize();
 
+  void performRaycast();
+
 protected:
 
 private:
