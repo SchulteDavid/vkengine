@@ -88,17 +88,18 @@ void PhysicsObject::setTransform(Transform<double> trans) {
   
 }
 
-void PhysicsObject::applyForce(Vector<3> force, Vector<3> pos) {
+void PhysicsObject::applyForce(const Vector<3> & force, const Vector<3> & pos) {
 
     this->rigidBody->activate(true);
-    this->rigidBody->applyForce(btVector3(force[0], force[1], force[2]), btVector3(pos[0], pos[1], pos[2]));
+    this->rigidBody->applyForce(btVector3(force(0), force(1), force(2)), btVector3(pos(0), pos(1), pos(2)));
 
 }
 
-void PhysicsObject::applyImpulse(Vector<3> impulse) {
+void PhysicsObject::applyImpulse(const Vector<3> & impulse, const Vector<3> & position) {
 
     this->rigidBody->activate(true);
-    this->rigidBody->applyCentralImpulse(btVector3(impulse[0], impulse[1], impulse[2]));
+    this->rigidBody->applyImpulse(btVector3(impulse(0), impulse(1), impulse(2)),
+				  btVector3(position(0), position(1), position(2)));
 
 }
 

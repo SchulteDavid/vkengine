@@ -40,8 +40,8 @@ void PhysicsNode::onTransformUpdate() {
     this->physObject->setTransform(getGlobalTransform());
 }
 
-void PhysicsNode::applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position) {
-  this->physObject->applyImpulse(impulse);
+void PhysicsNode::applyImpulse(const Math::Vector<3> & impulse, const Math::Vector<3> & position) {
+  this->physObject->applyImpulse(impulse, position);
 }
 
 void PhysicsNode::addToWorld(World * world, std::shared_ptr<Node> self) {
@@ -53,12 +53,6 @@ void PhysicsNode::addToWorld(World * world, std::shared_ptr<Node> self) {
 
 void PhysicsNode::onUpdate(const double dt, const double t) {
 
-  double dist;
-  std::shared_ptr<strc::Node> node = this->world->raycast(physObject->getPosition(), Math::Vector<3>({0,0,-1}), 1.0, dist);
-  if (node) {
-    std::cout << "Node "<< this << " hits node " << node << " dist = " << dist << std::endl;
-  }
-  
 }
 
 std::shared_ptr<PhysicsObject> PhysicsNode::getPhysicsObject() {
@@ -70,4 +64,8 @@ void PhysicsNode::synchronize() {
   Transform<double> trans = physObject->getTransform();
   setGlobalTransform(trans);
   
+}
+
+World * PhysicsNode::getWorld() {
+  return world;
 }

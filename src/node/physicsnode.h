@@ -13,13 +13,15 @@ namespace strc {
     PhysicsNode(std::string name, Transform<double> transform, std::shared_ptr<PhysicsObject> physObject);
     virtual ~PhysicsNode();
 
-    void applyImpulse(Math::Vector<3> impulse, Math::Vector<3> position);
-    void applyForce(Math::Vector<3> forcem, Math::Vector<3> position);
+    void applyImpulse(const Math::Vector<3> & impulse, const Math::Vector<3> & position);
+    void applyForce(const Math::Vector<3> & force, const Math::Vector<3> & position);
     double getMass();
 
     std::shared_ptr<PhysicsObject> getPhysicsObject();
 
     void synchronize() override;
+
+    World * getWorld();
 
   protected:
 

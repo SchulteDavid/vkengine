@@ -34,8 +34,8 @@ public:
   
   void setRigidBody(btRigidBody * body);
 
-  void applyImpulse(Math::Vector<3, double> impulse);
-  void applyForce(Math::Vector<3, double> force, Math::Vector<3, double> pos);
+  void applyImpulse(const Math::Vector<3, double> & impulse, const Math::Vector<3> & position);
+  void applyForce(const Math::Vector<3, double> & force, const Math::Vector<3, double> & pos);
 
   void synchronize();
 
