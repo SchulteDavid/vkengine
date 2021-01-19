@@ -58,7 +58,7 @@ template <typename T> inline Transform<T> operator*(const Transform<T> & t1, con
 
   Transform<T> res;
   res.position = t1.position + t1.rotation.toRotationMatrix() * t2.position;
-  res.rotation = t2.rotation * t1.rotation;
+  res.rotation = t1.rotation * t2.rotation;
   res.scale = Math::compMultiply(t1.scale, t2.scale);
 
   return res;
@@ -70,7 +70,7 @@ template <typename T> Transform<T> combineTransforms(const Transform<T> & t1, co
 
   Transform<T> res;
   res.position = t1.position + t2.position;
-  res.rotation = t2.rotation * t1.rotation;
+  res.rotation = t1.rotation * t2.rotation;
   res.scale = Math::compMultiply(t1.scale, t2.scale);
 
   return res;

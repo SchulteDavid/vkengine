@@ -43,12 +43,22 @@ std::shared_ptr<strc::Node> NodeUploader::uploadResource(vkutil::VulkanState & s
   populateResources(node);
   populateAnimations(node);
 
+  Transform<double> initTrans = node->getGlobalTransform();
+  std::cout << "World transform: " << wt << " init: " << initTrans << std::endl;
+  node->setTransform(node->getTransform(), wt);
+  Transform<double> fTrans = node->getGlobalTransform();
+  std::cout << "Final: " << fTrans << std::endl;
+  
   return node;
 
 }
 
 std::shared_ptr<strc::Node> NodeUploader::constructNode() {
   return rootNode;
+}
+
+void NodeUploader::worldTrans(Transform<double> trans) {
+  this->wt = trans;
 }
 
 void NodeUploader::addChild(LoadingResource child) {

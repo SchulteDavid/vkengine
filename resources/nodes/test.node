@@ -66,18 +66,7 @@ comp children = [
 	comp children = [
 
      	     {
-		string type = "MeshNode"
-		string name = "PlatformMesh"
-
-		comp transform = {
-	     	     float64 position = [0,0,0]
-	     	     float64 rotation = [1,0,0,0]
-		     float64 scale = [1,1,1]
-		}
-
-		string mesh = "resources/nodes/platform.glb::Platform"
-     		string material = "resources/nodes/platform.glb::Material.001"
-	
+	     string location = "resources/nodes/room.glb"
 	    },
 	    {
 		string type = "Node"

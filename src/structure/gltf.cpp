@@ -728,7 +728,7 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
   mmesh->makeConsistentWithNormals();
   
-  return zupMatrix * mmesh;
+  return mmesh;
 
 }
 
@@ -1277,6 +1277,8 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
   // Fetch node
   gltf_node_t & node = fileData.nodes[nodeId];
 
+  Transform<double> zUpTrans(Vector<3>({0, 0, 0}),Quaternion<double>::fromAxisAngle(Vector<3>({1,0,0}), M_PI / 2));
+
   // create transform
 
   Transform<float> tmptrans;
@@ -1362,18 +1364,25 @@ LoadingResource GLTFNodeLoader::load(ResourceLocation location) {
 
   lout << "GLTF-Data is loaded" << std::endl;
 
+
+  Transform<double> zupTrans(Vector<3>({0,0,0}), Quaternion<double>::fromAxisAngle(Vector<3>({1,0,0}), M_PI / 2));
   gltf_scene_t scene = fileData.scenes[fileData.rootScene];
-  std::shared_ptr<strc::Node> sceneNode(new strc::Node(""));
+  std::shared_ptr<strc::Node> sceneNode(new strc::Node("", zupTrans));
 
   std::shared_ptr<NodeUploader> sceneUploader = std::make_shared<NodeUploader>(sceneNode);
 
   loadState.nodes = std::vector<std::shared_ptr<NodeUploader>>(fileData.nodes.size());
   loadState.nodeRes = std::vector<LoadingResource>(fileData.nodes.size());
+
+  sceneUploader->worldTrans(zupTrans);
   
   for (int nodeId : scene.nodes) {
 
     std::shared_ptr<NodeUploader> child = loadNodeGLTF(fileData, nodeId, location.filename, loadState);
     //LoadingResource res = uploadResource(ResourceLocation("Node", location.filename, child->getNodeName()), child);
+
+    //child->worldTrans(zupTrans);
+    
     if (!loadState.nodeRes[nodeId])
       throw dbg::trace_exception("Loading of node yields no node.");
     sceneUploader->addChild(loadState.nodeRes[nodeId]);

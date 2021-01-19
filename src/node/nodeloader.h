@@ -20,6 +20,8 @@ class NodeUploader : public ResourceUploader<strc::Node> {
   void addAttachedResource(std::string name, LoadingResource res);
   void addAnimation(std::string name, std::shared_ptr<Animation> anim);
 
+  void worldTrans(Transform<double> trans);
+
   virtual std::string getNodeName();
 
  protected:
@@ -38,6 +40,7 @@ class NodeUploader : public ResourceUploader<strc::Node> {
   std::vector<LoadingResource> children;
   //std::shared_ptr<strc::EventHandler> eventHandler;
   std::string eventHandler;
+  Transform<double> wt;
 
   std::unordered_map<std::string, LoadingResource> resourcesToAttach;
   std::unordered_map<std::string, std::shared_ptr<Animation>> animations;

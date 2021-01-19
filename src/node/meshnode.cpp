@@ -78,6 +78,8 @@ void MeshNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 
   Transform<float> vTransform = convertTransform<double, float>(getGlobalTransform());
 
+  std::cout << "Mesh Node transform " << globalTransform << " " << getName() << std::endl;
+
   if (!this->renderElement) {
     std::shared_ptr<Model> tmpModel = buildModel(view->getState());
     //renderElement = std::shared_ptr<RenderElement>(RenderElement::buildRenderElement(view, tmpModel, material, vTransform));
