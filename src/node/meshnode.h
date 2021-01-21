@@ -26,6 +26,8 @@ namespace strc {
     std::shared_ptr<Material> getMaterial();
     std::shared_ptr<Mesh> getMesh();
 
+    void saveNode(std::shared_ptr<config::NodeCompound> comp) override;
+
   protected:
 
 

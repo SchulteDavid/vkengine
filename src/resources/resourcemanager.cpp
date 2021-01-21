@@ -48,7 +48,10 @@ ResourceLoader<Resource> * ResourceManager::getLoader(std::string name, int inde
 }
 
 std::shared_ptr<Resource> ResourceManager::registerResource(ResourceLocation location, std::shared_ptr<Resource> res) {
+
+  res->setLocation(location);
   return this->registries[location.type]->registerObject(location, res);
+  
 }
 
 bool ResourceManager::isLoaded(ResourceLocation location) {
@@ -211,6 +214,7 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
       fres->status.isUploaded = true;
       fres->status.isUseable = true;
       fres->cond.notify_all();
+      fres->location->setLocation(fres->name);
       //fres->prom.set_value();
 
       continue;
@@ -243,8 +247,8 @@ void ResourceManager::threadUploadingFunction(ResourceManager * resourceManager)
 
     fres->status.isUploaded = true;
     fres->status.isUseable  = true;
-
     fres->cond.notify_all();
+    fres->location->setLocation(fres->name);
     //fres->prom.set_value();
 
     resourceManager->unmarkResourceInPipeline(fres);
@@ -410,6 +414,7 @@ LoadingResource createSubresource(const ResourceLocation & location, std::shared
   LoadingResource res(new FutureResource(location));
   res->isPresent = true;
   res->uploader = uploader;
+  res->name = location;
 
   res->status.isUseable = false;
   res->status.isLoaded = true;
@@ -429,6 +434,7 @@ LoadingResource scheduleSubresourceUpload(ResourceManager * manager, ResourceLoc
   LoadingResource res(new FutureResource(location));
   res->isPresent = true;
   res->uploader = uploader;
+  res->name = location;
 
   res->status.isUseable = false;
   res->status.isLoaded = true;
@@ -461,4 +467,12 @@ void FutureResource::wait() {
   std::cout << "Waiting for " << this << std::endl;
   
   cond.wait(lock, [&] {return status.isUseable;});
+}
+
+void Resource::setLocation(const ResourceLocation & location) {
+  this->location = location;
+}
+
+const ResourceLocation & Resource::getLocation() {
+  return location;
 }

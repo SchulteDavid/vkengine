@@ -6,7 +6,7 @@
 #include "render/renderelement.h"
 #include <iostream>
 
-Material::Material(std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> textures) {
+Material::Material(std::shared_ptr<Shader> shader, std::vector<std::shared_ptr<Texture>> textures) : Resource("Material") {
 
     this->shader = shader;
     this->textures = textures;

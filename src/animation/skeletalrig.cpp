@@ -42,7 +42,7 @@ Math::Matrix<4,4,float> getTransformFromJoint(Joint & joint, Math::Matrix<4, 4, 
 
 }
 
-Skin::Skin(std::vector<Joint> joints) {
+Skin::Skin(std::vector<Joint> joints) : Resource("Skin") {
   this->joints = joints;
 }
 

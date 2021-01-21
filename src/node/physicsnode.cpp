@@ -103,3 +103,10 @@ void PhysicsNode::synchronize() {
 World * PhysicsNode::getWorld() {
   return world;
 }
+
+void PhysicsNode::saveNode(std::shared_ptr<config::NodeCompound> comp) {
+
+  std::shared_ptr<config::NodeCompound> physData = physutil::savePhysicsObject(physObject);
+
+  comp->addChild("physics", physData);  
+}

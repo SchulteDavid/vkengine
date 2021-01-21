@@ -14,7 +14,7 @@ using namespace strc;
 Node::Node(std::string name) : Node(name, Transform<double>()) {
 }
 
-Node::Node(std::string name, Transform<double> transform) : name(name) {
+Node::Node(std::string name, Transform<double> transform) : Resource("Node"), name(name) {
 
   this->transform = transform;
   this->globalTransform = transform;
@@ -34,8 +34,10 @@ void Node::attachEventHandler(std::shared_ptr<EventHandler> handler, std::shared
   eventHandler->bindToParent(self);
 }
 
-void Node::attachResource(std::string name, std::shared_ptr<Resource> resource) {
-  attachedResources[name] = resource;
+void Node::attachResource(std::string name, std::shared_ptr<Resource> res) {
+
+  attachedResources[name] = res;
+  
 }
 
 std::shared_ptr<Resource> Node::getAttachedResource(std::string name) {
@@ -230,15 +232,56 @@ std::shared_ptr<config::NodeCompound> transformToCompound(const Transform<double
 
 void Node::saveNode(std::shared_ptr<config::NodeCompound> comp) {
 
+  
+  
+}
+
+std::string Node::getTypeName() {
+
+  int status;
+  char * demangled = abi::__cxa_demangle(typeid(*this).name(), 0, 0, &status);
+
+  char * name = demangled + 6;
+  std::string res = std::string(name);
+  free(demangled);
+  return res;
+  
 }
 
 std::shared_ptr<config::NodeCompound> Node::toCompoundNode() {
 
   std::shared_ptr<config::NodeCompound> root = std::make_shared<config::NodeCompound>();
 
+  std::string tName = getTypeName();
+  root->addChild("type", std::make_shared<config::Node<char>>(tName.length(), tName.c_str()));
   root->addChild("name", std::make_shared<config::Node<char>>(name.length(), name.c_str()));
   root->addChild("transform", transformToCompound(transform));
+  
+  saveNode(root);
 
+  if (attachedResources.size()) {
+
+    std::vector<std::shared_ptr<config::NodeCompound>> resComps;
+    
+    for (auto it : attachedResources) {
+
+      std::shared_ptr<config::NodeCompound> resComp = std::make_shared<config::NodeCompound>();
+
+      const ResourceLocation & location = it.second->getLocation();
+      
+      resComp->addChild("name", std::make_shared<config::Node<char>>(it.first.length(), it.first.c_str()));
+      resComp->addChild("type", std::make_shared<config::Node<char>>(location.type.length(), location.type.c_str()));
+      std::string loc = location;
+      resComp->addChild("location", std::make_shared<config::Node<char>>(loc.length(), loc.c_str()));
+
+      resComps.push_back(resComp);
+      
+    }
+
+    root->addChild("attachedResources", std::make_shared<config::Node<std::shared_ptr<config::NodeCompound>>>(resComps.size(), resComps.data()));
+    
+  }
+  
   if (children.size()) {
 
     std::vector<std::shared_ptr<config::NodeCompound>> childComps;
@@ -259,18 +302,70 @@ std::shared_ptr<config::NodeCompound> Node::toCompoundNode() {
   
 }
 
+void Node::printChildren() {
+
+  for (auto it : children) {
+    std::cout << it.first << std::endl;
+  }
+  
+}
+
 #include "meshnode.h"
 #include "lightnode.h"
 #include "physicsnode.h"
 #include "audiosourcenode.h"
 
+template <class T> std::shared_ptr<NodeUploader> loadNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
+  
+  int status;
+  char * demangled = abi::__cxa_demangle(typeid(T).name(), 0, 0, &status);
+
+  std::string tName(demangled);
+  free(demangled);
+  
+  throw dbg::trace_exception(std::string("No specialisation for node type: ").append(tName));
+}
+
+template <> std::shared_ptr<NodeUploader> loadNode<strc::Node>(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
+  return loadDefaultNode(root, context, nodeName);
+}
+
+template <> std::shared_ptr<NodeUploader> loadNode<strc::MeshNode>(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
+  return loadMeshNode(root, context, nodeName);
+}
+
+template <> std::shared_ptr<NodeUploader> loadNode<strc::PhysicsNode>(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
+  return loadPhysicsNode(root, context, nodeName);
+}
+
+template <> std::shared_ptr<NodeUploader> loadNode<strc::AudioSourceNode>(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
+  return loadAudioSourceNode(root, context, nodeName);
+}
+
+template <> std::shared_ptr<NodeUploader> loadNode<strc::LightNode>(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
+  return loadLightNode(root, context, nodeName);
+}
+
+template <class T> void registerLoader() {
+
+  int status;
+  char * demangled = abi::__cxa_demangle(typeid(T).name(), 0, 0, &status);
+
+  char * name = demangled + 6;
+  std::string res = std::string(name);
+  free(demangled);
+
+  NodeLoader::registerNodeLoader(res, loadNode<T>);
+  
+}
+
 void Node::registerLoaders() {
 
-  NodeLoader::registerNodeLoader("Node", loadDefaultNode);
-  NodeLoader::registerNodeLoader("MeshNode", strc::loadMeshNode);
-  NodeLoader::registerNodeLoader("LightNode", strc::loadLightNode);
-  NodeLoader::registerNodeLoader("PhysicsNode", strc::loadPhysicsNode);
-  NodeLoader::registerNodeLoader("AudioSourceNode", strc::loadAudioSourceNode);
+  registerLoader<Node>();
+  registerLoader<MeshNode>();
+  registerLoader<PhysicsNode>();
+  registerLoader<AudioSourceNode>();
+  registerLoader<LightNode>();
 
   /// Register EventHandlers
 

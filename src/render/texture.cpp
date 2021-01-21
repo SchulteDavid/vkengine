@@ -17,7 +17,7 @@
 
 using namespace vkutil;
 
-Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth) : allocator(state.vmaAllocator), device(state.device) {
+Texture::Texture(vkutil::VulkanState & state, const std::vector<float> & data, int width, int height, int depth) : Resource("Texture"), allocator(state.vmaAllocator), device(state.device) {
 
     format = VK_FORMAT_R32G32B32A32_SFLOAT;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -72,7 +72,7 @@ Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data,
 
 }
 
-Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth, VkImageViewType viewType, int layerCount, VkImageCreateFlags flags) : allocator(state.vmaAllocator), device(state.device) {
+Texture::Texture(vkutil::VulkanState & state, const std::vector<uint8_t> & data, int width, int height, int depth, VkImageViewType viewType, int layerCount, VkImageCreateFlags flags) : Resource("Texture"), allocator(state.vmaAllocator), device(state.device) {
 
     //format = VK_FORMAT_R32G32B32A32_SFLOAT;
     format = VK_FORMAT_R8G8B8A8_UNORM;

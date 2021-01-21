@@ -187,3 +187,17 @@ std::shared_ptr<NodeUploader> strc::loadMeshNode(std::shared_ptr<config::NodeCom
   return std::make_shared<MeshNodeUploader>(nodeName, mesh, material, context.transform);
 
 }
+
+void MeshNode::saveNode(std::shared_ptr<config::NodeCompound> comp) {
+
+  if (mesh) {
+    std::string location = mesh->getLocation();
+    comp->addChild("mesh", std::make_shared<config::Node<char>>(location.length(), location.c_str()));
+  }
+
+  if (material) {
+    std::string location = material->getLocation();
+    comp->addChild("material", std::make_shared<config::Node<char>>(location.length(), location.c_str()));
+  }
+  
+}

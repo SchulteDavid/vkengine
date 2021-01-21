@@ -8,6 +8,8 @@
 
 #include "util/transform.h"
 
+#include <any>
+
 class PhysicsObject {
 
 public:
@@ -41,6 +43,12 @@ public:
 
   void performRaycast();
 
+  void setShapeType(std::string shapeType);
+  void setShapeData(std::any shapeData);
+
+  std::string getShapeType();
+  std::any getShapeData();
+
 protected:
 
 private:
@@ -49,6 +57,9 @@ private:
   double angularFactor;
   btCollisionShape * collisionShape;
   btRigidBody * rigidBody;
+
+  std::string shapeType;
+  std::any shapeData;
 
 
 };

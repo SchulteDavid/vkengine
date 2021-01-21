@@ -17,6 +17,10 @@ struct ResourceLocation {
 
   }
 
+  /*ResourceLocation() : type("UNKNOWN"), filename("NO_SUCH_FILE"), name("") {
+
+    }*/
+
   /// Registry in which this should be saved
   std::string type;
 
@@ -28,6 +32,15 @@ struct ResourceLocation {
   std::string name;
 
   static ResourceLocation parse(std::string type, std::string name);
+
+  operator std::string() const {
+    std::string res = filename;
+    if (name != "") {
+      res.append("::");
+      res.append(name);
+    }
+    return res;
+  }
 
 };
 

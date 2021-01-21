@@ -235,7 +235,7 @@ std::vector<uint8_t> convertToByteBuffer(std::vector<Model::Vertex> & verts) {
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices) {
+Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std::vector<uint16_t> & indices) : Resource("Model") {
 
     MeshHelper::computeTangents(verts, indices);
 
@@ -249,7 +249,7 @@ Model::Model(const vkutil::VulkanState & state, std::vector<Vertex> & verts, std
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh) : Resource("Model") { // : Model(state, mesh->getVerts(), mesh->getIndices()) {
 
     std::vector<InterleaveElement> elements(5);
 
@@ -293,7 +293,7 @@ Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std:
 
 }
 
-Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize, bool isStatic) {
+Model::Model(const vkutil::VulkanState & state, std::shared_ptr<Mesh> mesh, std::vector<InterleaveElement> elements, size_t elementSize, bool isStatic) : Resource("Model") {
 
     uint32_t indexSizeBytes;
     uint32_t indexCount;

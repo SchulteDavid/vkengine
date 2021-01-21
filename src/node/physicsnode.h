@@ -20,6 +20,7 @@ namespace strc {
     std::shared_ptr<PhysicsObject> getPhysicsObject();
 
     void synchronize() override;
+    void saveNode(std::shared_ptr<config::NodeCompound> root) override;
 
     World * getWorld();
 

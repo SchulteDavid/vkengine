@@ -4,7 +4,7 @@
 
 using namespace audio;
 
-Sound::Sound(std::vector<uint8_t> data, SoundFormatInfo formatInfo) : format(formatInfo) {
+Sound::Sound(std::vector<uint8_t> data, SoundFormatInfo formatInfo) : Resource("Sound"), format(formatInfo) {
 
   this->data = data;
 

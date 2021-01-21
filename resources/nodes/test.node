@@ -67,7 +67,7 @@ comp children = [
 
 	comp attachedResources = [
 	     {
-		string location = "resources/nodes/room.glb::Cube.001"
+		string location = "resources/nodes/room.glb::TestBaseMesh"
 		string type = "Mesh"
 		string name = "FloorMesh"
 	     }

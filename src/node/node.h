@@ -70,8 +70,11 @@ namespace strc {
     void addAnimation(std::string name, std::shared_ptr<Animation> animation);
 
     virtual void saveNode(std::shared_ptr<config::NodeCompound> comp);
+    virtual std::string getTypeName();
     
     std::shared_ptr<config::NodeCompound> toCompoundNode();
+
+    void printChildren();
     
   protected:
     /// This is the transform relative to

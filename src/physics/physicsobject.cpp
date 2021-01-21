@@ -110,3 +110,19 @@ void PhysicsObject::setAngularFactor(double f) {
 void PhysicsObject::performRaycast() {
   
 }
+
+void PhysicsObject::setShapeType(std::string shapeType) {
+  this->shapeType = shapeType;
+}
+
+void PhysicsObject::setShapeData(std::any shapeData) {
+  this->shapeData = shapeData;
+}
+
+std::string PhysicsObject::getShapeType() {
+  return shapeType;
+}
+
+std::any PhysicsObject::getShapeData() {
+  return shapeData;
+}

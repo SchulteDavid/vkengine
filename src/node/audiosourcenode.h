@@ -14,6 +14,8 @@ namespace strc {
 
     void playSound(std::shared_ptr<audio::Sound> sound);
 
+    void saveNode(std::shared_ptr<config::NodeCompound> comp) override;
+    
   protected:
     void onTransformUpdate() override;
 

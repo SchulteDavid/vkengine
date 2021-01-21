@@ -22,3 +22,7 @@ std::shared_ptr<Node> AudioSourceNode::duplicate(std::string name) {
 std::shared_ptr<NodeUploader> strc::loadAudioSourceNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext &context, const std::string nodeName) {
   return std::make_shared<NodeUploader>(std::make_shared<AudioSourceNode>(nodeName, context.transform));
 }
+
+void AudioSourceNode::saveNode(std::shared_ptr<config::NodeCompound> comp) {
+
+}

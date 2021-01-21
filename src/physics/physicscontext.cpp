@@ -144,6 +144,39 @@ namespace physutil {
     }
     
   }
+
+  struct BoxShapeData {
+    
+    BoxShapeData(Math::Vector<3> c) : corner(c) {};
+    Math::Vector<3> corner;
+    
+  };
+
+  struct SphereShapeData {
+
+    SphereShapeData(double r) : radius(r) {};
+    double radius;
+    
+  };
+
+  struct CapsuleShapeData {
+
+    CapsuleShapeData(double h, double r) : height(h), radius(r) {};
+    double height;
+    double radius;
+    
+  };
+
+  struct MeshShapeData {
+
+    MeshShapeData(std::shared_ptr<Mesh> m, std::string name) {
+      mesh = m;
+      meshName = name;
+    }
+    std::shared_ptr<Mesh> mesh;
+    std::string meshName;
+    
+  };
   
 };
 
@@ -157,19 +190,26 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
   std::string shapeName(data->getNode<char>("shapeName")->getRawData());
 
   btCollisionShape * shape = nullptr;
+
+  std::any shapeData;
   
   if (shapeName == "box") {
 
     std::cout << "Loading BoxShape " << std::endl;
     double * s = data->getNode<double>("boxSize")->getRawData().get();
     Math::Vector<3, double> svec(s);
+
+    shapeData = BoxShapeData(svec);
+    
     svec = Math::compMultiply(svec, transform.scale);
     shape = new btBoxShape(btVector3(svec[0], svec[1], svec[2]));
+    
     
   } else if (shapeName == "sphere") {
 
     double radius = data->getNode<double>("radius")->getElement(0);
     shape = new btSphereShape(radius);
+    shapeData = SphereShapeData(radius);
     
   } else if (shapeName == "capsule") {
 
@@ -177,11 +217,15 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
     double height = data->getNode<double>("height")->getElement(0);
     
     shape = new btCapsuleShapeZ(radius, height);
+
+    shapeData = CapsuleShapeData(height, radius);
     
   } else if (shapeName == "cylinder") {
 
     double radius = data->getNode<double>("radius")->getElement(0);
     double height = data->getNode<double>("height")->getElement(0);
+
+    shapeData = CapsuleShapeData(height, radius);
 
     btVector3 vec(radius, radius, height/2);
     
@@ -198,6 +242,8 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
     LoadingResource res = attachedResources.at(resName);
     std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(res->location);
 
+    shapeData = MeshShapeData(mesh, resName);
+
     btTriangleMesh * btMesh = new btTriangleMesh();
 
     transferMeshDataToBullet(mesh, btMesh);
@@ -208,8 +254,48 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
 
   if (!shape)
     throw dbg::trace_exception("Unknown collision shape");
+
+  std::shared_ptr<PhysicsObject> obj = std::make_shared<PhysicsObject>(mass, transform, shape);
+  obj->setShapeType(shapeName);
+  obj->setShapeData(shapeData);
+  return obj;
+  
+}
+
+std::shared_ptr<config::NodeCompound> physutil::savePhysicsObject(std::shared_ptr<PhysicsObject> obj) {
+
+  std::shared_ptr<config::NodeCompound> comp = std::make_shared<config::NodeCompound>();
+
+  std::string shapeType = obj->getShapeType();
+  comp->addChild("shapeName", std::make_shared<config::Node<char>>(shapeType.length(), shapeType.c_str()));
+
+  if (shapeType == "box") {
+
+    BoxShapeData bData = std::any_cast<BoxShapeData>(obj->getShapeData());
+    comp->addChild("boxSize", std::make_shared<config::Node<double>>(3, bData.corner.getData()));
     
-  return std::make_shared<PhysicsObject>(mass, transform, shape);
+  } else if (shapeType == "sphere") {
+
+    SphereShapeData sData = std::any_cast<SphereShapeData>(obj->getShapeData());
+    comp->addChild("radius", std::make_shared<config::Node<double>>(1, &sData.radius));
+    
+  } else if (shapeType == "capsule" || shapeType == "cylinder") {
+
+    CapsuleShapeData cData = std::any_cast<CapsuleShapeData>(obj->getShapeData());
+    comp->addChild("height", std::make_shared<config::Node<double>>(1, &cData.height));
+    comp->addChild("radius", std::make_shared<config::Node<double>>(1, &cData.radius));
+    
+  } else if (shapeType == "static_mesh") {
+
+    MeshShapeData mData = std::any_cast<MeshShapeData>(obj->getShapeData());
+    comp->addChild("name", std::make_shared<config::Node<char>>(mData.meshName.length(), mData.meshName.c_str()));
+    
+  }
+
+  double mass = obj->getMass();
+  comp->addChild("mass", std::make_shared<config::Node<double>>(1, &mass));
+
+  return comp;
   
 }
 

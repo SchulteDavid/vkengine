@@ -8,7 +8,7 @@
 
 using namespace Math;
 
-Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) {
+Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint16_t> indices) : Resource("Mesh") {
 
   this->verts = verts;
   this->indices = std::vector<uint32_t>(indices.size());
@@ -83,7 +83,7 @@ const VertexAttributeType Mesh::getAttributeType(std::string name) {
 
 }
 
-Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices) {
+Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint16_t> indices) : Resource("Mesh") {
 
   this->attributes = attributes;
   this->indices = std::vector<uint32_t>(indices.size());
@@ -113,7 +113,7 @@ Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vec
 
 }
 
-Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint32_t> indices) {
+Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint32_t> indices) : Resource("Mesh") {
 
   this->verts = verts;
   this->indices = indices;
@@ -176,7 +176,7 @@ Mesh::Mesh(std::vector<Model::Vertex> verts, std::vector<uint32_t> indices) {
 
 }
 
-Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint32_t> indices) {
+Mesh::Mesh(std::unordered_map<std::string, VertexAttribute> attributes, std::vector<uint32_t> indices) : Resource("Mesh") {
 
   this->attributes = attributes;
   this->indices = indices;
@@ -317,7 +317,10 @@ std::shared_ptr<Mesh> Mesh::withTransform(std::shared_ptr<Mesh> mesh, Math::Matr
 
   }
 
-  return std::shared_ptr<Mesh>(new Mesh(newAttributes, mesh->indices));
+  std::shared_ptr<Mesh> resMesh = std::shared_ptr<Mesh>(new Mesh(newAttributes, mesh->indices));
+  resMesh->setLocation(mesh->getLocation());
+  
+  return resMesh;
 
 }
 

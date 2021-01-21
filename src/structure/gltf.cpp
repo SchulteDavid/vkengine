@@ -1307,8 +1307,9 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     gltf_mesh_t gltfMesh = fileData.meshes[node.mesh];
 
     std::shared_ptr<Mesh> mesh = gltfLoadMesh(gltfMesh, fileData.accessors, fileData.bufferViews, fileData.binaryBuffer);
-    //mesh = yupMatrix * mesh;
-    LoadingResource meshRes = this->uploadResource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
+    ResourceLocation meshResourceLocation("Mesh", filename, gltfMesh.name);
+    mesh->setLocation(meshResourceLocation);
+    LoadingResource meshRes = this->uploadResource(meshResourceLocation, std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
     lout << "MeshRes " << meshRes << std::endl;
 
     int materialIndex = gltfMesh.primitives[0].material;
@@ -1318,14 +1319,14 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
       LoadingResource matRes = this->loadMaterial(fileData, materialIndex, filename);
       uploader = std::shared_ptr<NodeUploader>(new MeshNodeUploader(node.name, meshRes, matRes, trans, yupMatrix));
-      state.nodeRes[nodeId] = createResource(ResourceLocation("Node",filename, node.name) , uploader);
+      state.nodeRes[nodeId] = createResource(ResourceLocation("Node", filename, node.name) , uploader);
       
 
     } else {
 
       LoadingResource matRes = this->loadDependency(ResourceLocation("Material", "resources/materials/gltf_default.mat"));
       uploader = std::make_shared<MeshNodeUploader>(node.name, meshRes, matRes, trans, yupMatrix);
-      state.nodeRes[nodeId] = createResource(ResourceLocation("Node",filename, node.name), uploader);
+      state.nodeRes[nodeId] = createResource(ResourceLocation("Node", filename, node.name), uploader);
 
     }
 

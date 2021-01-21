@@ -51,3 +51,10 @@ std::shared_ptr<NodeUploader> strc::loadLightNode(std::shared_ptr<config::NodeCo
   return std::make_shared<NodeUploader>(node);
 
 }
+
+void LightNode::saveNode(std::shared_ptr<config::NodeCompound> comp) {
+
+  comp->addChild("lighttype", std::make_shared<config::Node<int>>(1, (int *)&this->type));
+  comp->addChild("power", std::make_shared<config::Node<float>>(1, &power));
+  
+}

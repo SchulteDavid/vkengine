@@ -60,6 +60,7 @@ private:
 namespace physutil {
 
   std::shared_ptr<PhysicsObject> loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform, const std::unordered_map<std::string, LoadingResource> & attachedResources);
+  std::shared_ptr<config::NodeCompound> savePhysicsObject(std::shared_ptr<PhysicsObject> obj);
   
 };
 

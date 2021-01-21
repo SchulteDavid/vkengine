@@ -10,7 +10,7 @@
 #include "util/debug/trace_exception.h"
 #include "util/vk_trace_exception.h"
 
-Shader::Shader(std::string vertShader, std::string fragShader, const VkDevice & device) : device(device) {
+Shader::Shader(std::string vertShader, std::string fragShader, const VkDevice & device) : Resource("Shader"), device(device) {
 
   this->modules.resize(2);
   this->stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
@@ -25,7 +25,7 @@ Shader::Shader(std::string vertShader, std::string fragShader, const VkDevice & 
 
 }
 
-Shader::Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state, unsigned int textureSlots) : device(state.device) {
+Shader::Shader(std::vector<uint8_t> vertCode, std::vector<uint8_t> fragCode, const vkutil::VulkanState & state, unsigned int textureSlots) : Resource("Shader"), device(state.device) {
 
   vertShaderCode = vertCode;
   fragShaderCode = fragCode;
