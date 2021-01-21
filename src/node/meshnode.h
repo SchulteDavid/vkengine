@@ -18,6 +18,7 @@ namespace strc {
   public:
     MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans);
     MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans, std::shared_ptr<Skin> skin);
+    MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr<Material> material, Transform<double> trans, std::shared_ptr<Skin> skin, bool hasColision);
 
     virtual ~MeshNode();
 
@@ -45,6 +46,8 @@ namespace strc {
 
     std::shared_ptr<Skin> skin;
 
+    bool hasColision;
+
     RenderElement::Instance instance;
 
   };
@@ -58,6 +61,7 @@ class MeshNodeUploader : public NodeUploader {
 public:
 
   MeshNodeUploader(std::string nodeName, LoadingResource mesh, LoadingResource material, Transform<double> transform);
+  MeshNodeUploader(std::string nodeName, LoadingResource mesh, LoadingResource material, Transform<double> transform, Math::Matrix<4, 4, float> meshTransform);
 
   bool uploadReady() override;
 
@@ -73,6 +77,8 @@ private:
   LoadingResource meshRes;
   LoadingResource materialRes;
   Transform<double> transform;
+
+  Math::Matrix<4, 4, float> meshTransform;
 
   LoadingResource skinResource;
   

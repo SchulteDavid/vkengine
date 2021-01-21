@@ -123,6 +123,10 @@ std::string NodeUploader::getNodeName() {
   return this->rootNode->getName();
 }
 
+const std::unordered_map<std::string, LoadingResource> & NodeUploader::getAttachedResources() {
+  return resourcesToAttach;
+}
+
 Transform<double> loadTransform(std::shared_ptr<config::NodeCompound> transNode) {
 
   Transform<double> trans;

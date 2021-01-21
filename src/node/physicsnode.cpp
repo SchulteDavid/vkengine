@@ -2,6 +2,8 @@
 
 #include "world/world.h"
 
+#include "node/nodeloader.h"
+
 using namespace strc;
 
 PhysicsNode::PhysicsNode(std::string name, Transform<double> trans, std::shared_ptr<PhysicsObject> obj) : Node(name, trans) {
@@ -15,9 +17,39 @@ PhysicsNode::~PhysicsNode() {
 
 }
 
+class PhysicsNodeUploader : public NodeUploader {
+
+public:
+  PhysicsNodeUploader(std::string name, Transform<double> transform, std::shared_ptr<config::NodeCompound> pData) : NodeUploader(), nodeName(name) {
+
+    this->transform = transform;
+    this->physicsData = pData;
+    
+  }
+
+  virtual ~PhysicsNodeUploader() {
+
+  }
+
+  std::shared_ptr<Node> constructNode() override {
+
+    std::shared_ptr<PhysicsObject> pobj = physutil::loadPhysicsObject(physicsData, transform, this->getAttachedResources());
+
+    return std::make_shared<PhysicsNode>(nodeName, transform, pobj);
+    
+  }
+
+private:
+
+  std::string nodeName;
+  Transform<double> transform;
+  std::shared_ptr<config::NodeCompound> physicsData;
+  
+};
+
 std::shared_ptr<NodeUploader> strc::loadPhysicsNode(std::shared_ptr<config::NodeCompound> root, const NodeLoader::LoadingContext & context, const std::string nodeName) {
 
-  std::cout << "Loading PhysicsNode" << std::endl;
+  /*std::cout << "Loading PhysicsNode" << std::endl;
 
   std::shared_ptr<config::NodeCompound> objectNode = root->getNodeCompound("physics");
 
@@ -25,7 +57,9 @@ std::shared_ptr<NodeUploader> strc::loadPhysicsNode(std::shared_ptr<config::Node
 
   std::shared_ptr<Node> node(new PhysicsNode(nodeName, context.transform, object));
 
-  return std::make_shared<NodeUploader>(node);
+  return std::make_shared<NodeUploader>(node);*/
+
+  return std::make_shared<PhysicsNodeUploader>(nodeName, context.transform, root->getNodeCompound("physics"));
   
 }
 

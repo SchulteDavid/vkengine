@@ -35,6 +35,8 @@ class NodeUploader : public ResourceUploader<strc::Node> {
 
   virtual std::shared_ptr<strc::Node> constructNode();
 
+  const std::unordered_map<std::string, LoadingResource> & getAttachedResources();
+  
  private:
   std::shared_ptr<strc::Node> rootNode;
   std::vector<LoadingResource> children;

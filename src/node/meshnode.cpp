@@ -14,6 +14,7 @@ MeshNode::MeshNode(std::string name, std::shared_ptr<Mesh> mesh, std::shared_ptr
   this->mesh = mesh;
   this->material = material;
   this->model = nullptr;
+  this->skin = nullptr;
 
   if (!this->material) {
     throw dbg::trace_exception("Empty material in MeshNode");
@@ -34,7 +35,7 @@ MeshNode::~MeshNode() {
 }
 
 void MeshNode::addToWorld(World * world, std::shared_ptr<Node> self) {
-
+  
 }
 
 std::shared_ptr<Node> MeshNode::duplicate(std::string name) {
@@ -124,6 +125,14 @@ MeshNodeUploader::MeshNodeUploader(std::string nodeName, LoadingResource mesh, L
     this->meshRes = mesh;
     this->materialRes = material;
     this->transform = transform;
+    this->meshTransform = Matrix<4, 4, float>(1.0);
+}
+
+MeshNodeUploader::MeshNodeUploader(std::string nodeName, LoadingResource mesh, LoadingResource material, Transform<double> transform, Matrix<4, 4, float> mTrans) : nodeName(nodeName) {
+    this->meshRes = mesh;
+    this->materialRes = material;
+    this->transform = transform;
+    this->meshTransform = mTrans;
 }
 
 std::string MeshNodeUploader::getNodeName() {
@@ -135,6 +144,8 @@ std::shared_ptr<strc::Node> MeshNodeUploader::constructNode() {
   std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(meshRes->location);
   std::shared_ptr<Material> mat = std::dynamic_pointer_cast<Material>(materialRes->location);
 
+  mesh = meshTransform * mesh;
+  
   std::shared_ptr<strc::Node> node;
   if (this->skinResource) {
     std::shared_ptr<Skin> skin = std::dynamic_pointer_cast<Skin>(skinResource->location);

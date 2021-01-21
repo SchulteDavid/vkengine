@@ -55,9 +55,11 @@ private:
 
 };
 
+#include "resources/resourceloader.h"
+
 namespace physutil {
 
-  std::shared_ptr<PhysicsObject> loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform);
+  std::shared_ptr<PhysicsObject> loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform, const std::unordered_map<std::string, LoadingResource> & attachedResources);
   
 };
 

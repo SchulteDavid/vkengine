@@ -728,7 +728,7 @@ std::shared_ptr<Mesh> gltfLoadMesh(gltf_mesh_t & mesh, std::vector<gltf_accessor
 
   mmesh->makeConsistentWithNormals();
   
-  return mmesh;
+  return zupMatrix * mmesh;
 
 }
 
@@ -1274,6 +1274,15 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
   lout << "Loading gltf-node " << nodeId << std::endl;
 
+  static float yupData[16] = {
+			      1, 0, 0, 0,
+			      0, 0, 1, 0,
+			      0,-1, 0, 0,
+			      0, 0, 0, 1
+  };
+
+  Matrix<4, 4, float> yupMatrix(yupData);
+
   // Fetch node
   gltf_node_t & node = fileData.nodes[nodeId];
 
@@ -1298,6 +1307,7 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     gltf_mesh_t gltfMesh = fileData.meshes[node.mesh];
 
     std::shared_ptr<Mesh> mesh = gltfLoadMesh(gltfMesh, fileData.accessors, fileData.bufferViews, fileData.binaryBuffer);
+    //mesh = yupMatrix * mesh;
     LoadingResource meshRes = this->uploadResource(ResourceLocation("Mesh", filename, gltfMesh.name), std::shared_ptr<ResourceUploader<Resource>>((ResourceUploader<Resource> *)new MeshUploader(mesh)));
     lout << "MeshRes " << meshRes << std::endl;
 
@@ -1307,14 +1317,14 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
     if (materialIndex >= 0) {
 
       LoadingResource matRes = this->loadMaterial(fileData, materialIndex, filename);
-      uploader = std::shared_ptr<NodeUploader>(new MeshNodeUploader(node.name, meshRes, matRes, trans));
+      uploader = std::shared_ptr<NodeUploader>(new MeshNodeUploader(node.name, meshRes, matRes, trans, yupMatrix));
       state.nodeRes[nodeId] = createResource(ResourceLocation("Node",filename, node.name) , uploader);
       
 
     } else {
 
       LoadingResource matRes = this->loadDependency(ResourceLocation("Material", "resources/materials/gltf_default.mat"));
-      uploader = std::make_shared<MeshNodeUploader>(node.name, meshRes, matRes, trans);
+      uploader = std::make_shared<MeshNodeUploader>(node.name, meshRes, matRes, trans, yupMatrix);
       state.nodeRes[nodeId] = createResource(ResourceLocation("Node",filename, node.name), uploader);
 
     }

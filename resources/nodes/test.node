@@ -53,7 +53,9 @@ comp children = [
 
 	comp physics = {
 	     float64 mass = 0.0
-	     string shapeName = "box"
+	     string shapeName = "static_mesh"
+
+	     string name = "FloorMesh"
 
 	     float64 boxSize = [20.9196,20.9196,0.29299]
 	}
@@ -63,26 +65,18 @@ comp children = [
 	     float64 scale = [1.0,1.0,1.0]
 	}
 
+	comp attachedResources = [
+	     {
+		string location = "resources/nodes/room.glb::Cube.001"
+		string type = "Mesh"
+		string name = "FloorMesh"
+	     }
+	]
+
 	comp children = [
 
-     	     {
-	     string location = "resources/nodes/room.glb"
-	    },
-	    {
-		string type = "Node"
-		string name = "StatueRoot0"
-
-		comp transform = {
-		     float64 position = [3, 0, 0]
-		     float64 rotation = [1,0,0,0]
-		     float64 scale = [4,4,4]
-		}
-
-		comp children = [
-		     {
-			string location = "resources/nodes/statue.glb"
-		     }
-		]
+     	    {
+		string location = "resources/nodes/room.glb"
 	    }
 	    
 	 ]

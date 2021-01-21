@@ -6,6 +6,8 @@
 #include "util/debug/logger.h"
 #include "util/debug/trace_exception.h"
 
+#include "util/mesh.h"
+
 PhysicsContext::PhysicsContext() {
 
   this->collisionConfig = new btDefaultCollisionConfiguration();
@@ -118,7 +120,34 @@ void PhysicsContext::addObject(std::shared_ptr<PhysicsObject> obj) {
 
 }
 
-std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform) {
+namespace physutil {
+
+  void transferMeshDataToBullet(std::shared_ptr<Mesh> mesh, btTriangleMesh * btMesh) {
+
+    std::vector<uint32_t> indices = mesh->getIndices();
+    const VertexAttribute & positions = mesh->getAttribute("POSITION");
+
+    for (size_t i = 0; i < indices.size(); i += 3) {
+
+      uint32_t i0 = indices[i];
+      uint32_t i1 = indices[i+1];
+      uint32_t i2 = indices[i+2];
+      
+      Math::Vector<3, float> p0 = positions.value[i0].vec3;
+      Math::Vector<3, float> p1 = positions.value[i1].vec3;
+      Math::Vector<3, float> p2 = positions.value[i2].vec3;
+
+      btMesh->addTriangle(btVector3(p0(0), p0(1), p0(2)),
+			  btVector3(p1(0), p1(1), p1(2)),
+			  btVector3(p2(0), p2(1), p2(2)));
+      
+    }
+    
+  }
+  
+};
+
+std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<config::NodeCompound> data, Transform<double> transform, const std::unordered_map<std::string, LoadingResource> & attachedResources) {
 
   using namespace config;
   using namespace physutil;
@@ -158,6 +187,23 @@ std::shared_ptr<PhysicsObject> physutil::loadPhysicsObject(std::shared_ptr<confi
     
     shape = new btCylinderShapeZ(vec);
     
+  } else if (shapeName == "static_mesh") {
+
+    std::string resName(data->getNode<char>("name")->getRawData());
+    std::cout << "Looking for attached resource with name " << resName << std::endl;
+
+    if (attachedResources.find(resName) == attachedResources.end())
+      throw dbg::trace_exception("No matching attached resource found.");
+
+    LoadingResource res = attachedResources.at(resName);
+    std::shared_ptr<Mesh> mesh = std::dynamic_pointer_cast<Mesh>(res->location);
+
+    btTriangleMesh * btMesh = new btTriangleMesh();
+
+    transferMeshDataToBullet(mesh, btMesh);
+    
+    shape = new btBvhTriangleMeshShape(btMesh, true);
+
   }
 
   if (!shape)

@@ -992,3 +992,25 @@ VkPipeline vkutil::createGraphicsPipeline(const VulkanState & state, const VkRen
   return graphicsPipeline;
 
 }
+
+VkPipeline vkutil::createComputePipeline(const VulkanState & state) {
+
+  VkPipelineLayoutCreateInfo layoutInfo = {};
+  layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  //layoutInfo.
+
+  VkPipelineLayout layout;
+  if (VkResult r = vkCreatePipelineLayout(state.device, &layoutInfo, nullptr, &layout))
+    throw vk_trace_exception("Unable to create compute-pipeline-layout", r);
+
+  VkComputePipelineCreateInfo pipelineInfo = {};
+  pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+  pipelineInfo.layout = layout;
+
+  VkPipeline computePipeline;
+  if (VkResult r = vkCreateComputePipelines(state.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &computePipeline))
+    throw vkutil::vk_trace_exception("Unable to create compute-pipeline", r);
+
+  return computePipeline;
+  
+}

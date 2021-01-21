@@ -154,6 +154,9 @@ namespace vkutil {
   VkDescriptorSetLayout createDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding> & bindings, const VkDevice & device);
   VkPipeline createGraphicsPipeline(const VulkanState & state, const VkRenderPass & renderPass, const std::vector<ShaderInputDescription> & shaders, const VertexInputDescriptions & descs, const VkDescriptorSetLayout & descriptorSetLayout, VkPipelineLayout & retLayout, VkExtent2D swapChainExtent, uint32_t subpassId);
 
+
+  VkPipeline createComputePipeline(const VulkanState & state);
+  
   bool hasStencilComponent(VkFormat format);
 
 }

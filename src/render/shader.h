@@ -45,16 +45,13 @@ public:
      Will create the VkDescriptorSetLayoutBindings Bindings
   **/
   std::vector<VkDescriptorSetLayoutBinding> getVkBindings(std::vector<Binding> bindings);
-  //std::vector<VkDescriptorSetLayoutBinding> getVkBindings(VkSampler & sampler);
 
   std::vector<vkutil::ShaderInputDescription> getShaderInputDescriptions();
   
   VkDescriptorSetLayout setupDescriptorSetLayout(std::vector<Shader::Binding> bindings);
-  //void setupDescriptorSetLayout(VkSampler & sampler);
   VkPipeline setupGraphicsPipeline(vkutil::VertexInputDescriptions & descs, const VkRenderPass & renderPass, const vkutil::VulkanState & state, const VkDescriptorSetLayout & descLayout, VkExtent2D swapChainExtent, VkPipelineLayout & pipelineLayout, uint32_t subpassId = 0);
 
   VkDescriptorPool setupDescriptorPool(int scSize, std::vector<Binding> & binds);
-  //std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<VkBuffer> & uniformBuffers, size_t elementSize, std::vector<std::shared_ptr<Texture>>& tex, int scSize); /// <- To be stored in RenderElement
   std::vector<VkDescriptorSet> createDescriptorSets(VkDescriptorPool & descPool, const VkDescriptorSetLayout & descLayout, std::vector<Binding> & binds, std::vector<std::shared_ptr<Texture>>& tex, int scSize);
   VkPipeline & getPipeline();
   VkPipelineLayout & getPipelineLayout();
