@@ -1,0 +1,89 @@
+string type = "Node"
+string name = "Level"
+
+comp transform = {
+     float64 position = [0,0,0]
+     float64 rotation = [1,0,0,0]
+     float64 scale = [1,1,1]
+}
+
+comp children = [
+     {
+	string type = "PhysicsNode"
+	string name = "RoomNode"
+
+	comp physics = {
+	     float64 mass = 0.0
+	     string shapeName = "box"
+	     float64 boxSize = [7, 14, 0.5]
+	}
+	comp transform = {
+	     float64 position = [0,0,0]
+     	     float64 rotation = [1,0,0,0]
+     	     float64 scale = [1,1,1]
+	}
+	comp children = [
+	     {
+		string location = "resources/nodes/room.glb"
+	     }
+	]
+     },
+     {
+	string type = "PhysicsNode"
+	string name = "FallingBox"
+	comp physics = {
+	     float64 mass = 10.0
+	     string shapeName = "sphere"
+	     float64 boxSize = [1,1,1]
+	     float64 radius = 1.0
+	}
+	string eventHandler = "TestEventHandler"
+
+	comp transform = {
+	     float64 position = [0,0,10]
+     	     float64 rotation = [1,0,0,0]
+	     float64 scale = [1,1,1]
+	}
+
+	comp attachedResources = [
+	     {
+		string type = "Plugin"
+		string name = "PyTest"
+		string location = "pytest"
+	     },
+	     {
+		string type = "Sound"
+		string name = "TestSound"
+		string location = "resources/sounds/bounce.wav"
+	     }
+	]
+
+	comp children = [
+	     {
+	     
+	     	string type = "AudioSourceNode"
+		string name = "AudioSource"
+		comp transform = {
+		     float64 position = [0,0,0]
+		     float64 rotation = [1,0,0,0]
+		     float64 scale = [1,1,1]
+		}
+             },
+             {	
+		string location = "resources/nodes/player.glb::Icosphere"
+	     },
+	     {
+		string type = "LightNode"
+		string name = "Light.001"
+		comp transform = {
+	     	     float64 position = [0,0,1.2]
+	     	     float64 rotation = [1,0,0,0]
+     	     	     float64 scale = [1,1,1]
+		}
+		int32 lighttype = 1
+		float32 power = 0.0
+     	     }
+
+	 ]
+     }
+]

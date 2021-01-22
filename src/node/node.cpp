@@ -310,6 +310,10 @@ void Node::printChildren() {
   
 }
 
+std::unordered_map<std::string, std::shared_ptr<strc::Node>> & Node::getChildren() {
+  return children;
+}
+
 #include "meshnode.h"
 #include "lightnode.h"
 #include "physicsnode.h"

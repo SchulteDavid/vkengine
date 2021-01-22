@@ -75,6 +75,8 @@ namespace strc {
     std::shared_ptr<config::NodeCompound> toCompoundNode();
 
     void printChildren();
+
+    std::unordered_map<std::string, std::shared_ptr<Node>> & getChildren();
     
   protected:
     /// This is the transform relative to
