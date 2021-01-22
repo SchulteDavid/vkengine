@@ -114,9 +114,6 @@ void createResourceLoaders(ResourceManager * resourceManager) {
 
 
   strc::Node::registerLoaders();
-
-  //resourceManager->addLoader("Node", (ResourceLoader<Resource> *) new GLTFNodeLoader(view->getState(), view->getRenderpass(), view->getSwapchainExtent()));
-  
   resourceManager->addLoader("Node", (ResourceLoader<Resource> *) new NodeLoader());
 
   std::shared_ptr<ArchiveLoader> gltfLoader(new GLTFNodeLoader());
