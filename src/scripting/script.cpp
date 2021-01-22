@@ -1,18 +1,10 @@
-#include "plugin.h"
+#include "scripting/script.h"
 
-Plugin::Plugin() : Resource("Plugin") {
+Script::Script() : Resource("Script") {
     //ctor
 }
 
-Plugin::~Plugin()
+Script::~Script()
 {
     //dtor
-}
-
-void Plugin::preload() {
-
-}
-
-void Plugin::onInit(Window * window) {
-
 }
