@@ -32,6 +32,8 @@ public:
   ResourceLoader<Resource> * getLoader(std::string name, int index = 0);
 
   template<typename T> std::shared_ptr<ResourceUploader<T>> loadResource(ResourceLocation location) {
+    if (this->registries.find(location.type) == this->registries.end())
+      throw dbg::trace_exception(std::string("No such registry").append(location.type));
     return ((ResourceRegistry<T> *) this->registries[location.type])->load(location);
   }
 
