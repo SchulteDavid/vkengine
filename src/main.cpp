@@ -270,6 +270,7 @@ int main(int argc, char ** argv) {
 
     view->drawFrame();
     wait = false;
+    //std::cout << "fps: " << view->getFpsCount() << std::endl;
 
   }
 

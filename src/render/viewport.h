@@ -91,6 +91,8 @@ public:
 
   std::shared_ptr<Camera> getCamera();
 
+  double getFpsCount();
+
 protected:
 
   void setupRenderPass();
@@ -200,6 +202,8 @@ private:
   ThreadedBufferManager * bufferManager;
 
   std::shared_ptr<Texture> skyBox;
+
+  double fpsCount;
 
 };
 
