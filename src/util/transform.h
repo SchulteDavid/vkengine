@@ -57,7 +57,7 @@ template <typename T> std::ostream & operator<<(std::ostream & stream, Transform
 template <typename T> inline Transform<T> operator*(const Transform<T> & t1, const Transform<T> & t2) {
 
   Transform<T> res;
-  res.position = t1.position + t1.rotation.toRotationMatrix() * t2.position;
+  res.position = t1.position + t1.rotation.toRotationMatrix() * Math::compMultiply(t1.scale, t2.position);
   res.rotation = t1.rotation * t2.rotation;
   res.scale = Math::compMultiply(t1.scale, t2.scale);
 
@@ -69,7 +69,7 @@ template <typename T> inline Transform<T> operator*(const Transform<T> & t1, con
 template <typename T> Transform<T> combineTransforms(const Transform<T> & t1, const Transform<T> & t2) {
 
   Transform<T> res;
-  res.position = t1.position + t2.position;
+  res.position = t1.position + t1.rotation.toRotationMatrix() * Math::compMultiply(t1.scale, t2.position);
   res.rotation = t1.rotation * t2.rotation;
   res.scale = Math::compMultiply(t1.scale, t2.scale);
 

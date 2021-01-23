@@ -1121,7 +1121,7 @@ void updateLoadedPositions(std::unordered_map<float, Transform<float>> & transfo
 
     if (transforms.find(time) != transforms.end()) {
 
-      transforms[time].position = Vector<3, float>({positions[i][0], -positions[i][2], positions[i][1]});
+      transforms[time].position = Vector<3, float>({positions[i][0], positions[i][1], positions[i][2]});
       //transforms[time].position = positions[i];
       
     } else {
@@ -1129,7 +1129,7 @@ void updateLoadedPositions(std::unordered_map<float, Transform<float>> & transfo
       /// TODO : Update to interpolate nearest keyframes for other chanels.
       
       Transform<float> trans;
-      trans.position = Vector<3, float>({positions[i][0], -positions[i][2], positions[i][1]});
+      trans.position = Vector<3, float>({positions[i][0], positions[i][1], positions[i][2]});
       //trans.position = positions[i];
 
       transforms[time] = trans;
@@ -1152,7 +1152,7 @@ void updateLoadedScales(std::unordered_map<float, Transform<float>> & transforms
 
     if (transforms.find(time) != transforms.end()) {
 
-      transforms[time].scale = Vector<3, float>({scales[i][0], scales[i][2], scales[i][1]});
+      transforms[time].scale = Vector<3, float>({scales[i][0], scales[i][1], scales[i][2]});
       //transforms[time].scale = scales[i];
 
     } else {
@@ -1160,7 +1160,7 @@ void updateLoadedScales(std::unordered_map<float, Transform<float>> & transforms
       /// TODO : Update to interpolate nearest keyframes for other chanels.
       
       Transform<float> trans;
-      trans.scale = Vector<3, float>({scales[i][0], scales[i][2], scales[i][1]});
+      trans.scale = Vector<3, float>({scales[i][0], scales[i][1], scales[i][2]});
       //trans.scale = scales[i];
 
       transforms[time] = trans;
@@ -1186,14 +1186,14 @@ void updateLoadedRotations(std::unordered_map<float, Transform<float>> & transfo
 
     if (transforms.find(time) != transforms.end()) {
 
-      transforms[time].rotation = Quaternion<float>(rotations[i].a, rotations[i].b, -rotations[i].d, rotations[i].c);
+      transforms[time].rotation = Quaternion<float>(rotations[i].a, rotations[i].b, rotations[i].c, rotations[i].d);
       
     } else {
 
       /// TODO : Update to interpolate nearest keyframes for other chanels.
       
       Transform<float> trans;
-      trans.rotation = Quaternion<float>(rotations[i].a, rotations[i].b, -rotations[i].d, rotations[i].c);
+      trans.rotation = Quaternion<float>(rotations[i].a, rotations[i].b, rotations[i].c, rotations[i].d);
 
       transforms[time] = trans;
       
