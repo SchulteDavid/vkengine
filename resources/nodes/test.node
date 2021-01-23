@@ -76,7 +76,7 @@ comp children = [
 	comp children = [
 
      	    {
-		string location = "resources/nodes/room.glb"
+		string location = "resources/nodes/robot.glb"
 	    }
 	    
 	 ]

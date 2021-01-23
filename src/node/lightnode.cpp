@@ -10,15 +10,22 @@ LightNode::LightNode(std::string name, LightType type, float power, Transform<do
   this->type = type;
   this->power = power;
   this->view = nullptr;
+  this->color = Math::Vector<3, float>(1,1,1);
+}
+
+LightNode::LightNode(std::string name, LightType type, float power, Math::Vector<3, float> color, Transform<double> transform) : LightNode(name, type, power, transform) {
+
+  this->color = color;
+  
 }
 
 void LightNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 
   Transform<double> trans = getGlobalTransform();
   glm::vec4 pos(trans.position[0], trans.position[1], trans.position[2], (float) type);
-  glm::vec4 color(power, power, power, 1.0);
+  glm::vec4 c(power * color[0], power * color[1], power * color[2], 1.0);
 
-  this->light = view->addLight(pos, color);
+  this->light = view->addLight(pos, c);
 
   this->view = view;
   
@@ -26,7 +33,7 @@ void LightNode::addToViewport(Viewport * view, std::shared_ptr<Node> self) {
 }
 
 std::shared_ptr<Node> LightNode::duplicate(std::string name) {
-  return std::make_shared<LightNode>(name, type, power, transform);
+  return std::make_shared<LightNode>(name, type, power, color, transform);
 }
 
 void LightNode::onTransformUpdate() {
@@ -35,9 +42,9 @@ void LightNode::onTransformUpdate() {
 
   Transform<double> trans = getGlobalTransform();
   glm::vec4 pos(trans.position[0], trans.position[1], trans.position[2], (float) type);
-  glm::vec4 color(power, power, power, 1.0);
+  glm::vec4 c(power * color[0], power * color[1], power * color[2], 1.0);
   
-  this->view->updateLight(light, pos, color);
+  this->view->updateLight(light, pos, c);
   
 }
 

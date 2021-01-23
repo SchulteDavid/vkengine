@@ -82,6 +82,8 @@ struct gltf_node_t {
   std::vector<int> children;
   int skin;
 
+  json extensions;
+
 };
 
 void from_json(const json & j, gltf_node_t & node) {
@@ -124,6 +126,12 @@ void from_json(const json & j, gltf_node_t & node) {
     j.at("skin").get_to(node.skin);
   } catch (std::exception e) {
     node.skin = -1;
+  }
+
+  try {
+    node.extensions = j.at("extensions");
+  } catch (std::exception) {
+
   }
 
 }
@@ -442,6 +450,16 @@ void from_json(const json & j, gltf_skin_t & skin) {
   j.at("joints").get_to(skin.joints);
   j.at("name").get_to(skin.name);
 
+}
+
+struct gltf_extension_t {
+
+  std::unordered_map<std::string, json> extData;
+  
+};
+
+void from_json(const json & j, gltf_extension_t & ext) {
+  j.get_to(ext.extData);
 }
 
 template <typename T> T gltfGetBufferData(const gltf_accessor_t & acc, const gltf_buffer_view_t & bufferView, uint8_t * data, int index) {
@@ -782,6 +800,28 @@ std::vector<uint8_t> gltfLoadPackedImage(uint8_t * buffer, gltf_buffer_view_t & 
 
 }
 
+struct gltf_khr_light_punctual_t {
+
+  double intensity;
+  std::string name;
+  std::string type;
+  Math::Vector<3, float> color;
+  
+};
+
+void from_json(const json & j, gltf_khr_light_punctual_t & light) {
+
+  std::vector<float> tmpColor;
+  
+  j.at("intensity").get_to(light.intensity);
+  j.at("color").get_to(tmpColor);
+  j.at("name").get_to(light.name);
+  j.at("type").get_to(light.type);
+
+  light.color = Math::Vector<3, float>(tmpColor[0], tmpColor[1], tmpColor[2]);
+  
+}
+
 struct gltf_file_data_t {
 
   uint32_t rootScene;
@@ -798,7 +838,11 @@ struct gltf_file_data_t {
   std::vector<gltf_animation_t> animations;
   std::vector<gltf_skin_t> skins;
 
+  std::vector<gltf_khr_light_punctual_t> lights;
+  
   uint8_t * binaryBuffer;
+
+  gltf_extension_t extensions;
 
 };
 
@@ -808,6 +852,27 @@ struct gltf_loading_state_t {
   std::vector<LoadingResource> nodeRes;
   
 };
+
+void gltfLoadExtension_KHR_light_punctual(json & jData, gltf_file_data_t * fData) {
+
+  std::cout << "Loading lights from gltf" << std::endl;
+
+  fData->lights = jData.at("lights").get<std::vector<gltf_khr_light_punctual_t>>();
+  
+}
+
+void gltfLoadRecognisedExtensions(gltf_extension_t & extensions, gltf_file_data_t * data) {
+
+  if (!data)
+    return;
+
+
+  if (extensions.extData.find("KHR_lights_punctual") != extensions.extData.end()) {
+    gltfLoadExtension_KHR_light_punctual(extensions.extData["KHR_lights_punctual"], data);
+  }
+  
+  
+}
 
 void gltfLoadFile(std::string fname, gltf_file_data_t * data) {
 
@@ -859,6 +924,7 @@ void gltfLoadFile(std::string fname, gltf_file_data_t * data) {
   std::vector<gltf_material_t> materials;
   std::vector<gltf_image_t> images;
   std::vector<gltf_texture_t> textures;
+  gltf_extension_t extensions;
 
   try {
 
@@ -895,6 +961,15 @@ void gltfLoadFile(std::string fname, gltf_file_data_t * data) {
 
   }
 
+  try {
+    extensions = jsonData["extensions"].get<gltf_extension_t>();
+
+    gltfLoadRecognisedExtensions(extensions, data);
+    
+  } catch (json::type_error & e) {
+
+  }
+
   int sceneID = jsonData["scene"].get<int>();
   uint8_t * binaryBuffer = chunks[1].rawData;
 
@@ -914,6 +989,7 @@ void gltfLoadFile(std::string fname, gltf_file_data_t * data) {
     data->skins = skins;
 
     data->rootScene = sceneID;
+    data->extensions = extensions;
 
   } else {
     delete[] binaryBuffer;
@@ -982,6 +1058,7 @@ struct gltf_anim_vertex {
 
 #include "node/nodeloader.h"
 #include "node/meshnode.h"
+#include "node/lightnode.h"
 
 GLTFNodeLoader::GLTFNodeLoader() {
 
@@ -1330,7 +1407,32 @@ std::shared_ptr<NodeUploader> GLTFNodeLoader::loadNodeGLTF(gltf_file_data_t & fi
 
     }
 
+  } else if (node.extensions.contains("KHR_lights_punctual")) {
 
+    int lightId;
+    node.extensions.at("KHR_lights_punctual").at("light").get_to(lightId);
+
+    if (lightId < fileData.lights.size()) {
+
+      const gltf_khr_light_punctual_t & light = fileData.lights[lightId];
+      
+      strc::LightNode::LightType lightType;
+      if (light.type == "point") {
+	lightType = strc::LightNode::LIGHT_POINT;
+      } else if (light.type == "directional") {
+	lightType = strc::LightNode::LIGHT_SUN;
+      }
+
+      std::shared_ptr<strc::LightNode> lnode = std::make_shared<strc::LightNode>(node.name, lightType, light.intensity, light.color, trans);
+
+      uploader = std::make_shared<NodeUploader>(lnode);
+      state.nodeRes[nodeId] = createResource(ResourceLocation("Node", filename, node.name), uploader);
+      
+    } else {
+      std::cerr << "Light id: " << lightId << " file has " << fileData.lights.size() << " lights loaded." << std::endl;
+      throw dbg::trace_exception("Light id outside of provided range");
+    }
+    
   } else {
     std::shared_ptr<strc::Node> snode = std::make_shared<strc::Node>(node.name, trans);
     uploader = std::make_shared<NodeUploader>(snode);

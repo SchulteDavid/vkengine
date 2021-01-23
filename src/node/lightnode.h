@@ -17,6 +17,7 @@ namespace strc {
     };
 
     LightNode(std::string name, LightType type, float power, Transform<double> transform);
+    LightNode(std::string name, LightType type, float power, Math::Vector<3, float> color, Transform<double> transform);
 
     void saveNode(std::shared_ptr<config::NodeCompound> comp) override;
     
@@ -33,6 +34,7 @@ namespace strc {
     
     LightType type;
     float power;
+    Math::Vector<3, float> color;
 
 
   };
